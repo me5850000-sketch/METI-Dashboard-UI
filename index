@@ -1,0 +1,530 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>meti_tasks Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: #0f1117;
+    color: #e2e8f0;
+    min-height: 100vh;
+    direction: rtl;
+  }
+  .header {
+    background: #1a1d27;
+    border-bottom: 1px solid #2d3148;
+    padding: 16px 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .header h1 {
+    font-size: 20px;
+    font-weight: 600;
+    color: #3ecf8e;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .header h1 span.dot {
+    width: 10px; height: 10px;
+    background: #3ecf8e;
+    border-radius: 50%;
+    display: inline-block;
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%,100% { opacity:1; } 50% { opacity:0.4; }
+  }
+  .stats-bar {
+    display: flex;
+    gap: 12px;
+    padding: 16px 24px;
+    background: #14161f;
+    border-bottom: 1px solid #1e2133;
+  }
+  .stat {
+    background: #1a1d27;
+    border: 1px solid #2d3148;
+    border-radius: 8px;
+    padding: 10px 16px;
+    font-size: 13px;
+  }
+  .stat strong { color: #3ecf8e; font-size: 18px; display: block; }
+  .stat span { color: #94a3b8; font-size: 11px; }
+  .toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 14px 24px;
+    background: #14161f;
+    border-bottom: 1px solid #1e2133;
+    flex-wrap: wrap;
+  }
+  .toolbar input[type="text"] {
+    background: #1a1d27;
+    border: 1px solid #2d3148;
+    border-radius: 8px;
+    color: #e2e8f0;
+    padding: 8px 12px;
+    font-size: 13px;
+    flex: 1;
+    min-width: 200px;
+    outline: none;
+    direction: rtl;
+  }
+  .toolbar input[type="text"]:focus { border-color: #3ecf8e; }
+  .toolbar select {
+    background: #1a1d27;
+    border: 1px solid #2d3148;
+    border-radius: 8px;
+    color: #e2e8f0;
+    padding: 8px 12px;
+    font-size: 13px;
+    cursor: pointer;
+    outline: none;
+  }
+  .toolbar select:focus { border-color: #3ecf8e; }
+  .btn {
+    padding: 8px 16px;
+    border-radius: 8px;
+    border: none;
+    font-size: 13px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.15s;
+  }
+  .btn-primary { background: #3ecf8e; color: #0f1117; }
+  .btn-primary:hover { background: #2fb578; }
+  .btn-danger { background: #ef4444; color: #fff; }
+  .btn-danger:hover { background: #dc2626; }
+  .btn-secondary { background: #1e2133; border: 1px solid #2d3148; color: #e2e8f0; }
+  .btn-secondary:hover { background: #252840; }
+  .btn-edit { background: transparent; border: 1px solid #3b82f6; color: #3b82f6; padding: 4px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; }
+  .btn-edit:hover { background: #3b82f6; color: #fff; }
+  .btn-del { background: transparent; border: 1px solid #ef4444; color: #ef4444; padding: 4px 10px; font-size: 12px; border-radius: 6px; cursor: pointer; }
+  .btn-del:hover { background: #ef4444; color: #fff; }
+  .table-wrap {
+    overflow-x: auto;
+    padding: 0 24px 24px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    margin-top: 16px;
+  }
+  thead tr {
+    background: #1a1d27;
+    border-bottom: 1px solid #2d3148;
+  }
+  thead th {
+    text-align: right;
+    padding: 10px 12px;
+    color: #94a3b8;
+    font-weight: 500;
+    white-space: nowrap;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  tbody tr {
+    border-bottom: 1px solid #1e2133;
+    transition: background 0.1s;
+  }
+  tbody tr:hover { background: #1a1d27; }
+  tbody td {
+    padding: 10px 12px;
+    white-space: nowrap;
+    max-width: 200px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    color: #cbd5e1;
+  }
+  .badge {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 500;
+  }
+  .badge-morning { background: #1e3a2f; color: #3ecf8e; }
+  .badge-night { background: #1e2a3a; color: #60a5fa; }
+  .badge-over { background: #2a1e3a; color: #c084fc; }
+  .loading {
+    text-align: center;
+    padding: 60px;
+    color: #94a3b8;
+    font-size: 15px;
+  }
+  .loading .spinner {
+    width: 32px; height: 32px;
+    border: 3px solid #2d3148;
+    border-top-color: #3ecf8e;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin: 0 auto 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .pagination {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 24px;
+    border-top: 1px solid #1e2133;
+    font-size: 13px;
+    color: #94a3b8;
+  }
+  .pagination button {
+    background: #1a1d27;
+    border: 1px solid #2d3148;
+    color: #e2e8f0;
+    padding: 6px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .pagination button:disabled { opacity: 0.4; cursor: not-allowed; }
+  .pagination button:not(:disabled):hover { background: #252840; }
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-overlay.active { display: flex; }
+  .modal {
+    background: #1a1d27;
+    border: 1px solid #2d3148;
+    border-radius: 12px;
+    padding: 24px;
+    width: 480px;
+    max-width: 95vw;
+    direction: rtl;
+  }
+  .modal h2 { font-size: 16px; margin-bottom: 20px; color: #e2e8f0; }
+  .form-group { margin-bottom: 14px; }
+  .form-group label { display: block; font-size: 12px; color: #94a3b8; margin-bottom: 6px; }
+  .form-group input, .form-group select {
+    width: 100%;
+    background: #0f1117;
+    border: 1px solid #2d3148;
+    border-radius: 8px;
+    color: #e2e8f0;
+    padding: 9px 12px;
+    font-size: 13px;
+    outline: none;
+    direction: rtl;
+  }
+  .form-group input:focus, .form-group select:focus { border-color: #3ecf8e; }
+  .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
+  .confirm-modal { text-align: center; }
+  .confirm-modal p { color: #94a3b8; font-size: 14px; margin: 12px 0 20px; }
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    padding: 12px 20px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    z-index: 2000;
+    transform: translateY(80px);
+    opacity: 0;
+    transition: all 0.3s;
+  }
+  .toast.show { transform: translateY(0); opacity: 1; }
+  .toast.success { background: #064e3b; color: #3ecf8e; border: 1px solid #065f46; }
+  .toast.error { background: #450a0a; color: #f87171; border: 1px solid #7f1d1d; }
+  .empty { text-align: center; padding: 40px; color: #64748b; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1><span class="dot"></span> meti_tasks Dashboard</h1>
+  <span id="conn-status" style="font-size:12px; color:#94a3b8;">جاري الاتصال...</span>
+</div>
+
+<div class="stats-bar">
+  <div class="stat"><strong id="stat-total">—</strong><span>إجمالي السجلات</span></div>
+  <div class="stat"><strong id="stat-showing">—</strong><span>معروض الآن</span></div>
+  <div class="stat"><strong id="stat-page">—</strong><span>الصفحة الحالية</span></div>
+</div>
+
+<div class="toolbar">
+  <input type="text" id="search" placeholder="بحث في qtc_name أو unit أو shift..." oninput="onSearch()">
+  <select id="shift-filter" onchange="loadData()">
+    <option value="">كل الشيفتات</option>
+    <option value="Morning">Morning</option>
+    <option value="Night">Night</option>
+    <option value="Over Shift (M)">Over Shift (M)</option>
+  </select>
+  <select id="limit-select" onchange="loadData()">
+    <option value="100">100 rows</option>
+    <option value="1000">1,000 rows</option>
+    <option value="10000">10,000 rows</option>
+    <option value="30000">30,000 rows</option>
+  </select>
+  <button class="btn btn-primary" onclick="loadData()">&#8635; تحديث</button>
+</div>
+
+<div class="table-wrap">
+  <div id="loading" class="loading"><div class="spinner"></div>جاري التحميل...</div>
+  <table id="data-table" style="display:none">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>ID</th>
+        <th>Timestamp</th>
+        <th>Shift</th>
+        <th>Unit</th>
+        <th>QTC Name</th>
+        <th>إجراءات</th>
+      </tr>
+    </thead>
+    <tbody id="table-body"></tbody>
+  </table>
+  <div id="empty" class="empty" style="display:none">لا توجد نتائج</div>
+</div>
+
+<div class="pagination" id="pagination" style="display:none">
+  <button id="btn-prev" onclick="changePage(-1)">&#8594; السابق</button>
+  <span id="page-info"></span>
+  <button id="btn-next" onclick="changePage(1)">التالي &#8592;</button>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <h2>✏️ تعديل السجل</h2>
+    <input type="hidden" id="edit-id">
+    <div class="form-group">
+      <label>Shift</label>
+      <select id="edit-shift">
+        <option value="Morning">Morning</option>
+        <option value="Night">Night</option>
+        <option value="Over Shift (M)">Over Shift (M)</option>
+      </select>
+    </div>
+    <div class="form-group">
+      <label>Unit</label>
+      <input type="text" id="edit-unit">
+    </div>
+    <div class="form-group">
+      <label>QTC Name</label>
+      <input type="text" id="edit-qtc">
+    </div>
+    <div class="form-group">
+      <label>Timestamp</label>
+      <input type="text" id="edit-timestamp">
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal('edit-modal')">إلغاء</button>
+      <button class="btn btn-primary" onclick="saveEdit()">💾 حفظ</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="delete-modal">
+  <div class="modal confirm-modal">
+    <h2>🗑️ تأكيد الحذف</h2>
+    <p>هل أنت متأكد من حذف هذا السجل؟ لا يمكن التراجع.</p>
+    <input type="hidden" id="delete-id">
+    <div class="modal-actions" style="justify-content:center">
+      <button class="btn btn-secondary" onclick="closeModal('delete-modal')">إلغاء</button>
+      <button class="btn btn-danger" onclick="confirmDelete()">نعم، احذف</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const SUPABASE_URL = 'https://mlncwxzugxjulxxuhmsd.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1sbmN3eHp1Z3hqdWx4eHVobXNkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI5NTIxMTksImV4cCI6MjA4ODUyODExOX0.fmiOXHejEGPlt4u-x3qFjcQktGus32kq_3sPklouQsM';
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+let allRows = [];
+let filteredRows = [];
+let currentPage = 1;
+const PAGE_SIZE = 50;
+let searchTimer = null;
+let totalCount = 0;
+
+async function loadData() {
+  showLoading(true);
+  const limit = parseInt(document.getElementById('limit-select').value);
+  const shiftFilter = document.getElementById('shift-filter').value;
+  const searchVal = document.getElementById('search').value.trim();
+
+  try {
+    let query = sb.from('meti_tasks').select('*', { count: 'exact' });
+    if (shiftFilter) query = query.eq('shift', shiftFilter);
+    if (searchVal) {
+      query = query.or(`qtc_name.ilike.%${searchVal}%,unit.ilike.%${searchVal}%,shift.ilike.%${searchVal}%`);
+    }
+    query = query.order('timestamp', { ascending: false }).limit(limit);
+
+    const { data, error, count } = await query;
+    if (error) throw error;
+
+    allRows = data || [];
+    filteredRows = allRows;
+    totalCount = count || allRows.length;
+    currentPage = 1;
+
+    document.getElementById('stat-total').textContent = totalCount.toLocaleString();
+    document.getElementById('stat-showing').textContent = allRows.length.toLocaleString();
+    document.getElementById('conn-status').textContent = '✓ متصل';
+    document.getElementById('conn-status').style.color = '#3ecf8e';
+
+    renderTable();
+  } catch(e) {
+    showLoading(false);
+    showToast('خطأ في الاتصال: ' + e.message, 'error');
+    document.getElementById('conn-status').textContent = '✗ خطأ في الاتصال';
+    document.getElementById('conn-status').style.color = '#f87171';
+  }
+}
+
+function renderTable() {
+  const tbody = document.getElementById('table-body');
+  const table = document.getElementById('data-table');
+  const empty = document.getElementById('empty');
+  showLoading(false);
+
+  const totalPages = Math.ceil(filteredRows.length / PAGE_SIZE);
+  const start = (currentPage - 1) * PAGE_SIZE;
+  const pageRows = filteredRows.slice(start, start + PAGE_SIZE);
+
+  document.getElementById('stat-page').textContent = `${currentPage} / ${totalPages}`;
+
+  if (pageRows.length === 0) {
+    table.style.display = 'none';
+    empty.style.display = 'block';
+    document.getElementById('pagination').style.display = 'none';
+    return;
+  }
+
+  empty.style.display = 'none';
+  table.style.display = 'table';
+
+  tbody.innerHTML = pageRows.map((row, i) => {
+    const badgeClass = row.shift === 'Morning' ? 'badge-morning' : row.shift === 'Night' ? 'badge-night' : 'badge-over';
+    const ts = row.timestamp ? row.timestamp.replace('T', ' ').substring(0, 19) : '—';
+    return `<tr>
+      <td style="color:#475569">${start + i + 1}</td>
+      <td style="font-size:11px;color:#475569;font-family:monospace">${(row.id||'').substring(0,12)}...</td>
+      <td style="color:#94a3b8;font-size:12px">${ts}</td>
+      <td><span class="badge ${badgeClass}">${row.shift||'—'}</span></td>
+      <td>${row.unit||'—'}</td>
+      <td style="font-weight:500">${row.qtc_name||'—'}</td>
+      <td style="display:flex;gap:6px;align-items:center">
+        <button class="btn-edit" onclick="openEdit('${row.id}')">✏️ تعديل</button>
+        <button class="btn-del" onclick="openDelete('${row.id}')">🗑️ حذف</button>
+      </td>
+    </tr>`;
+  }).join('');
+
+  const pag = document.getElementById('pagination');
+  pag.style.display = 'flex';
+  document.getElementById('page-info').textContent = `صفحة ${currentPage} من ${totalPages} (${filteredRows.length.toLocaleString()} سجل)`;
+  document.getElementById('btn-prev').disabled = currentPage <= 1;
+  document.getElementById('btn-next').disabled = currentPage >= totalPages;
+}
+
+function changePage(dir) {
+  currentPage += dir;
+  renderTable();
+  window.scrollTo(0, 0);
+}
+
+function onSearch() {
+  clearTimeout(searchTimer);
+  searchTimer = setTimeout(loadData, 400);
+}
+
+function showLoading(show) {
+  document.getElementById('loading').style.display = show ? 'block' : 'none';
+  if (show) {
+    document.getElementById('data-table').style.display = 'none';
+    document.getElementById('empty').style.display = 'none';
+  }
+}
+
+function openEdit(id) {
+  const row = allRows.find(r => r.id === id);
+  if (!row) return;
+  document.getElementById('edit-id').value = id;
+  document.getElementById('edit-shift').value = row.shift || '';
+  document.getElementById('edit-unit').value = row.unit || '';
+  document.getElementById('edit-qtc').value = row.qtc_name || '';
+  document.getElementById('edit-timestamp').value = row.timestamp || '';
+  document.getElementById('edit-modal').classList.add('active');
+}
+
+async function saveEdit() {
+  const id = document.getElementById('edit-id').value;
+  const updates = {
+    shift: document.getElementById('edit-shift').value,
+    unit: document.getElementById('edit-unit').value,
+    qtc_name: document.getElementById('edit-qtc').value,
+    timestamp: document.getElementById('edit-timestamp').value,
+  };
+  try {
+    const { error } = await sb.from('meti_tasks').update(updates).eq('id', id);
+    if (error) throw error;
+    closeModal('edit-modal');
+    showToast('✓ تم التعديل بنجاح', 'success');
+    loadData();
+  } catch(e) {
+    showToast('خطأ: ' + e.message, 'error');
+  }
+}
+
+function openDelete(id) {
+  document.getElementById('delete-id').value = id;
+  document.getElementById('delete-modal').classList.add('active');
+}
+
+async function confirmDelete() {
+  const id = document.getElementById('delete-id').value;
+  try {
+    const { error } = await sb.from('meti_tasks').delete().eq('id', id);
+    if (error) throw error;
+    closeModal('delete-modal');
+    showToast('✓ تم الحذف بنجاح', 'success');
+    loadData();
+  } catch(e) {
+    showToast('خطأ: ' + e.message, 'error');
+  }
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+document.querySelectorAll('.modal-overlay').forEach(m => {
+  m.addEventListener('click', e => { if(e.target === m) m.classList.remove('active'); });
+});
+
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+loadData();
+</script>
+</body>
+</html>
