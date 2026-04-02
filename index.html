@@ -1009,17 +1009,67 @@ function renderStats(data, user){
 }
 
 function initStatsListener(){
-  gid('statsArea').addEventListener('click',function(e){
-    var pill=e.target.closest('button.pill-x');
-    if(pill){var t=pill.getAttribute('data-clear');if(t==='sft')activeSFilter=null;else activeRFilter=null;activeDrillCard=null;activeDrillShift=null;renderStats(cachedStats,cachedUser);return;}
-    var row=e.target.closest('tr.clickable');
-    if(row){var ft=row.getAttribute('data-ftype'),fv=row.getAttribute('data-fval');if(ft==='sft')activeSFilter=activeSFilter===fv?null:fv;else activeRFilter=activeRFilter===fv?null:fv;activeDrillCard=null;activeDrillShift=null;renderStats(cachedStats,cachedUser);return;}
-    var closeBtn=e.target.closest('.drill-close');
-    if(closeBtn){activeDrillCard=null;activeDrillShift=null;var ds=gid('statsArea').querySelector('#drillSection');if(ds)ds.innerHTML='';gid('statsArea').querySelectorAll('.card').forEach(function(c){c.classList.remove('card-active');});return;}
-    var shBtn=e.target.closest('.drill-shift-btn');
-    if(shBtn){activeDrillShift=activeDrillShift===shBtn.getAttribute('data-shift')?null:shBtn.getAttribute('data-shift');renderDrill(buildShifts(applyFilters(cachedStats)));return;}
-    var card=e.target.closest('.card[data-dtype]');
-    if(card){var dtype=card.getAttribute('data-dtype');if(activeDrillCard===dtype){activeDrillCard=null;activeDrillShift=null;var ds2=gid('statsArea').querySelector('#drillSection');if(ds2)ds2.innerHTML='';gid('statsArea').querySelectorAll('.card').forEach(function(c){c.classList.remove('card-active');});}else{activeDrillCard=dtype;activeDrillShift=null;gid('statsArea').querySelectorAll('.card').forEach(function(c){c.classList.remove('card-active');});card.classList.add('card-active');renderDrill(buildShifts(applyFilters(cachedStats)));}}
+  var sa = gid('statsArea');
+  if(!sa) return;
+  if(sa.getAttribute('data-wired') === 'true') return;
+  sa.setAttribute('data-wired', 'true');
+  
+  sa.addEventListener('click', function(e){
+    // 1. الضغط على زرار إغلاق تفاصيل الكارت (Drill close)
+    var closeBtn = e.target.closest('.drill-close');
+    if(closeBtn){
+      activeDrillCard = null; activeDrillShift = null;
+      var ds = sa.querySelector('#drillSection'); if(ds) ds.innerHTML = '';
+      sa.querySelectorAll('.card').forEach(function(c){c.classList.remove('card-active');});
+      return;
+    }
+
+    // 2. الضغط على الكروت (Lane FP, Lane QA, etc.)
+    var card = e.target.closest('.card[data-dtype]');
+    if(card){
+      var dtype = card.getAttribute('data-dtype');
+      if(activeDrillCard === dtype){
+        activeDrillCard = null; activeDrillShift = null;
+        var ds2 = sa.querySelector('#drillSection'); if(ds2) ds2.innerHTML = '';
+        sa.querySelectorAll('.card').forEach(function(c){c.classList.remove('card-active');});
+      } else {
+        activeDrillCard = dtype; activeDrillShift = null;
+        sa.querySelectorAll('.card').forEach(function(c){c.classList.remove('card-active');});
+        card.classList.add('card-active');
+        // بننادي وظيفة بناء تفاصيل الشفتات بناءً على بيانات اليوم كله
+        renderDrill(buildShifts(cachedStats)); 
+      }
+      return;
+    }
+    
+    // 3. الضغط على صفوف الجدول (Cross-Filtering)
+    var row = e.target.closest('tr.clickable');
+    if(row){
+      var ft = row.getAttribute('data-ftype'), fv = row.getAttribute('data-fval');
+      if(ft === 'sft') activeSFilter = (activeSFilter === fv ? null : fv);
+      else activeRFilter = (activeRFilter === fv ? null : fv);
+      activeDrillCard = null; activeDrillShift = null;
+      renderStats(cachedStats, cachedUser);
+      return;
+    }
+
+    // 4. الضغط على زرار مسح الفلتر (Pills)
+    var pill = e.target.closest('button.pill-x');
+    if(pill){
+      var t = pill.getAttribute('data-clear');
+      if(t === 'sft') activeSFilter = null; else activeRFilter = null;
+      activeDrillCard = null; activeDrillShift = null;
+      renderStats(cachedStats, cachedUser);
+      return;
+    }
+    
+    // 5. الضغط على أزرار الشفتات جوه تفاصيل الكارت
+    var shBtn = e.target.closest('.drill-shift-btn');
+    if(shBtn){
+      activeDrillShift = (activeDrillShift === shBtn.getAttribute('data-shift') ? null : shBtn.getAttribute('data-shift'));
+      renderDrill(buildShifts(cachedStats));
+      return;
+    }
   });
 }
 
