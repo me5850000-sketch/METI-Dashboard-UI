@@ -1801,16 +1801,6 @@ window.onload=function(){
 
   // Data filter (adv)
  // Data filter (adv)
-  gid('btnDFilter').addEventListener('click',function(){
-    SHARED.from=DP.getVal('dFrom');SHARED.to=DP.getVal('dTo');
-    var ft=gid('dFromTime'),tt=gid('dToTime');
-    SHARED.fromTime=ft?ft.value:'00:00';SHARED.toTime=tt?tt.value:'23:59';
-    SHARED.syncAll();loadData();
-  });
-  gid('btnDClear').addEventListener('click',function(){
-    applyShiftDefaults(SESSION&&SESSION.shift);loadData();
-  });
-
   // Mod buttons
   document.querySelectorAll('.mod-btn[data-mod]').forEach(function(b){b.addEventListener('click',function(){var mod=b.getAttribute('data-mod');if(mod==='all'){activeModFilters.clear();activeModFilters.add('all');}else{activeModFilters.delete('all');if(activeModFilters.has(mod)){activeModFilters.delete(mod);if(activeModFilters.size===0)activeModFilters.add('all');}else activeModFilters.add(mod);}dataPage=1;updateModBtns();renderDataFiltered();});});
   updateModBtns();
