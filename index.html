@@ -337,6 +337,16 @@ body.dark #searchField, body.dark #searchInput { background: #1e2130 !important;
   flex-wrap: wrap;
 }
 body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
+  .tbl-card { border: none !important; box-shadow: none !important; background: transparent !important; overflow: visible !important; }
+  .tbl-card table { display: block; }
+  .tbl-card thead { display: none; /* إخفاء الهيدر القديم */ }
+  .tbl-card tbody tr { display: block; background: white; margin-bottom: 16px; border-radius: 14px; border: 1px solid var(--border); padding: 12px; box-shadow: var(--shadow); position: relative; }
+  body.dark .tbl-card tbody tr { background: #1e2130; border-color: #2d3250; }
+  .tbl-card td { display: flex !important; justify-content: space-between; align-items: center; padding: 8px 4px !important; border-bottom: 1px dashed var(--border) !important; text-align: right; font-size: 13px !important; }
+  body.dark .tbl-card td { border-bottom-color: #2d3250 !important; }
+  .tbl-card td:last-child { border-bottom: none !important; }
+  /* إضافة خط جانبي جمالي للكارت */
+  .tbl-card tbody tr::before { content: ''; position: absolute; left: 0; top: 12px; bottom: 12px; width: 4px; border-radius: 0 4px 4px 0; background: var(--blue); }
 </style>
 </head>
 <body>
@@ -985,17 +995,63 @@ function renderStats(data,user){
 }
 
 function initStatsListener(){
-  gid('statsArea').addEventListener('click',function(e){
-    var pill=e.target.closest('button.pill-x');
-    if(pill){var t=pill.getAttribute('data-clear');if(t==='sft')activeSFilter=null;else activeRFilter=null;activeDrillCard=null;activeDrillShift=null;renderStats(cachedStats,cachedUser);return;}
-    var row=e.target.closest('tr.clickable');
-    if(row){var ft=row.getAttribute('data-ftype'),fv=row.getAttribute('data-fval');if(ft==='sft')activeSFilter=activeSFilter===fv?null:fv;else activeRFilter=activeRFilter===fv?null:fv;activeDrillCard=null;activeDrillShift=null;renderStats(cachedStats,cachedUser);return;}
-    var closeBtn=e.target.closest('.drill-close');
-    if(closeBtn){activeDrillCard=null;activeDrillShift=null;var ds=gid('statsArea').querySelector('#drillSection');if(ds)ds.innerHTML='';gid('statsArea').querySelectorAll('.card').forEach(function(c){c.classList.remove('card-active');});return;}
-    var shBtn=e.target.closest('.drill-shift-btn');
-    if(shBtn){activeDrillShift=activeDrillShift===shBtn.getAttribute('data-shift')?null:shBtn.getAttribute('data-shift');renderDrill(buildShifts(applyFilters(cachedStats)));return;}
-    var card=e.target.closest('.card[data-dtype]');
-    if(card){var dtype=card.getAttribute('data-dtype');if(activeDrillCard===dtype){activeDrillCard=null;activeDrillShift=null;var ds2=gid('statsArea').querySelector('#drillSection');if(ds2)ds2.innerHTML='';gid('statsArea').querySelectorAll('.card').forEach(function(c){c.classList.remove('card-active');});}else{activeDrillCard=dtype;activeDrillShift=null;gid('statsArea').querySelectorAll('.card').forEach(function(c){c.classList.remove('card-active');});card.classList.add('card-active');renderDrill(buildShifts(applyFilters(cachedStats)));}}
+  var sa = gid('statsArea');
+  if(!sa) return;
+  // منع التكرار وضمان تشغيل الكليك دايماً
+  if(sa.getAttribute('data-wired') === 'true') return;
+  sa.setAttribute('data-wired', 'true');
+  
+  sa.addEventListener('click', function(e){
+    var pill = e.target.closest('button.pill-x');
+    if(pill){
+      var t = pill.getAttribute('data-clear');
+      if(t === 'sft') activeSFilter = null; else activeRFilter = null;
+      activeDrillCard = null; activeDrillShift = null;
+      renderStats(cachedStats, cachedUser);
+      return;
+    }
+    
+    var row = e.target.closest('tr.clickable');
+    if(row){
+      var ft = row.getAttribute('data-ftype'), fv = row.getAttribute('data-fval');
+      if(ft === 'sft') activeSFilter = (activeSFilter === fv ? null : fv);
+      else activeRFilter = (activeRFilter === fv ? null : fv);
+      activeDrillCard = null; activeDrillShift = null;
+      renderStats(cachedStats, cachedUser);
+      // سكرول ناعم لفوق عشان اليوزر يشوف الكروت اتحدثت
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
+    
+    var closeBtn = e.target.closest('.drill-close');
+    if(closeBtn){
+      activeDrillCard = null; activeDrillShift = null;
+      var ds = sa.querySelector('#drillSection'); if(ds) ds.innerHTML = '';
+      sa.querySelectorAll('.card').forEach(function(c){c.classList.remove('card-active');});
+      return;
+    }
+    
+    var shBtn = e.target.closest('.drill-shift-btn');
+    if(shBtn){
+      activeDrillShift = (activeDrillShift === shBtn.getAttribute('data-shift') ? null : shBtn.getAttribute('data-shift'));
+      renderDrill(buildShifts(applyFilters(cachedStats)));
+      return;
+    }
+    
+    var card = e.target.closest('.card[data-dtype]');
+    if(card){
+      var dtype = card.getAttribute('data-dtype');
+      if(activeDrillCard === dtype){
+        activeDrillCard = null; activeDrillShift = null;
+        var ds2 = sa.querySelector('#drillSection'); if(ds2) ds2.innerHTML = '';
+        sa.querySelectorAll('.card').forEach(function(c){c.classList.remove('card-active');});
+      } else {
+        activeDrillCard = dtype; activeDrillShift = null;
+        sa.querySelectorAll('.card').forEach(function(c){c.classList.remove('card-active');});
+        card.classList.add('card-active');
+        renderDrill(buildShifts(applyFilters(cachedStats)));
+      }
+    }
   });
 }
 
