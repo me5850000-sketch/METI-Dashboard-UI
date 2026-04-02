@@ -251,9 +251,14 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
   .topbar{padding:10px 14px!important;gap:8px}.tb-left .tb-title{font-size:16px!important}
   .tb-left .tb-sub,#topClock{display:none}
   .content{padding:12px!important}
-  .filter-bar{padding:10px 12px!important;gap:8px!important;flex-direction:column;align-items:stretch!important}
-  .dp-wrap{min-width:unset!important;width:100%}.dp-input,.fb-time{width:100%!important;font-size:13px!important;min-width:unset!important}
-  .fbtn{width:100%!important;text-align:center;padding:10px!important;font-size:13px!important}
+  .filter-bar{padding:14px!important;gap:8px!important;flex-direction:row!important;flex-wrap:wrap!important}
+  .filter-bar label{width:100%;margin-bottom:-6px;font-size:10px!important}
+  .filter-bar .dp-wrap, .filter-bar .fb-time{width:calc(50% - 4px)!important;min-width:unset!important;flex:none!important}
+  .dp-input{width:100%!important;font-size:13px!important;padding:9px 32px 9px 10px!important;height:38px}
+  .fb-time{font-size:13px!important;padding:9px 10px!important;height:38px}
+  .fbtn{width:calc(50% - 4px)!important;padding:10px!important;font-size:13px!important;margin-top:6px}
+  #attShiftBtns, #attShiftBtns2 {width:100%;margin-top:6px}
+  #attShiftBtns label, #attShiftBtns2 label {width:auto;margin-bottom:0}
   .cards{grid-template-columns:repeat(2,1fr)!important;gap:10px!important;margin-bottom:16px}
   .card{padding:16px 12px 14px!important}.card-val{font-size:28px!important}.card-lbl{font-size:9px!important}
   .tbl-card{overflow-x:auto}table{min-width:520px}
