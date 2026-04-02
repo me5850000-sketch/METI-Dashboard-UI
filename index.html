@@ -268,7 +268,17 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
   .topbar{padding:10px 14px!important;gap:8px}.tb-left .tb-title{font-size:16px!important}
   .tb-left .tb-sub,#topClock{display:none}
   .content{padding:12px!important}
-  
+  /* Hide Queue + Objects on mobile */
+  #pgData table th:nth-child(11),
+  #pgData table td:nth-child(11),
+  #pgData table th:nth-child(12),
+  #pgData table td:nth-child(12){ display:none!important; }
+  #pgData table{ min-width:unset!important; }
+  #pgData th{ font-size:9px!important; padding:7px 4px!important; }
+  #pgData td{ font-size:10px!important; padding:6px 4px!important; }
+  #pgData .badge{ font-size:9px!important; padding:2px 4px!important; }
+  #pgData table td:nth-child(9),
+  #pgData table td:nth-child(10){ font-size:9px!important; max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   /* التعديلات الجديدة لشريط الفلتر الموحد على الموبايل */
   .global-filter-bar { padding: 14px!important; top: 54px; }
   .global-filter-bar > div { flex-direction:row!important; flex-wrap:wrap!important; gap:8px!important; }
