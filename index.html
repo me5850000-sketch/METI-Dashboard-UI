@@ -1415,13 +1415,28 @@ SH_BEST.forEach(function(sh){
 bestHtml+='</div>';
 
 var html=bestHtml+'<div class="tbl-card" id="labPageCard">';
-  html+='<div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--blue-lt);padding:0 12px 0 0;flex-wrap:wrap;gap:8px"><div style="display:flex;gap:0">';
-  labShifts.forEach(function(sh,si){var isF=si===0;html+='<div class="lab-tab'+(isF?' lab-tab-active':'')+'" data-labtab="'+sh+'" style="padding:10px 16px;cursor:pointer;font-size:13px;font-weight:700;border-bottom:'+(isF?'2px solid var(--blue)':'2px solid transparent')+';color:'+(isF?'var(--blue)':'var(--gray)')+';margin-bottom:-2px;transition:all .15s"><span class="badge '+shiftBadge(sh)+'" style="margin-right:4px;font-size:10px">'+sh+'</span></div>';});
+html+='<div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--blue-lt);padding:0 12px 0 0;flex-wrap:wrap;gap:8px"><div style="display:flex;gap:0">';
+// All tab
+html+='<div class="lab-tab" data-labtab="__all__" style="padding:10px 16px;cursor:pointer;font-size:13px;font-weight:700;border-bottom:2px solid transparent;color:var(--gray);margin-bottom:-2px;transition:all .15s">All</div>';
+labShifts.forEach(function(sh,si){var isF=si===0;html+='<div class="lab-tab'+(isF?' lab-tab-active':'')+'" data-labtab="'+sh+'" style="padding:10px 16px;cursor:pointer;font-size:13px;font-weight:700;border-bottom:'+(isF?'2px solid var(--blue)':'2px solid transparent')+';color:'+(isF?'var(--blue)':'var(--gray)')+';margin-bottom:-2px;transition:all .15s"><span class="badge '+shiftBadge(sh)+'" style="margin-right:4px;font-size:10px">'+sh+'</span></div>';});
   html+='</div><div class="lab-sort-pills" id="labPageSortPills">';
   SORT_PILLS.forEach(function(p){html+='<button class="lab-sort-pill'+(p.key==='total'?' '+p.ac:'')+'" data-sortkey="'+p.key+'">'+p.label+'</button>';});
   html+='</div></div>';
   if(unitsSet.length>1){html+='<div id="labUnitBar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:#f8f9ff;border-bottom:1px solid var(--border)"><span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Unit</span><button class="mod-btn lab-unit-btn" data-labunit="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>';unitsSet.forEach(function(u){html+='<button class="mod-btn lab-unit-btn" data-labunit="'+u+'">'+u+'</button>';});html+='</div>';}
   html+='<div class="lab-content-area" data-active-sh="'+labShifts[0]+'">';
+// All tab content
+var allLabs=Object.keys(initLabs).map(function(k){
+  var total=0,lfp=0,lqa=0,lifp=0,liqa=0,laneT=0,lidarT=0;
+  Object.keys(initLabs[k].shifts).forEach(function(sh){
+    var sd=initLabs[k].shifts[sh];
+    total+=sd.total;lfp+=sd.lane.fp;lqa+=sd.lane.qa;lifp+=sd.lidar.fp;liqa+=sd.lidar.qa;
+    laneT+=sd.lane.fp+sd.lane.qa;lidarT+=sd.lidar.fp+sd.lidar.qa;
+  });
+  var topUnit=Object.keys(initLabs[k].units).sort(function(a,b){return initLabs[k].units[b]-initLabs[k].units[a];})[0]||'';
+  var topPc=Object.keys(initLabs[k].pcs||{}).sort(function(a,b){return (initLabs[k].pcs[b]||0)-(initLabs[k].pcs[a]||0);})[0]||'';
+  return{name:k,total:total,lfp:lfp,lqa:lqa,lifp:lifp,liqa:liqa,laneTotal:laneT,lidarTotal:lidarT,unit:topUnit,pc:topPc,shift:''};
+}).filter(function(x){return x.total>0;});
+html+='<div class="lab-tab-content" data-labtabcontent="__all__" data-labs="'+encodeURIComponent(JSON.stringify(allLabs))+'" style="display:none"><div class="lab-list-wrap"></div></div>';
   labShifts.forEach(function(sh,si){
     var isF=si===0;
     var shLabs=Object.keys(initLabs).filter(function(k){return initLabs[k].shifts[sh]&&initLabs[k].shifts[sh].total>0;}).map(function(k){
@@ -1498,9 +1513,12 @@ var html=bestHtml+'<div class="tbl-card" id="labPageCard">';
     renderLabPage('total');
     var pillsEl=document.querySelector('#labPageSortPills');
     if(pillsEl){pillsEl.addEventListener('click',function(e){var p=e.target.closest('.lab-sort-pill');if(!p)return;var k=p.getAttribute('data-sortkey');if(k)renderLabPage(k);});}
-    document.querySelectorAll('#labPageCard .lab-tab').forEach(function(t){t.addEventListener('click',function(){var sh=t.getAttribute('data-labtab');var ca=document.querySelector('#labPageCard .lab-content-area');if(ca)ca.setAttribute('data-active-sh',sh);document.querySelectorAll('#labPageCard .lab-tab').forEach(function(x){var a=x.getAttribute('data-labtab')===sh;x.style.borderBottomColor=a?'var(--blue)':'transparent';x.style.color=a?'var(--blue)':'var(--gray)';});document.querySelectorAll('#labPageCard .lab-tab-content').forEach(function(c){c.style.display=c.getAttribute('data-labtabcontent')===sh?'block':'none';});setTimeout(function(){renderLabPage(labSortKey);},0);});});
-    document.querySelectorAll('.lab-unit-btn').forEach(function(b){b.addEventListener('click',function(){var u=b.getAttribute('data-labunit');if(u==='all'){activeLabUnits.clear();activeLabUnits.add('all');}else{activeLabUnits.delete('all');if(activeLabUnits.has(u)){activeLabUnits.delete(u);if(activeLabUnits.size===0)activeLabUnits.add('all');}else activeLabUnits.add(u);}updateLabUnitBtns();rebuildContent();});});
-  },0);
+   document.querySelectorAll('#labPageCard .lab-tab').forEach(function(t){t.addEventListener('click',function(){var sh=t.getAttribute('data-labtab');var ca=document.querySelector('#labPageCard .lab-content-area');
+if(ca)ca.setAttribute('data-active-sh',sh);
+document.querySelectorAll('#labPageCard .lab-tab').forEach(function(x){var a=x.getAttribute('data-labtab')===sh;x.style.borderBottomColor=a?'var(--blue)':'transparent';x.style.color=a?'var(--blue)':'var(--gray)';});
+document.querySelectorAll('#labPageCard .lab-tab-content').forEach(function(c){c.style.display=c.getAttribute('data-labtabcontent')===sh?'block':'none';});
+setTimeout(function(){renderLabPage(labSortKey);},0);
+});});
 }
 </script>
 
