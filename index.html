@@ -1444,7 +1444,13 @@ function renderLabelersPage(data){
     sorted.forEach(function(lb,i){
       var sv=lb[sortKey]||0,pct=Math.round(sv/maxV*100),lw=lb.total>0?Math.round(lb.laneTotal/lb.total*pct):0,liw=pct-lw;
       var rc=i<3?rankColors[i]:'';
-      h+='<div style="display:grid;grid-template-columns:'+gridCols+';gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid #f5f5f5"><div class="labeler-rank '+rc+'">'+(i+1)+'</div><div><div style="font-weight:700;font-size:13px;margin-bottom:5px">'+lb.name+'</div><div style="height:5px;border-radius:3px;background:var(--blue-lt);overflow:hidden;display:flex"><div style="width:'+lw+'%;background:var(--green);transition:width .4s"></div><div style="width:'+liw+'%;background:var(--teal);transition:width .4s"></div></div></div>';
+     h+='<div style="display:grid;grid-template-columns:'+gridCols+';gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid #f5f5f5"><div class="labeler-rank '+rc+'">'+(i+1)+'</div><div>'
+        +'<div style="font-weight:700;font-size:13px;margin-bottom:4px">'+lb.name+'</div>'
+        +'<div style="display:flex;gap:5px;margin-bottom:4px;flex-wrap:wrap">'
+        +(lb.unit?'<span style="font-size:10px;font-weight:700;background:var(--blue-bg);color:var(--blue);padding:2px 7px;border-radius:5px;border:1px solid var(--blue-lt)">📍 '+lb.unit+'</span>':'')
+        +(lb.pc&&lb.pc!=='-'?'<span style="font-size:10px;font-weight:700;background:#f0faf3;color:#1e8e3e;padding:2px 7px;border-radius:5px;border:1px solid #c3e6cb">🖥 PC '+lb.pc+'</span>':'')
+        +'</div>'
+        +'<div style="height:5px;border-radius:3px;background:var(--blue-lt);overflow:hidden;display:flex"><div style="width:'+lw+'%;background:var(--green);transition:width .4s"></div><div style="width:'+liw+'%;background:var(--teal);transition:width .4s"></div></div></div>';
       subCols.forEach(function(k){h+=cell(lb[k],k);});
       h+='<div style="font-size:20px;font-weight:800;color:'+(sortColors[sortKey]||'var(--blue)')+';text-align:right">'+sv+'</div></div>';
     });
