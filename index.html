@@ -1360,16 +1360,19 @@ function renderLabelersPage(data){
 
   function getRows(){var rows=data;if(userSeeOwnOnly())rows=rows.filter(function(r){return nShift(r[F.shift]||'')===SESSION.shift;});if(!activeLabUnits.has('all'))rows=rows.filter(function(r){return activeLabUnits.has((r[F.unit]||'').trim());});return rows;}
 
-  function buildLabelers(rows){
+ function buildLabelers(rows){
     var labelers={};
     rows.forEach(function(r){
       var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
       var sh=nShift(r[F.shift]||'Unknown'),lb=titleCase(r[F.labeler]||'Unknown');
+      var un=(r[F.unit]||'').trim(),pc=(r[F.pc]||'').toString().trim();
       var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1,isFP=pass==='FP',isQA=pass==='QA';
       function bump(o){o.total++;if(isFP)o.fp++;if(isQA)o.qa++;}
-      if(!labelers[lb])labelers[lb]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0},shifts:{}};
+      if(!labelers[lb])labelers[lb]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0},shifts:{},units:{},pcs:{}};
       if(!labelers[lb].shifts[sh])labelers[lb].shifts[sh]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0}};
       labelers[lb].total++;labelers[lb].shifts[sh].total++;
+      if(un)labelers[lb].units[un]=(labelers[lb].units[un]||0)+1;
+      if(pc&&pc!=='-')labelers[lb].pcs[pc]=(labelers[lb].pcs[pc]||0)+1;
       if(isL){bump(labelers[lb].lane);bump(labelers[lb].shifts[sh].lane);}
       if(isLi){bump(labelers[lb].lidar);bump(labelers[lb].shifts[sh].lidar);}
     });
@@ -1406,7 +1409,12 @@ function renderLabelersPage(data){
     var h='';
     ls.forEach(function(sh,si){
       var isF=activeSh?sh===activeSh:si===0;
-      var shLabs=Object.keys(labelers).filter(function(k){return labelers[k].shifts[sh]&&labelers[k].shifts[sh].total>0;}).map(function(k){var sd=labelers[k].shifts[sh];return{name:k,total:sd.total,lfp:sd.lane.fp,lqa:sd.lane.qa,lifp:sd.lidar.fp,liqa:sd.lidar.qa,laneTotal:sd.lane.fp+sd.lane.qa,lidarTotal:sd.lidar.fp+sd.lidar.qa};});
+     var shLabs=Object.keys(labelers).filter(function(k){return labelers[k].shifts[sh]&&labelers[k].shifts[sh].total>0;}).map(function(k){
+      var sd=labelers[k].shifts[sh];
+      var topUnit=Object.keys(labelers[k].units).sort(function(a,b){return labelers[k].units[b]-labelers[k].units[a];})[0]||'';
+      var topPc=Object.keys(labelers[k].pcs).sort(function(a,b){return labelers[k].pcs[b]-labelers[k].pcs[a];})[0]||'';
+      return{name:k,total:sd.total,lfp:sd.lane.fp,lqa:sd.lane.qa,lifp:sd.lidar.fp,liqa:sd.lidar.qa,laneTotal:sd.lane.fp+sd.lane.qa,lidarTotal:sd.lidar.fp+sd.lidar.qa,unit:topUnit,pc:topPc};
+    });
       h+='<div class="lab-tab-content" data-labtabcontent="'+sh+'" data-labs="'+encodeURIComponent(JSON.stringify(shLabs))+'" style="display:'+(isF?'block':'none')+'"><div class="lab-list-wrap"></div></div>';
     });
     wrap.innerHTML=h;
