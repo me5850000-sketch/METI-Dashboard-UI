@@ -790,10 +790,32 @@ function showLoginErr(msg) {
     }
 }
 
-function doLogout(){
-  google.script.run.withSuccessHandler(function(){}).withFailureHandler(function(){}).logout(TOKEN);
-  sessionStorage.clear();SESSION=null;TOKEN=null;cachedStats=null;
-  hide('dashScreen');show('loginScreen');gid('lPass').value='';
+function doLogout() {
+  // 1. مسح البيانات من ذاكرة المتصفح فوراً (أهم خطوة)
+  sessionStorage.clear();
+  localStorage.removeItem('meti_token'); // لو كنت بتستخدمها
+  
+  // 2. إعادة ضبط المتغيرات العالمية
+  SESSION = null;
+  TOKEN = null;
+  cachedStats = null;
+
+  // 3. تغيير الواجهة فوراً لشاشة اللوجن
+  document.getElementById('dashScreen').style.display = 'none';
+  document.getElementById('loginScreen').style.display = 'flex';
+  
+  // 4. مسح خانة الباسورد لزيادة الأمان
+  if (document.getElementById('lPass')) document.getElementById('lPass').value = '';
+
+  // 5. محاولة إبلاغ السيرفر (اختياري، لن يعطل الخروج لو فشل)
+  if (TOKEN) {
+    google.script.run
+      .withSuccessHandler(function() { console.log("Server session cleared"); })
+      .logout(TOKEN);
+  }
+  
+  // تنبيه بسيط
+  toast("Signed out successfully", "ok");
 }
 
 function showLoginErr(m){var el=gid('loginErr');el.textContent=m;el.style.display='block';}
