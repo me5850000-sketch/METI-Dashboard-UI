@@ -612,32 +612,32 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
 // Calls your deployed Apps Script via fetch()
 // ═══════════════════════════════════════════════
 // 1. استبدل جزء الـ BRIDGE في بداية الـ Javascript بهذا الكود الموحد:
-var google = {
-  script: {
-    run: {
-      _s: null, _f: null,
-      withSuccessHandler: function(cb) { this._s = cb; return this; },
-      withFailureHandler: function(cb) { this._f = cb; return this; },
-      execute: function(fn, args) {
-        var s = this._s, f = this._f;
-        fetch(APPS_SCRIPT_URL, {
-          method: 'POST',
-          mode: 'cors',
-          body: JSON.stringify({ fn: fn, args: args })
-        })
-        .then(function(r) { return r.json(); })
-        .then(function(data) { if (s) s(data); })
-        .catch(function(e) { if (f) f(e); });
-      },
-      // تأكد أن الوظائف مكتوبة بهذا الشكل
-      login: function(id, pwd) { this.execute('login', [id, pwd]); },
-      getStats: function(t, f, to) { this.execute('getStats', [t, f, to]); },
-      getTargets: function(t) { this.execute('getTargets', [t]); },
-      getQtcUsers: function(t) { this.execute('getQtcUsers', [t]); },
-      getAttendance: function(t, d, s) { this.execute('getAttendance', [t, d, s]); }
+var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx1ULOosEGPVHuj0VFdKXnRFfksevvNdDZjA6q18omMSDbcSEC9wRvYIk7TyzX6VI3f/exec";
+
+  var google = {
+    script: {
+      run: {
+        _s: null, _f: null,
+        withSuccessHandler: function(cb) { this._s = cb; return this; },
+        withFailureHandler: function(cb) { this._f = cb; return this; },
+        execute: function(fn, args) {
+          var s = this._s, f = this._f;
+          fetch(APPS_SCRIPT_URL, {
+            method: 'POST',
+            mode: 'cors',
+            body: JSON.stringify({ fn: fn, args: args })
+          })
+          .then(r => r.json())
+          .then(data => { if (s) s(data); })
+          .catch(e => { console.error(e); if (f) f(e); });
+        },
+        login: function(id, pwd) { this.execute('login', [id, pwd]); },
+        getStats: function(t, f, to) { this.execute('getStats', [t, f, to]); },
+        getAttendance: function(t, d, s) { this.execute('getAttendance', [t, d, s]); },
+        logout: function(t) { this.execute('logout', [t]); }
+      }
     }
-  }
-};
+  };
 </script>
 
 <script>
