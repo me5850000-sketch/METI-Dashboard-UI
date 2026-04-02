@@ -741,22 +741,58 @@ function applyShiftDefaults(shift){var role=SESSION&&SESSION.role;var d=(role===
 
 <script>
 // ══ AUTH ══
-function doLogin(){
-  var id=gid('lEmail').value.trim(),pwd=gid('lPass').value.trim();
-  if(!id||!pwd){showLoginErr('Enter name/email and password');return;}
-  var btn=gid('loginBtn');btn.textContent='...';btn.disabled=true;
-  gid('loginErr').style.display='none';
-  google.script.run
-    .withSuccessHandler(function(r){
-      btn.textContent='Sign In';btn.disabled=false;
-      if(!r.ok){showLoginErr(r.msg);return;}
-      TOKEN=r.token;SESSION=r.user;
-      sessionStorage.setItem('dk_tok',TOKEN);
-      sessionStorage.setItem('dk_usr',JSON.stringify(SESSION));
-      showDash();applyShiftDefaults(SESSION.shift);loadStats();
-    })
-    .withFailureHandler(function(e){btn.textContent='Sign In';btn.disabled=false;showLoginErr('Connection error: '+e.message);})
-    .login(id,pwd);
+function doLogin() {
+    const id = gid('IName').value; // تأكد من ID خانة الاسم
+    const pwd = gid('IPass').value; // تأكد من ID خانة الباسورد
+    const btn = gid('btnLogin'); // تأكد من ID الزر
+
+    if (!id || !pwd) {
+        showLoginErr('يرجى إدخال الاسم وكلمة المرور');
+        return;
+    }
+
+    // بدء حالة التحميل
+    btn.textContent = '...';
+    btn.disabled = true;
+
+    google.script.run
+        .withSuccessHandler(function(res) {
+            // إعادة الزر لحالته الطبيعية
+            btn.textContent = 'Login';
+            btn.disabled = false;
+
+            if (res && res.ok) {
+                // نجاح الدخول
+                SESSION = res.user;
+                TOKEN = res.token;
+                localStorage.setItem('meti_token', TOKEN); // حفظ الجلسة
+                
+                hide('loginScreen');
+                show('dashScreen');
+                loadDashboardData(); // وظيفة لجلب بيانات الداشبورد
+            } else {
+                // فشل الدخول (الاسم أو الباسورد غلط)
+                showLoginErr(res.msg || 'بيانات الدخول غير صحيحة');
+            }
+        })
+        .withFailureHandler(function(err) {
+            btn.textContent = 'Login';
+            btn.disabled = false;
+            showLoginErr('خطأ في الاتصال بالسيرفر');
+            console.error(err);
+        })
+        .login(id, pwd);
+}
+
+// وظيفة لإظهار الخطأ تحت الخانات
+function showLoginErr(msg) {
+    const errEl = gid('loginErr'); // تأكد من وجود عنصر بهذا الـ ID في الـ HTML
+    if (errEl) {
+        errEl.textContent = msg;
+        errEl.style.display = 'block';
+    } else {
+        alert(msg); // حل احتياطي إذا لم يوجد عنصر نصي
+    }
 }
 
 function doLogout(){
