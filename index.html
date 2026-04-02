@@ -288,28 +288,6 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
   .cards{grid-template-columns:repeat(2,1fr)!important;gap:12px!important}.grid2{grid-template-columns:1fr!important}
   .target-cards{grid-template-columns:1fr 1fr;gap:14px}.modal{width:500px!important}.modal-wide{width:90%!important}
 }
-     /* ══ ADVANCED FILTERS ══ */
-.adv-filters-wrap {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
-  opacity: 0;
-}
-.adv-filters-wrap.show {
-  max-height: 500px; /* رقم كبير يكفي المحتوى */
-  opacity: 1;
-}
-.filter-lbl {
-  font-size: 10px;
-  font-weight: 800;
-  color: var(--gray);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  width: 50px;
-  display: inline-block;
-}
-body.dark .filter-lbl { color: #9aa0b4; }
-body.dark #searchField, body.dark #searchInput { background: #1e2130 !important; color: #e8eaf0 !important; border-color: #2d3250 !important; }
 </style>
 </head>
 <body>
@@ -433,63 +411,23 @@ body.dark #searchField, body.dark #searchInput { background: #1e2130 !important;
         </div>
 
         <!-- DATA -->
-       <div id="pgData" style="display:none">
-          
-          <div id="dataStatsBar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:10px 14px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);font-size:12px;font-weight:700;display:none;">
+        <div id="pgData" style="display:none">
+          <div id="shiftBannerData" style="display:none" class="shift-banner">Showing data for your shift: <strong id="shiftBannerDataText"></strong></div>
+          <div class="filter-bar">
+            <label>From</label>
+            <div class="dp-wrap" id="dpWrap-dFrom"><input type="text" class="dp-input" id="dFrom" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
+            <select class="fb-time" id="dFromTime"></select>
+            <label>To</label>
+            <div class="dp-wrap" id="dpWrap-dTo"><input type="text" class="dp-input" id="dTo" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
+            <select class="fb-time" id="dToTime"></select>
+            <button class="fbtn fbtn-primary" id="btnDFilter">Filter</button>
+            <button class="fbtn fbtn-ghost" id="btnDClear">✕ Clear</button>
+            <div style="width:100%;display:flex;gap:6px;flex-wrap:wrap;margin-top:6px" id="modBtns">
+              <button class="mod-btn" data-mod="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>
+              <button class="mod-btn" data-mod="lane">Lane</button><button class="mod-btn" data-mod="lidar">Lidar</button>
+              <button class="mod-btn" data-mod="lane_fp">Lane FP</button><button class="mod-btn" data-mod="lane_qa">Lane QA</button>
+              <button class="mod-btn" data-mod="lidar_fp">Lidar FP</button><button class="mod-btn" data-mod="lidar_qa">Lidar QA</button>
             </div>
-
-          <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
-            <div style="flex:1; min-width:250px; display:flex; background:white; border:1px solid var(--border); border-radius:8px; overflow:hidden; box-shadow:var(--shadow)">
-              <select id="searchField" style="border:none; background:#f8f9ff; padding:8px 12px; font-size:13px; font-weight:700; color:var(--blue); outline:none; border-right:1px solid var(--border); cursor:pointer;">
-                <option value="labeler">Labeler</option><option value="queue">Queue</option><option value="unit">Unit</option>
-                <option value="qtc">QTC</option><option value="ubkey">Yubikey</option><option value="taskid">Task ID</option>
-              </select>
-              <input type="text" id="searchInput" placeholder="Search data..." autocomplete="off" style="flex:1; border:none; padding:8px 12px; font-size:13px; outline:none; color:var(--dark);">
-              <button id="searchClearBtn" style="background:none; border:none; padding:0 12px; color:var(--gray); cursor:pointer; display:none;">✕</button>
-            </div>
-            
-            <button onclick="document.getElementById('advFilters').classList.toggle('show')" style="background:var(--blue); color:white; border:none; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; box-shadow:var(--shadow); display:flex; align-items:center; gap:6px;">
-              ⚙️ Filters
-            </button>
-          </div>
-
-          <div id="advFilters" class="adv-filters-wrap">
-            <div class="filter-bar" style="margin-bottom:12px;">
-              <div style="width:100%; display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--gray-lt);">
-                <label>From</label>
-                <div class="dp-wrap" id="dpWrap-dFrom"><input type="text" class="dp-input" id="dFrom" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
-                <select class="fb-time" id="dFromTime"></select>
-                <label>To</label>
-                <div class="dp-wrap" id="dpWrap-dTo"><input type="text" class="dp-input" id="dTo" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
-                <select class="fb-time" id="dToTime"></select>
-                <button class="fbtn fbtn-primary" id="btnDFilter">Apply Date</button>
-                <button class="fbtn fbtn-ghost" id="btnDClear">Clear</button>
-              </div>
-
-              <div style="width:100%;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px" id="modBtns">
-                <span class="filter-lbl">Type:</span>
-                <button class="mod-btn" data-mod="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>
-                <button class="mod-btn" data-mod="lane">Lane</button><button class="mod-btn" data-mod="lidar">Lidar</button>
-                <button class="mod-btn" data-mod="lane_fp">Lane FP</button><button class="mod-btn" data-mod="lane_qa">Lane QA</button>
-                <button class="mod-btn" data-mod="lidar_fp">Lidar FP</button><button class="mod-btn" data-mod="lidar_qa">Lidar QA</button>
-              </div>
-              <div style="width:100%;display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px" id="unitBtns">
-                <span class="filter-lbl">Unit:</span>
-                <button class="mod-btn data-unit-btn" data-dunit="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>
-              </div>
-              <div style="width:100%;display:flex;align-items:center;gap:6px;flex-wrap:wrap;" id="shiftBtns">
-                <span class="filter-lbl">Shift:</span>
-                <button class="mod-btn data-shift-btn" data-dshift="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>
-                <button class="mod-btn data-shift-btn" data-dshift="Morning">Morning</button>
-                <button class="mod-btn data-shift-btn" data-dshift="Night">Night</button>
-                <button class="mod-btn data-shift-btn" data-dshift="Over Night">Over Night</button>
-                <button class="mod-btn data-shift-btn" data-dshift="Over Shift">Over Shift</button>
-              </div>
-            </div>
-          </div>
-
-          <div id="dataArea"><div class="loading"><div class="spin"></div> Loading data...</div></div>
-        </div>
             <div style="width:100%;display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px" id="unitBtns">
               <span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Unit</span>
               <button class="mod-btn data-unit-btn" data-dunit="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>
@@ -1181,22 +1119,15 @@ function renderDataFiltered(){
   var s=(dataPage-1)*PAGE_SZ,e2=Math.min(s+PAGE_SZ,filtered.length);
   var pg=filtered.slice(s,e2),tp=Math.ceil(filtered.length/PAGE_SZ)||1;
 
-  // 🔴 الجزء الجديد: رمي الإحصائيات في الشريط العلوي الثابت 🔴
-  var statsBar = gid('dataStatsBar');
-  if(statsBar) {
-    var stHtml = '<span style="color:var(--gray)">'+filtered.length+' records</span><span style="color:var(--border)">|</span>';
-    if(lf>0) stHtml+='<span style="color:#1e8e3e;background:#e8f5e9;padding:2px 8px;border-radius:6px">LFP: '+lf+'</span>';
-    if(lq>0) stHtml+='<span style="color:#e37400;background:#fff3cd;padding:2px 8px;border-radius:6px">LQA: '+lq+'</span>';
-    if(lif>0) stHtml+='<span style="color:#007b83;background:#e0f7fa;padding:2px 8px;border-radius:6px">LiFP: '+lif+'</span>';
-    if(liq>0) stHtml+='<span style="color:#7b1fa2;background:#f3e5f5;padding:2px 8px;border-radius:6px">LiQA: '+liq+'</span>';
-    if(lf+lq+lif+liq>0) stHtml+='<span style="color:var(--blue);background:var(--blue-bg);padding:2px 8px;border-radius:6px;font-weight:800">Total: '+(lf+lq+lif+liq)+'</span>';
-    statsBar.innerHTML = stHtml;
-    statsBar.style.display = 'flex';
-  }
-
-  // 🔴 بناء الجدول مباشرة بدون صندوق الإحصائيات القديم 🔴
-  var html='<div class="tbl-card"><table><thead><tr><th>#</th><th class="left">Labeler</th><th>Shift</th><th>Unit</th><th>Modality</th><th>Pass</th><th>QTC</th><th>PC</th><th>Yubikey</th><th>Task ID</th><th>Queue</th><th>Obj</th><th>Date</th><th>Time</th></tr></thead><tbody>';
-  
+  var html='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:14px;padding:12px 16px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow)">';
+  html+='<span style="font-size:12px;font-weight:700;color:var(--gray)">'+filtered.length+' records</span><span style="color:var(--border)">|</span>';
+  if(lf>0)html+='<span style="font-size:13px;font-weight:800;color:#1e8e3e;background:#e8f5e9;padding:3px 10px;border-radius:8px">LFP: '+lf+'</span>';
+  if(lq>0)html+='<span style="font-size:13px;font-weight:800;color:#e37400;background:#fff3cd;padding:3px 10px;border-radius:8px">LQA: '+lq+'</span>';
+  if(lif>0)html+='<span style="font-size:13px;font-weight:800;color:#007b83;background:#e0f7fa;padding:3px 10px;border-radius:8px">LiFP: '+lif+'</span>';
+  if(liq>0)html+='<span style="font-size:13px;font-weight:800;color:#7b1fa2;background:#f3e5f5;padding:3px 10px;border-radius:8px">LiQA: '+liq+'</span>';
+  if(lf+lq+lif+liq>0)html+='<span style="font-size:13px;font-weight:800;color:var(--blue);background:var(--blue-bg);padding:3px 10px;border-radius:8px">Total: '+(lf+lq+lif+liq)+'</span>';
+  html+='</div>';
+  html+='<div class="tbl-card"><table><thead><tr><th>#</th><th class="left">Labeler</th><th>Shift</th><th>Unit</th><th>Modality</th><th>Pass</th><th>QTC</th><th>PC</th><th>Yubikey</th><th>Task ID</th><th>Queue</th><th>Obj</th><th>Date</th><th>Time</th></tr></thead><tbody>';
   if(!pg.length){html+='<tr><td colspan="14" class="empty">No records</td></tr>';}
   else{
     pg.forEach(function(r,i){
@@ -1226,13 +1157,6 @@ function renderDataFiltered(){
         +'</tr>';
     });
   }
-  html+='</tbody></table><div class="pagination"><button class="pg-btn" id="pgPrev" '+(dataPage<=1?'disabled':'')+'>Prev</button><span class="pg-info">Page '+dataPage+' / '+tp+' · '+filtered.length+'</span><button class="pg-btn" id="pgNext" '+(dataPage>=tp?'disabled':'')+'>Next</button></div></div>';
-  shtml('dataArea',html);
-
-  if(gid('pgPrev'))gid('pgPrev').addEventListener('click',function(){dataPage--;renderDataFiltered();});
-  if(gid('pgNext'))gid('pgNext').addEventListener('click',function(){dataPage++;renderDataFiltered();});
-  gid('dataArea').addEventListener('click',function(e){var row=e.target.closest('tr.data-row');if(!row)return;var idx=parseInt(row.getAttribute('data-ridx'));var rec=getFilteredData()[idx];if(rec)openDetail(rec);});
-}
   html+='</tbody></table><div class="pagination"><button class="pg-btn" id="pgPrev" '+(dataPage<=1?'disabled':'')+'>Prev</button><span class="pg-info">Page '+dataPage+' / '+tp+' · '+filtered.length+'</span><button class="pg-btn" id="pgNext" '+(dataPage>=tp?'disabled':'')+'>Next</button></div></div>';
   shtml('dataArea',html);
 
