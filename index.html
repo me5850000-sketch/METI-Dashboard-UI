@@ -1449,9 +1449,7 @@ html+='<div class="lab-tab-content" data-labtabcontent="__all__" data-labs="'+en
   });
   html+='</div></div>';
   shtml('labelersArea',html);
-
- function updateLabUnitBtns(){
- document.querySelectorAll('.lab-unit-btn').forEach(function(b){
+document.querySelectorAll('.lab-unit-btn').forEach(function(b){
   b.addEventListener('click', function(){
     var u = b.getAttribute('data-labunit');
     if(u==='all'){
@@ -1466,10 +1464,19 @@ html+='<div class="lab-tab-content" data-labtabcontent="__all__" data-labs="'+en
         activeLabUnits.add(u);
       }
     }
-    updateLabUnitBtns();
-    rebuildContent();
+    updateLabUnitBtns(); // ← بس بتحدث الـ styles
+    rebuildContent();    // ← بس بتعيد بناء المحتوى
   });
 });
+ function updateLabUnitBtns(){
+  document.querySelectorAll('.lab-unit-btn').forEach(function(b){
+    var u = b.getAttribute('data-labunit');
+    var act = activeLabUnits.has(u) || (u==='all' && activeLabUnits.has('all'));
+    b.style.background = act ? 'var(--blue)' : 'white';
+    b.style.color = act ? 'white' : 'var(--gray)';
+    b.style.borderColor = act ? 'var(--blue)' : 'var(--border)';
+  });
+}
 
   function rebuildContent(){
     var labelers=buildLabelers(getRows());
