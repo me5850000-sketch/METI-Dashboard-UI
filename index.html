@@ -1393,7 +1393,12 @@ function renderLabelersPage(data){
   html+='<div class="lab-content-area" data-active-sh="'+labShifts[0]+'">';
   labShifts.forEach(function(sh,si){
     var isF=si===0;
-    var shLabs=Object.keys(initLabs).filter(function(k){return initLabs[k].shifts[sh]&&initLabs[k].shifts[sh].total>0;}).map(function(k){var sd=initLabs[k].shifts[sh];return{name:k,total:sd.total,lfp:sd.lane.fp,lqa:sd.lane.qa,lifp:sd.lidar.fp,liqa:sd.lidar.qa,laneTotal:sd.lane.fp+sd.lane.qa,lidarTotal:sd.lidar.fp+sd.lidar.qa};});
+    var shLabs=Object.keys(initLabs).filter(function(k){return initLabs[k].shifts[sh]&&initLabs[k].shifts[sh].total>0;}).map(function(k){
+      var sd=initLabs[k].shifts[sh];
+      var topUnit=Object.keys(initLabs[k].units).sort(function(a,b){return initLabs[k].units[b]-initLabs[k].units[a];})[0]||'';
+      var topPc=Object.keys(initLabs[k].pcs).sort(function(a,b){return initLabs[k].pcs[b]-initLabs[k].pcs[a];})[0]||'';
+      return{name:k,total:sd.total,lfp:sd.lane.fp,lqa:sd.lane.qa,lifp:sd.lidar.fp,liqa:sd.lidar.qa,laneTotal:sd.lane.fp+sd.lane.qa,lidarTotal:sd.lidar.fp+sd.lidar.qa,unit:topUnit,pc:topPc};
+    });
     html+='<div class="lab-tab-content" data-labtabcontent="'+sh+'" data-labs="'+encodeURIComponent(JSON.stringify(shLabs))+'" style="display:'+(isF?'block':'none')+'"><div class="lab-list-wrap"></div></div>';
   });
   html+='</div></div>';
@@ -1820,8 +1825,12 @@ window.onload=function(){
   updateModBtns();
 
   // Shift buttons (data)
+ // Unit + Shift buttons (data)
   var allUnitBtn=document.querySelector('.data-unit-btn[data-dunit="all"]');
-if(allUnitBtn)allUnitBtn.addEventListener('click',function(){toggleDataUnit('all');});
+  if(allUnitBtn)allUnitBtn.addEventListener('click',function(){toggleDataUnit('all');});
+  document.querySelectorAll('.data-shift-btn').forEach(function(b){
+    b.addEventListener('click',function(){toggleDataShift(b.getAttribute('data-dshift'));});
+  });
 
   // Search
   var si=gid('searchInput'),sf=gid('searchField'),sc=gid('searchClearBtn');
