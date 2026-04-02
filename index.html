@@ -609,55 +609,45 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
 // BRIDGE: replaces google.script.run
 // Calls your deployed Apps Script via fetch()
 // ═══════════════════════════════════════════════
-var GAS = {
-  _call: function(fn, args, onSuccess, onFailure) {
-    if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('YOUR_DEPLOYMENT_ID') !== -1) {
-      document.getElementById('configNotice').style.display = 'block';
-      if (onFailure) onFailure(new Error('APPS_SCRIPT_URL not configured'));
-      return;
-    }
-    var params = new URLSearchParams();
-    params.append('fn', fn);
-    params.append('args', JSON.stringify(args));
-    fetch(APPS_SCRIPT_URL + '?fn=' + encodeURIComponent(fn) + '&args=' + encodeURIComponent(JSON.stringify(args)), {
-      method: 'GET',
-      mode: 'cors'
-    })
-    .then(function(r) { return r.json(); })
-    .then(function(data) { if (onSuccess) onSuccess(data); })
-    .catch(function(e) { if (onFailure) onFailure(e); });
-  }
-};
-
-// Polyfill: replicate google.script.run interface
 var google = {
   script: {
-    run: new Proxy({}, {
-      get: function(_, fn) {
-        var _success = null, _failure = null;
-        var obj = {
-          withSuccessHandler: function(cb) { _success = cb; return obj; },
-          withFailureHandler: function(cb) { _failure = cb; return obj; }
-        };
-        // Each function name becomes a callable
-        obj[fn] = function() {
-          var args = Array.prototype.slice.call(arguments);
-          GAS._call(fn, args, _success, _failure);
-        };
-        return new Proxy(obj, {
-          get: function(o, k) {
-            if (k in o) return o[k];
-            return function() {
-              var args = Array.prototype.slice.call(arguments);
-              GAS._call(fn, args, _success, _failure);
-            };
-          },
-          apply: function(_, __, args) {
-            GAS._call(fn, args, _success, _failure);
-          }
-        });
+    run: (function() {
+      function Runner() {
+        this._success = null;
+        this._failure = null;
       }
-    })
+      Runner.prototype.withSuccessHandler = function(cb) {
+        this._success = cb;
+        return this;
+      };
+      Runner.prototype.withFailureHandler = function(cb) {
+        this._failure = cb;
+        return this;
+      };
+
+      var handler = {
+        get: function(target, fn) {
+          if (fn in target) return target[fn].bind(target);
+          return function() {
+            var args = Array.prototype.slice.call(arguments);
+            var s = target._success, f = target._failure;
+            if (!APPS_SCRIPT_URL || APPS_SCRIPT_URL.indexOf('YOUR_DEPLOYMENT_ID') !== -1) {
+              document.getElementById('configNotice').style.display = 'block';
+              if (f) f(new Error('APPS_SCRIPT_URL not configured'));
+              return;
+            }
+            fetch(APPS_SCRIPT_URL + '?fn=' + encodeURIComponent(fn) + '&args=' + encodeURIComponent(JSON.stringify(args)), {
+              method: 'GET', mode: 'cors'
+            })
+            .then(function(r) { return r.json(); })
+            .then(function(data) { if (s) s(data); })
+            .catch(function(e) { if (f) f(e); });
+          };
+        }
+      };
+
+      return new Proxy(new Runner(), handler);
+    })()
   }
 };
 </script>
