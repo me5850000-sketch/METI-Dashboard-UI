@@ -1527,7 +1527,7 @@ function renderQtcPage(data){
     var sh=parseQtcShift(raw),name=cleanQtcName(raw),un=(r[F.unit]||'Unknown').trim();
     var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
     var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;
-    var key=raw+'||'+un;
+    var key=name+'||'+sh;
     if(!qtcs[key])qtcs[key]={name:name,shift:sh,unit:un,total:0,lfp:0,lqa:0,lifp:0,liqa:0,laneTotal:0,lidarTotal:0};
     qtcs[key].total++;
     if(isL&&pass==='FP'){qtcs[key].lfp++;qtcs[key].laneTotal++;}if(isL&&pass==='QA'){qtcs[key].lqa++;qtcs[key].laneTotal++;}
