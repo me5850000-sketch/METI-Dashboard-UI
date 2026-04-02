@@ -911,26 +911,17 @@ function applyFilters(data){
   });
 }
 
-function renderStats(data,user){
-  var filtered=applyFilters(data);
-  if(!filtered.length){shtml('statsArea','<div class="empty">No records found.</div>');return;}
-  var lf=0,lq=0,lif=0,liq=0,shifts={},units={};
-  var SH_ORD=['Morning','Night','Over Night','Over Shift'],ROOM_ORD=['NC Room 102','NC Room 106','NC Room 108','4th Floor','2nd Floor'];
-  filtered.forEach(function(r){
+function renderStats(data, user){
+  if(!data || !data.length){shtml('statsArea','<div class="empty">No records found.</div>');return;}
+
+  // 1. الكروت العلوية (دايماً بتعرض الإجمالي ومش بتتأثر بالضغط على الجداول)
+  var lf=0,lq=0,lif=0,liq=0;
+  data.forEach(function(r){
     var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
-    var sh=nShift(r[F.shift]||'Unknown'),un=(r[F.unit]||'Unknown').trim();
-    var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1,isFP=pass==='FP',isQA=pass==='QA';
-    if(isL){if(isFP)lf++;if(isQA)lq++;}
-    if(isLi){if(isFP)lif++;if(isQA)liq++;}
-    function bump(o){o.total++;if(isFP)o.fp++;if(isQA)o.qa++;}
-    function ensure(map,key){if(!map[key])map[key]={lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0},total:0};}
-    ensure(shifts,sh);ensure(units,un);
-    shifts[sh].total++;if(isL)bump(shifts[sh].lane);if(isLi)bump(shifts[sh].lidar);
-    units[un].total++;if(isL)bump(units[un].lane);if(isLi)bump(units[un].lidar);
+    var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;
+    if(isL&&pass==='FP')lf++;if(isL&&pass==='QA')lq++;
+    if(isLi&&pass==='FP')lif++;if(isLi&&pass==='QA')liq++;
   });
-  var sortedSH=SH_ORD.filter(function(s){return!!shifts[s];});
-  var sortedRM=ROOM_ORD.filter(function(u){return!!units[u];});
-  Object.keys(units).forEach(function(u){if(sortedRM.indexOf(u)===-1)sortedRM.push(u);});
 
   var html='<div class="cards" id="cardsRow">';
   html+=mkCard('Lane FP',lf,'green','lane_fp');
@@ -940,13 +931,29 @@ function renderStats(data,user){
   html+='</div><div id="drillSection"></div>';
 
   if(activeSFilter||activeRFilter){
-    html+='<div class="filter-pills"><span style="font-size:12px;color:var(--gray);font-weight:700">Filter:</span>';
-    if(activeSFilter)html+='<span class="filter-pill">'+activeSFilter+' <button class="pill-x" data-clear="sft">✕</button></span>';
-    if(activeRFilter)html+='<span class="filter-pill">'+activeRFilter+' <button class="pill-x" data-clear="unt">✕</button></span>';
-    html+='<span style="font-size:12px;color:var(--gray)">'+filtered.length+' records</span></div>';
+    html+='<div class="filter-pills" style="margin-top:-10px;margin-bottom:15px"><span style="font-size:12px;color:var(--gray);font-weight:700">Filtered Details By:</span>';
+    if(activeSFilter)html+='<span class="filter-pill">Shift: '+activeSFilter+' <button class="pill-x" data-clear="sft">✕</button></span>';
+    if(activeRFilter)html+='<span class="filter-pill">Unit: '+activeRFilter+' <button class="pill-x" data-clear="unt">✕</button></span>';
+    html+='</div>';
   }
 
-  html+='<div class="grid2"><div><div class="sec-hdr">By Shift</div><div class="tbl-card"><table><thead><tr><th class="left">Shift</th><th>L-FP</th><th>L-QA</th><th>Li-FP</th><th>Li-QA</th><th>Total</th></tr></thead><tbody>';
+  html+='<div class="grid2">';
+
+  // 2. جدول الشفتات (بيظهر دايماً كامل، إلا لو اخترت وحدة معينة يفلتر عليها)
+  var shifts={}, SH_ORD=['Morning','Night','Over Night','Over Shift'];
+  data.forEach(function(r){
+    if(activeRFilter && (r[F.unit]||'').trim() !== activeRFilter) return; 
+    var sh=nShift(r[F.shift]||'Unknown');
+    var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
+    var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;
+    if(!shifts[sh]) shifts[sh]={lane:{fp:0,qa:0},lidar:{fp:0,qa:0},total:0};
+    shifts[sh].total++;
+    if(isL&&pass==='FP')shifts[sh].lane.fp++;if(isL&&pass==='QA')shifts[sh].lane.qa++;
+    if(isLi&&pass==='FP')shifts[sh].lidar.fp++;if(isLi&&pass==='QA')shifts[sh].lidar.qa++;
+  });
+  var sortedSH=SH_ORD.filter(function(s){return!!shifts[s];});
+  
+  html+='<div><div class="sec-hdr">By Shift '+(activeRFilter?'— '+activeRFilter:'')+'</div><div class="tbl-card"><table><thead><tr><th class="left">Shift</th><th>L-FP</th><th>L-QA</th><th>Li-FP</th><th>Li-QA</th><th>Total</th></tr></thead><tbody>';
   var shT={lfp:0,lqa:0,lifp:0,liqa:0,t:0};
   sortedSH.forEach(function(s){
     var d=shifts[s],ia=activeSFilter===s;
@@ -955,14 +962,31 @@ function renderStats(data,user){
   });
   html+='<tr class="total-row"><td class="left bold">TOTAL</td><td>'+shT.lfp+'</td><td>'+shT.lqa+'</td><td>'+shT.lifp+'</td><td>'+shT.liqa+'</td><td class="bold">'+shT.t+'</td></tr></tbody></table></div></div>';
 
-  html+='<div><div class="sec-hdr">By Unit</div><div class="tbl-card"><table><thead><tr><th class="left">Unit</th><th>L-FP</th><th>L-QA</th><th>Li-FP</th><th>Li-QA</th><th>Total</th></tr></thead><tbody>';
+  // 3. جدول الوحدات (بيظهر دايماً كامل، إلا لو اخترت شفت معين يفلتر عليه)
+  var units={}, ROOM_ORD=['NC Room 102','NC Room 106','NC Room 108','4th Floor','2nd Floor'];
+  data.forEach(function(r){
+    if(activeSFilter && nShift(r[F.shift]||'') !== activeSFilter) return;
+    var un=(r[F.unit]||'Unknown').trim();
+    var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
+    var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;
+    if(!units[un]) units[un]={lane:{fp:0,qa:0},lidar:{fp:0,qa:0},total:0};
+    units[un].total++;
+    if(isL&&pass==='FP')units[un].lane.fp++;if(isL&&pass==='QA')units[un].lane.qa++;
+    if(isLi&&pass==='FP')units[un].lidar.fp++;if(isLi&&pass==='QA')units[un].lidar.qa++;
+  });
+  var sortedRM=ROOM_ORD.filter(function(u){return!!units[u];});
+  Object.keys(units).forEach(function(u){if(sortedRM.indexOf(u)===-1)sortedRM.push(u);});
+
+  html+='<div><div class="sec-hdr">By Unit '+(activeSFilter?'— '+activeSFilter:'')+'</div><div class="tbl-card"><table><thead><tr><th class="left">Unit</th><th>L-FP</th><th>L-QA</th><th>Li-FP</th><th>Li-QA</th><th>Total</th></tr></thead><tbody>';
   var unT={lfp:0,lqa:0,lifp:0,liqa:0,t:0};
   sortedRM.forEach(function(u){
     var d=units[u],ia=activeRFilter===u;
     html+='<tr class="clickable'+(ia?' row-active':'')+'" data-ftype="unt" data-fval="'+u+'"><td class="left bold">'+u+'</td><td>'+d.lane.fp+'</td><td>'+d.lane.qa+'</td><td>'+d.lidar.fp+'</td><td>'+d.lidar.qa+'</td><td class="bold">'+d.total+'</td></tr>';
     unT.lfp+=d.lane.fp;unT.lqa+=d.lane.qa;unT.lifp+=d.lidar.fp;unT.liqa+=d.lidar.qa;unT.t+=d.total;
   });
-  html+='<tr class="total-row"><td class="left bold">TOTAL</td><td>'+unT.lfp+'</td><td>'+unT.lqa+'</td><td>'+unT.lifp+'</td><td>'+unT.liqa+'</td><td class="bold">'+unT.t+'</td></tr></tbody></table></div></div></div>';
+  html+='<tr class="total-row"><td class="left bold">TOTAL</td><td>'+unT.lfp+'</td><td>'+unT.lqa+'</td><td>'+unT.lifp+'</td><td>'+unT.liqa+'</td><td class="bold">'+unT.t+'</td></tr></tbody></table></div></div>';
+
+  html+='</div>';
 
   var isQtcRole=SESSION&&SESSION.role==='qtc';
   if(!isQtcRole)html+='<div class="sec-hdr" style="margin-top:8px">Weekly Target</div><div id="homeTargetOuter"><div id="homeTargetArea"><div class="loading"><div class="spin"></div> Loading...</div></div></div>';
@@ -976,11 +1000,11 @@ function renderStats(data,user){
       google.script.run.withSuccessHandler(function(r){initWeekTarget(r&&!r.err?r.data:cachedStats);}).withFailureHandler(function(){initWeekTarget(cachedStats);}).getStats(TOKEN,_wf,null);
     },0);
   }
-  setTimeout(function(){renderBestQtc(filtered);},0);
+  setTimeout(function(){renderBestQtc(data);},0);
 
   if(activeDrillCard){
     gid('statsArea').querySelectorAll('.card').forEach(function(c){if(c.getAttribute('data-dtype')===activeDrillCard)c.classList.add('card-active');});
-    renderDrill(buildShifts(applyFilters(cachedStats)));
+    renderDrill(buildShifts(data));
   }
 }
 
