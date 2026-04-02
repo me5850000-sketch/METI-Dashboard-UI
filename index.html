@@ -611,43 +611,40 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
 // ═══════════════════════════════════════════════
 var google = {
   script: {
-    run: (function() {
-      function makeRunner() {
-        var _success = null, _failure = null;
-        var runner = {
-          withSuccessHandler: function(cb) { _success = cb; return runner; },
-          withFailureHandler: function(cb) { _failure = cb; return runner; }
-        };
-        var handler = {
-          get: function(target, fn) {
-            if (fn in target) return target[fn];
-            return function() {
-              var args = Array.prototype.slice.call(arguments);
-              var s = _success, f = _failure;
-              fetch(APPS_SCRIPT_URL + '?fn=' + encodeURIComponent(fn) + '&args=' + encodeURIComponent(JSON.stringify(args)), {
-                method: 'GET', mode: 'cors'
-              })
-              .then(function(r) { return r.json(); })
-              .then(function(data) { if (s) s(data); })
-              .catch(function(e) { if (f) f(e); });
-            };
-          }
-        };
-        return new Proxy(runner, handler);
+    run: {
+      _s: null,
+      _f: null,
+      withSuccessHandler: function(cb) {
+        var obj = Object.assign({}, google.script.run);
+        obj._s = cb;
+        return obj;
+      },
+      withFailureHandler: function(cb) {
+        var obj = Object.assign({}, google.script.run);
+        obj._f = cb;
+        return obj;
       }
-      // Return a Proxy that creates a fresh runner for each property access
-      return new Proxy({}, {
-        get: function(target, fn) {
-          var runner = makeRunner();
-          if (fn === 'withSuccessHandler' || fn === 'withFailureHandler') {
-            return runner[fn].bind(runner);
-          }
-          return runner[fn];
-        }
-      });
-    })()
+    }
   }
 };
+
+// Add all API functions dynamically
+(function() {
+  var fns = ['login','logout','getStats','getQtcStats','getQtcUsers','getUsers',
+             'upsertUser','deleteUser','getAttendance','getTargets','setTarget'];
+  fns.forEach(function(fn) {
+    google.script.run[fn] = function() {
+      var args = Array.prototype.slice.call(arguments);
+      var s = this._s, f = this._f;
+      fetch(APPS_SCRIPT_URL + '?fn=' + encodeURIComponent(fn) + '&args=' + encodeURIComponent(JSON.stringify(args)), {
+        method: 'GET', mode: 'cors'
+      })
+      .then(function(r) { return r.json(); })
+      .then(function(data) { if (s) s(data); })
+      .catch(function(e) { if (f) f(e); });
+    };
+  });
+})();
 </script>
 
 <script>
