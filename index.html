@@ -1806,7 +1806,8 @@ window.onload=function(){
   updateModBtns();
 
   // Shift buttons (data)
-  document.querySelectorAll('.data-shift-btn').forEach(function(b){b.addEventListener('click',function(){toggleDataShift(b.getAttribute('data-dshift'));});});
+  var allUnitBtn=document.querySelector('.data-unit-btn[data-dunit="all"]');
+if(allUnitBtn)allUnitBtn.addEventListener('click',function(){toggleDataUnit('all');});
 
   // Search
   var si=gid('searchInput'),sf=gid('searchField'),sc=gid('searchClearBtn');
