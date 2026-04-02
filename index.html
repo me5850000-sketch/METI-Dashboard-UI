@@ -618,7 +618,6 @@ var google = {
       _s: null, _f: null,
       withSuccessHandler: function(cb) { this._s = cb; return this; },
       withFailureHandler: function(cb) { this._f = cb; return this; },
-      // وظيفة التنفيذ الموحدة لإرسال الطلبات لـ Apps Script
       execute: function(fn, args) {
         var s = this._s, f = this._f;
         fetch(APPS_SCRIPT_URL, {
@@ -628,13 +627,14 @@ var google = {
         })
         .then(function(r) { return r.json(); })
         .then(function(data) { if (s) s(data); })
-        .catch(function(e) { console.error(e); if (f) f(e); });
+        .catch(function(e) { if (f) f(e); });
       },
-      // تعريف الوظائف
+      // تأكد أن الوظائف مكتوبة بهذا الشكل
       login: function(id, pwd) { this.execute('login', [id, pwd]); },
       getStats: function(t, f, to) { this.execute('getStats', [t, f, to]); },
+      getTargets: function(t) { this.execute('getTargets', [t]); },
       getQtcUsers: function(t) { this.execute('getQtcUsers', [t]); },
-      getTargets: function(t) { this.execute('getTargets', [t]); }
+      getAttendance: function(t, d, s) { this.execute('getAttendance', [t, d, s]); }
     }
   }
 };
