@@ -24,7 +24,7 @@
 
 <script>
   // ★ EDIT THIS LINE ONLY ★
-  var APPS_SCRIPT_URL = "https://script.google.com/macros/s/YOUR_DEPLOYMENT_ID/exec";
+  var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycby-FhJBKt8QdhevkIdq_ns06BO2Mhkgx-msYf5vQdj1CNQ8Q-qokV22_4rL2-rcLKoQ/exec";
 </script>
 
 <style>
@@ -666,24 +666,39 @@ var google = {
 // Add this to your Code.gs:
 //
 // function doGet(e) {
-//   var fn = e.parameter.fn;
-//   var args = JSON.parse(e.parameter.args || '[]');
-//   if (fn && typeof this[fn] === 'function') {
-//     try {
-//       var result = this[fn].apply(this, args);
-//       return ContentService
-//         .createTextOutput(JSON.stringify(result))
-//         .setMimeType(ContentService.MimeType.JSON);
-//     } catch(err) {
-//       return ContentService
-//         .createTextOutput(JSON.stringify({err: err.message}))
-//         .setMimeType(ContentService.MimeType.JSON);
-//     }
-//   }
-//   return HtmlService.createHtmlOutputFromFile('DashboardUI')
-//     .setTitle('METI Dashboard')
-//     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
-// }
+  // لو في function name في الـ URL → رد بـ JSON
+  var fn = e && e.parameter && e.parameter.fn;
+  
+  if (fn) {
+    var args = [];
+    try { args = JSON.parse(e.parameter.args || '[]'); } catch(ex) {}
+    
+    // إضافة CORS headers
+    var output;
+    try {
+      if (typeof this[fn] === 'function') {
+        var result = this[fn].apply(this, args);
+        output = ContentService
+          .createTextOutput(JSON.stringify(result))
+          .setMimeType(ContentService.MimeType.JSON);
+      } else {
+        output = ContentService
+          .createTextOutput(JSON.stringify({err: 'Function not found: ' + fn}))
+          .setMimeType(ContentService.MimeType.JSON);
+      }
+    } catch(err) {
+      output = ContentService
+        .createTextOutput(JSON.stringify({err: err.message}))
+        .setMimeType(ContentService.MimeType.JSON);
+    }
+    return output;
+  }
+
+  // لو مفيش function → ارجع الـ HTML (للـ Apps Script interface)
+  return HtmlService.createHtmlOutputFromFile('DashboardUI')
+    .setTitle('METI Dashboard')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
 </script>
 
 <script>
