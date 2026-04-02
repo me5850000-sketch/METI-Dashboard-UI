@@ -1450,7 +1450,25 @@ html+='<div class="lab-tab-content" data-labtabcontent="__all__" data-labs="'+en
   html+='</div></div>';
   shtml('labelersArea',html);
 
-  function updateLabUnitBtns(){document.querySelectorAll('.lab-unit-btn').forEach(function(b){var u=b.getAttribute('data-labunit'),act=activeLabUnits.has(u)||(u==='all'&&activeLabUnits.has('all'));b.style.background=act?'var(--blue)':'white';b.style.color=act?'white':'var(--gray)';b.style.borderColor=act?'var(--blue)':'var(--border)';});}
+  function updateLabUnitBtns(){document.querySelectorAll('.lab-unit-btn').forEach(function(b){
+    b.addEventListener('click',function(){
+        var u=b.getAttribute('data-labunit');
+        if(u==='all'){
+            activeLabUnits.clear();
+            activeLabUnits.add('all');
+        } else {
+            activeLabUnits.delete('all');
+            if(activeLabUnits.has(u)){
+                activeLabUnits.delete(u);
+                if(activeLabUnits.size===0) activeLabUnits.add('all');
+            } else {
+                activeLabUnits.add(u);
+            }
+        }
+        updateLabUnitBtns();
+        rebuildContent(); // ← هنا المشكلة
+    });
+});
 
   function rebuildContent(){
     var labelers=buildLabelers(getRows());
