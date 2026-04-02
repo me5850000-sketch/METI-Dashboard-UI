@@ -72,10 +72,27 @@ body{background:var(--bg);min-height:100vh;font-size:14px;color:var(--dark)}
 .logout-btn{display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:rgba(255,255,255,.75);font-size:13px;cursor:pointer;width:100%;transition:all .15s}
 .logout-btn:hover{background:rgba(255,255,255,.16);color:white}
 .main{margin-left:230px;flex:1;display:flex;flex-direction:column;min-height:100vh}
-.topbar{background:white;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:100;box-shadow:var(--shadow)}
+.topbar{background:white;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;box-shadow:var(--shadow)}
 .tb-left .tb-title{font-size:20px;font-weight:800;color:var(--blue)}
 .tb-left .tb-sub{font-size:12px;color:var(--gray);margin-top:2px}
 .content{padding:24px 28px;flex:1}
+
+/* ══ GLOBAL FILTER BAR ══ */
+.global-filter-bar {
+  background: white;
+  padding: 12px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 68px; /* Below topbar */
+  z-index: 150;
+  box-shadow: 0 4px 15px rgba(28,69,135,.05);
+  flex-wrap: wrap;
+}
+.global-filter-bar label{font-size:11px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:0.5px}
+body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
 
 /* ══ COMPONENTS ══ */
 .shift-banner{background:var(--blue-bg);border:1.5px solid var(--blue-lt);border-radius:10px;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:var(--blue)}
@@ -251,14 +268,19 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
   .topbar{padding:10px 14px!important;gap:8px}.tb-left .tb-title{font-size:16px!important}
   .tb-left .tb-sub,#topClock{display:none}
   .content{padding:12px!important}
-  .filter-bar{padding:14px!important;gap:8px!important;flex-direction:row!important;flex-wrap:wrap!important}
-  .filter-bar label{width:100%;margin-bottom:-6px;font-size:10px!important}
-  .filter-bar .dp-wrap, .filter-bar .fb-time{width:calc(50% - 4px)!important;min-width:unset!important;flex:none!important}
-  .dp-input{width:100%!important;font-size:13px!important;padding:9px 32px 9px 10px!important;height:38px}
-  .fb-time{font-size:13px!important;padding:9px 10px!important;height:38px}
-  .fbtn{width:calc(50% - 4px)!important;padding:10px!important;font-size:13px!important;margin-top:6px}
-  #attShiftBtns, #attShiftBtns2 {width:100%;margin-top:6px}
-  #attShiftBtns label, #attShiftBtns2 label {width:auto;margin-bottom:0}
+  
+  /* التعديلات الجديدة لشريط الفلتر الموحد على الموبايل */
+  .global-filter-bar { padding: 14px!important; top: 54px; }
+  .global-filter-bar > div { flex-direction:row!important; flex-wrap:wrap!important; gap:8px!important; }
+  .global-filter-bar label { width:100%; margin-bottom:-6px; font-size:10px!important; margin-left:0!important; }
+  .global-filter-bar .dp-wrap, .global-filter-bar .fb-time { width:calc(50% - 4px)!important; min-width:unset!important; flex:none!important; }
+  #btnGlobalFilter, #btnGlobalClear { width:calc(50% - 4px)!important; padding:10px!important; margin-top:6px; }
+  
+  /* إصلاح فلاتر الداتا الداخلية */
+  .filter-bar{padding:10px 12px!important;gap:8px!important;flex-direction:column;align-items:stretch!important}
+  .dp-input,.fb-time{width:100%!important;font-size:13px!important;min-width:unset!important}
+  .fbtn{width:100%!important;text-align:center;padding:10px!important;font-size:13px!important}
+  
   .cards{grid-template-columns:repeat(2,1fr)!important;gap:10px!important;margin-bottom:16px}
   .card{padding:16px 12px 14px!important}.card-val{font-size:28px!important}.card-lbl{font-size:9px!important}
   .tbl-card{overflow-x:auto}table{min-width:520px}
@@ -299,6 +321,22 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
 }
 body.dark .filter-lbl { color: #9aa0b4; }
 body.dark #searchField, body.dark #searchInput { background: #1e2130 !important; color: #e8eaf0 !important; border-color: #2d3250 !important; }
+
+/* ══ GLOBAL FILTER BAR ══ */
+.global-filter-bar {
+  background: white;
+  padding: 12px 28px;
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  position: sticky;
+  top: 65px; /* Below topbar */
+  z-index: 99;
+  box-shadow: var(--shadow);
+  flex-wrap: wrap;
+}
+body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
 </style>
 </head>
 <body>
@@ -399,19 +437,22 @@ body.dark #searchField, body.dark #searchInput { background: #1e2130 !important;
         </div>
       </div>
 
+      <div class="global-filter-bar" id="globalFilterBar" style="display:none;">
+          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; width: 100%;">
+            <label style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;">From</label>
+            <div class="dp-wrap" id="dpWrap-gFrom"><input type="text" class="dp-input" id="gFrom" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
+            <select class="fb-time" id="gFromTime"></select>
+            <label style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-left:8px;">To</label>
+            <div class="dp-wrap" id="dpWrap-gTo"><input type="text" class="dp-input" id="gTo" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
+            <select class="fb-time" id="gToTime"></select>
+            <button class="fbtn fbtn-primary" id="btnGlobalFilter" style="margin-left:auto;">Filter</button>
+            <button class="fbtn fbtn-ghost" id="btnGlobalClear">✕ Clear</button>
+          </div>
+      </div>
+
       <div class="content">
         <div id="pgHome">
           <div id="shiftBannerHome" style="display:none" class="shift-banner">Showing data for your shift: <strong id="shiftBannerHomeText"></strong></div>
-          <div class="filter-bar">
-            <label>From</label>
-            <div class="dp-wrap" id="dpWrap-fFrom"><input type="text" class="dp-input" id="fFrom" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
-            <select class="fb-time" id="fFromTime"></select>
-            <label>To</label>
-            <div class="dp-wrap" id="dpWrap-fTo"><input type="text" class="dp-input" id="fTo" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
-            <select class="fb-time" id="fToTime"></select>
-            <button class="fbtn fbtn-primary" id="btnFilter">Filter</button>
-            <button class="fbtn fbtn-ghost" id="btnClear">✕ Clear</button>
-          </div>
           <div id="statsArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
         </div>
 
@@ -428,23 +469,12 @@ body.dark #searchField, body.dark #searchInput { background: #1e2130 !important;
               <button id="searchClearBtn" style="background:none; border:none; padding:0 12px; color:var(--gray); cursor:pointer; display:none;">✕</button>
             </div>
             <button onclick="document.getElementById('advFilters').classList.toggle('show')" style="background:var(--blue); color:white; border:none; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; box-shadow:var(--shadow); display:flex; align-items:center; gap:6px;">
-  ⚙️ If You Want Filter More Press Here
-</button>
+              ⚙️ If You Want Filter Press Here
+            </button>
           </div>
 
           <div id="advFilters" class="adv-filters-wrap">
             <div class="filter-bar" style="margin-bottom:12px;">
-              <div style="width:100%; display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--gray-lt);">
-                <label>From</label>
-                <div class="dp-wrap" id="dpWrap-dFrom"><input type="text" class="dp-input" id="dFrom" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
-                <select class="fb-time" id="dFromTime"></select>
-                <label>To</label>
-                <div class="dp-wrap" id="dpWrap-dTo"><input type="text" class="dp-input" id="dTo" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
-                <select class="fb-time" id="dToTime"></select>
-                <button class="fbtn fbtn-primary" id="btnDFilter">Apply Date</button>
-                <button class="fbtn fbtn-ghost" id="btnDClear">Clear</button>
-              </div>
-
               <div style="width:100%;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px" id="modBtns">
                 <span class="filter-lbl">Type:</span>
                 <button class="mod-btn" data-mod="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>
@@ -471,44 +501,14 @@ body.dark #searchField, body.dark #searchInput { background: #1e2130 !important;
         </div>
 
         <div id="pgLabelers" style="display:none">
-          <div class="filter-bar">
-            <label>From</label>
-            <div class="dp-wrap" id="dpWrap-lFrom"><input type="text" class="dp-input" id="lFrom" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
-            <select class="fb-time" id="lFromTime"></select>
-            <label>To</label>
-            <div class="dp-wrap" id="dpWrap-lTo"><input type="text" class="dp-input" id="lTo" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
-            <select class="fb-time" id="lToTime"></select>
-            <button class="fbtn fbtn-primary" id="btnLFilter">Filter</button>
-            <button class="fbtn fbtn-ghost" id="btnLClear">✕ Clear</button>
-          </div>
           <div id="labelersArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
         </div>
 
         <div id="pgQtc" style="display:none">
-          <div class="filter-bar">
-            <label>From</label>
-            <div class="dp-wrap" id="dpWrap-qFrom"><input type="text" class="dp-input" id="qFrom" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
-            <select class="fb-time" id="qFromTime"></select>
-            <label>To</label>
-            <div class="dp-wrap" id="dpWrap-qTo"><input type="text" class="dp-input" id="qTo" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
-            <select class="fb-time" id="qToTime"></select>
-            <button class="fbtn fbtn-primary" id="btnQFilter">Filter</button>
-            <button class="fbtn fbtn-ghost" id="btnQClear">✕ Clear</button>
-          </div>
           <div id="qtcArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
         </div>
 
         <div id="pgQtcStats" style="display:none">
-          <div class="filter-bar">
-            <label>From</label>
-            <div class="dp-wrap" id="dpWrap-qsFrom"><input type="text" class="dp-input" id="qsFrom" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
-            <select class="fb-time" id="qsFromTime"></select>
-            <label>To</label>
-            <div class="dp-wrap" id="dpWrap-qsTo"><input type="text" class="dp-input" id="qsTo" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
-            <select class="fb-time" id="qsToTime"></select>
-            <button class="fbtn fbtn-primary" id="btnQsFilter">Filter</button>
-            <button class="fbtn fbtn-ghost" id="btnQsClear">✕ Clear</button>
-          </div>
           <div id="qtcStatsArea"><div class="empty">Select a QTC to see their stats.</div></div>
         </div>
 
@@ -698,16 +698,15 @@ var DP={
   setVal:function(id,iso,trig){DP.vals[id]=iso;var el=gid(id);if(el)el.value=DP.fmtDisplay(iso);if(trig&&iso)DP.onChange(id);},
   getVal:function(id){return DP.vals[id]||'';},
   onChange:function(id){
-    var fi=['fFrom','dFrom','lFrom','qFrom','qsFrom'],ti=['fTo','dTo','lTo','qTo','qsTo'];
+    var fi=['gFrom'],ti=['gTo'];
     if(fi.indexOf(id)!==-1){SHARED.from=DP.vals[id];SHARED.syncAll();}
     if(ti.indexOf(id)!==-1){SHARED.to=DP.vals[id];SHARED.syncAll();}
     if(id==='attDate'&&SESSION&&TOKEN){loadAttendance();return;}
     if(id==='attDate2'&&SESSION&&TOKEN){loadAttDetails();return;}
-    if(SESSION)SHARED.reloadActive();
   },
   open:function(id){DP.close();var iso=DP.getVal(id)||todayISO(),p=iso.split('-');DP.active=id;DP.view='days';DP.viewYear=parseInt(p[0]);DP.viewMonth=parseInt(p[1])-1;DP.render();var inp=gid(id);if(inp)inp.classList.add('open');},
   close:function(){var ex=document.querySelector('.dp-popup');if(ex)ex.remove();if(DP.active){var inp=gid(DP.active);if(inp)inp.classList.remove('open');}DP.active=null;},
-  render:function(){var ex=document.querySelector('.dp-popup');if(ex)ex.remove();if(!DP.active)return;var popup=document.createElement('div');popup.className='dp-popup';popup.setAttribute('data-dp','1');if(DP.active==='fTo'||DP.active==='dTo')popup.classList.add('align-right');popup.innerHTML=DP.view==='days'?DP.buildDaysHTML():DP.view==='months'?DP.buildMonthsHTML():DP.buildYearsHTML();var wrap=document.getElementById('dpWrap-'+DP.active);if(!wrap){var inp=gid(DP.active);if(inp&&inp.parentNode)wrap=inp.parentNode;}if(wrap){wrap.style.position='relative';wrap.appendChild(popup);}popup.addEventListener('click',DP.handleClick);popup.addEventListener('mousedown',function(e){e.preventDefault();});},
+  render:function(){var ex=document.querySelector('.dp-popup');if(ex)ex.remove();if(!DP.active)return;var popup=document.createElement('div');popup.className='dp-popup';popup.setAttribute('data-dp','1');if(DP.active==='gTo')popup.classList.add('align-right');popup.innerHTML=DP.view==='days'?DP.buildDaysHTML():DP.view==='months'?DP.buildMonthsHTML():DP.buildYearsHTML();var wrap=document.getElementById('dpWrap-'+DP.active);if(!wrap){var inp=gid(DP.active);if(inp&&inp.parentNode)wrap=inp.parentNode;}if(wrap){wrap.style.position='relative';wrap.appendChild(popup);}popup.addEventListener('click',DP.handleClick);popup.addEventListener('mousedown',function(e){e.preventDefault();});},
   buildDaysHTML:function(){var mn=['January','February','March','April','May','June','July','August','September','October','November','December'],dow=['Su','Mo','Tu','We','Th','Fr','Sa'];var h='<div class="dp-nav"><button class="dp-nav-btn" data-dp-act="prev">‹</button><span class="dp-month-label" data-dp-act="switchMonths">'+mn[DP.viewMonth]+' '+DP.viewYear+'</span><button class="dp-nav-btn" data-dp-act="next">›</button></div><div class="dp-grid">';dow.forEach(function(d){h+='<div class="dp-dow">'+d+'</div>';});var today=todayISO(),sel=DP.getVal(DP.active)||'';var fd=new Date(DP.viewYear,DP.viewMonth,1).getDay(),dim=new Date(DP.viewYear,DP.viewMonth+1,0).getDate(),pd=new Date(DP.viewYear,DP.viewMonth,0).getDate();for(var i=fd-1;i>=0;i--)h+='<div class="dp-day other-month">'+(pd-i)+'</div>';for(var d2=1;d2<=dim;d2++){var iso=DP.viewYear+'-'+('0'+(DP.viewMonth+1)).slice(-2)+'-'+('0'+d2).slice(-2);var cls='dp-day'+(iso===today?' today':'')+(iso===sel?' selected':'');h+='<div class="'+cls+'" data-dp-act="pick" data-dp-iso="'+iso+'">'+d2+'</div>';}var cells=fd+dim,nd=cells%7===0?0:7-cells%7;for(var n=1;n<=nd;n++)h+='<div class="dp-day other-month">'+n+'</div>';return h+'</div>';},
   buildMonthsHTML:function(){var mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];var sel=DP.getVal(DP.active)||'',sm=sel?parseInt(sel.split('-')[1])-1:-1,sy=sel?parseInt(sel.split('-')[0]):-1;var h='<div class="dp-nav"><button class="dp-nav-btn" data-dp-act="prevYear">‹</button><span class="dp-month-label" data-dp-act="switchYears">'+DP.viewYear+'</span><button class="dp-nav-btn" data-dp-act="nextYear">›</button></div><div class="dp-ym-grid">';mn.forEach(function(m,i){h+='<div class="dp-ym-item'+(i===sm&&DP.viewYear===sy?' selected':'')+'" data-dp-act="pickMonth" data-dp-mi="'+i+'">'+m+'</div>';});return h+'</div>';},
   buildYearsHTML:function(){var sel=DP.getVal(DP.active)||'',sy=sel?parseInt(sel.split('-')[0]):-1,sy0=Math.floor(DP.viewYear/12)*12;var h='<div class="dp-nav"><button class="dp-nav-btn" data-dp-act="prevDecade">‹</button><span class="dp-month-label">'+sy0+' – '+(sy0+11)+'</span><button class="dp-nav-btn" data-dp-act="nextDecade">›</button></div><div class="dp-ym-grid">';for(var y=sy0;y<sy0+12;y++)h+='<div class="dp-ym-item'+(y===sy?' selected':'')+'" data-dp-act="pickYear" data-dp-y="'+y+'">'+y+'</div>';return h+'</div>';},
@@ -720,26 +719,46 @@ document.addEventListener('mousedown',function(e){if(DP.active&&!e.target.closes
 // ══ SHARED DATE/TIME ══
 var SHARED={
   from:'',to:'',fromTime:'00:00',toTime:'23:59',
-  fromIds:['fFrom','dFrom','lFrom','qFrom','qsFrom'],toIds:['fTo','dTo','lTo','qTo','qsTo'],
-  ftIds:['fFromTime','dFromTime','lFromTime','qFromTime','qsFromTime'],ttIds:['fToTime','dToTime','lToTime','qToTime','qsToTime'],
-  syncAll:function(){var s=SHARED;s.fromIds.forEach(function(id){DP.vals[id]=s.from;var el=gid(id);if(el)el.value=DP.fmtDisplay(s.from);});s.toIds.forEach(function(id){DP.vals[id]=s.to;var el=gid(id);if(el)el.value=DP.fmtDisplay(s.to);});s.ftIds.forEach(function(id){var el=gid(id);if(el)el.value=s.fromTime;});s.ttIds.forEach(function(id){var el=gid(id);if(el)el.value=s.toTime;});},
-  reloadActive:function(){if(gid('pgHome').style.display!=='none')loadStats();else if(gid('pgData').style.display!=='none')loadData();else if(gid('pgLabelers').style.display!=='none')loadLabelers();else if(gid('pgQtc').style.display!=='none')loadQtc();else if(gid('pgQtcStats').style.display!=='none')initQtcStats();}
+  syncAll:function(){
+    DP.vals['gFrom'] = this.from; if(gid('gFrom')) gid('gFrom').value = DP.fmtDisplay(this.from);
+    DP.vals['gTo'] = this.to; if(gid('gTo')) gid('gTo').value = DP.fmtDisplay(this.to);
+    if(gid('gFromTime')) gid('gFromTime').value = this.fromTime;
+    if(gid('gToTime')) gid('gToTime').value = this.toTime;
+  },
+  reloadActive:function(){
+    if(gid('pgHome').style.display!=='none')loadStats();
+    else if(gid('pgData').style.display!=='none')loadData();
+    else if(gid('pgLabelers').style.display!=='none')loadLabelers();
+    else if(gid('pgQtc').style.display!=='none')loadQtc();
+    else if(gid('pgQtcStats').style.display!=='none')initQtcStats();
+  }
 };
 
 function buildTimeSelects(){
   var html='';for(var h=0;h<24;h++){for(var m=0;m<60;m+=30){var hh=('0'+h).slice(-2),mm=m===0?'00':'30',val=hh+':'+mm;var h12=(h===0?12:(h>12?h-12:h)),ampm=h>=12?'PM':'AM';html+='<option value="'+val+'">'+h12+':'+mm+' '+ampm+'</option>';}}
   html+='<option value="23:59">End of Day</option>';
-  SHARED.ftIds.concat(SHARED.ttIds).forEach(function(id){var el=gid(id);if(el)el.innerHTML=html;});
-  ['fFrom','fTo','dFrom','dTo','lFrom','lTo','qFrom','qTo','qsFrom','qsTo'].forEach(function(id){var el=gid(id);if(el){el.addEventListener('click',function(){DP.open(id);});}});
-  SHARED.ftIds.forEach(function(id){var el=gid(id);if(el)el.addEventListener('change',function(){SHARED.fromTime=el.value;SHARED.syncAll();if(SESSION)SHARED.reloadActive();});});
-  SHARED.ttIds.forEach(function(id){var el=gid(id);if(el)el.addEventListener('change',function(){SHARED.toTime=el.value;SHARED.syncAll();if(SESSION)SHARED.reloadActive();});});
+  ['gFromTime', 'gToTime'].forEach(function(id){var el=gid(id);if(el)el.innerHTML=html;});
+  ['gFrom', 'gTo'].forEach(function(id){var el=gid(id);if(el){el.addEventListener('click',function(){DP.open(id);});}});
+  ['gFromTime', 'gToTime'].forEach(function(id){
+    var el=gid(id);
+    if(el)el.addEventListener('change',function(){
+      if(id === 'gFromTime') SHARED.fromTime = el.value;
+      else SHARED.toTime = el.value;
+      SHARED.syncAll();
+    });
+  });
 }
 
-function getFilterISO(dateId,timeId){var fi=['fFrom','dFrom','lFrom','qFrom','qsFrom'];var iso,tv;if(fi.indexOf(dateId)!==-1){iso=SHARED.from;tv=SHARED.fromTime;}else{iso=SHARED.to;tv=SHARED.toTime;}if(!iso)return null;return iso+'T'+tv+':'+(tv==='23:59'?'59':'00');}
+function getFilterISO(isFrom){
+  var iso = isFrom ? SHARED.from : SHARED.to;
+  var tv = isFrom ? SHARED.fromTime : SHARED.toTime;
+  if(!iso) return null;
+  return iso+'T'+tv+':'+(tv==='23:59'?'59':'00');
+}
 
 function getShiftDefaults(shift){var s=(shift||'').trim().toLowerCase();if(s==='morning')return{from:todayISO(),fromTime:'08:00',to:todayISO(),toTime:'16:30'};if(s==='night'){var tom=new Date();tom.setDate(tom.getDate()+1);var ty=tom.getFullYear(),tm=('0'+(tom.getMonth()+1)).slice(-2),td=('0'+tom.getDate()).slice(-2);return{from:todayISO(),fromTime:'16:00',to:ty+'-'+tm+'-'+td,toTime:'00:30'};}if(s==='over night')return{from:todayISO(),fromTime:'00:00',to:todayISO(),toTime:'08:30'};return{from:todayISO(),fromTime:'00:00',to:todayISO(),toTime:'23:59'};}
 
-function applyShiftDefaults(shift){var role=SESSION&&SESSION.role;var d=(role==='admin'||role==='sm'||role==='wla')?{from:todayISO(),fromTime:'00:00',to:todayISO(),toTime:'23:59'}:getShiftDefaults(shift);SHARED.from=d.from;SHARED.to=d.to;SHARED.fromTime=d.fromTime;SHARED.toTime=d.toTime;SHARED.syncAll();SHARED.ftIds.forEach(function(id){var el=gid(id);if(el)el.value=d.fromTime;});SHARED.ttIds.forEach(function(id){var el=gid(id);if(el)el.value=d.toTime;})}
+function applyShiftDefaults(shift){var role=SESSION&&SESSION.role;var d=(role==='admin'||role==='sm'||role==='wla')?{from:todayISO(),fromTime:'00:00',to:todayISO(),toTime:'23:59'}:getShiftDefaults(shift);SHARED.from=d.from;SHARED.to=d.to;SHARED.fromTime=d.fromTime;SHARED.toTime=d.toTime;SHARED.syncAll();}
 </script>
 
 <script>
@@ -828,6 +847,10 @@ function showDash(){
   if(hasRole(SESSION.role,ROLES_MANAGE_USERS))document.querySelectorAll('.admin-only').forEach(function(el){el.style.display='';});
   if(!hasRole(SESSION.role,ROLES_VIEW_DATA)){var nd=gid('nav-data');if(nd)nd.style.display='none';}
   if(userSeeOwnOnly()){gid('shiftBannerHomeText').textContent=SESSION.shift;gid('shiftBannerDataText').textContent=SESSION.shift;gid('shiftBannerHome').style.display='flex';gid('shiftBannerData').style.display='flex';}
+  
+  // Show global filter initially
+  var gf = gid('globalFilterBar');
+  if(gf) gf.style.display = 'flex';
 }
 </script>
 
@@ -838,6 +861,12 @@ var PAGES={home:{pg:'pgHome',title:'Home',sub:'Overview & Statistics'},data:{pg:
 function navTo(page){
   if(page==='data'&&SESSION&&!hasRole(SESSION.role,ROLES_VIEW_DATA))return;
   if(page==='users'&&SESSION&&!hasRole(SESSION.role,ROLES_MANAGE_USERS))return;
+  
+  // Toggle Global Filter Bar visibility
+  var pagesWithGlobalFilter = ['home', 'data', 'labelers', 'qtc', 'qtcstats'];
+  var gf = gid('globalFilterBar');
+  if(gf) gf.style.display = pagesWithGlobalFilter.includes(page) ? 'flex' : 'none';
+
   Object.keys(PAGES).forEach(function(k){
     var s=k===page;
     gid(PAGES[k].pg).style.display=s?'block':'none';
@@ -860,7 +889,7 @@ function navTo(page){
 // ══ HOME STATS ══
 function loadStats(){
   if(TOKEN)google.script.run.withSuccessHandler(function(r){if(r&&!r.err&&r.targets)TARGETS=r.targets;}).withFailureHandler(function(){}).getTargets(TOKEN);
-  var from=getFilterISO('fFrom','fFromTime'),to=getFilterISO('fTo','fToTime');
+  var from=getFilterISO(true),to=getFilterISO(false);
   shtml('statsArea','<div class="loading"><div class="spin"></div> Loading stats...</div>');
   google.script.run
     .withSuccessHandler(function(r){
@@ -1058,7 +1087,7 @@ function renderWeekTarget(){var el=gid('homeTargetArea');if(!el)return;var weeks
 <script>
 // ══ DATA PAGE ══
 function loadData(){
-  var from=getFilterISO('dFrom','dFromTime'),to=getFilterISO('dTo','dToTime');
+  var from=getFilterISO(true),to=getFilterISO(false);
   shtml('dataArea','<div class="loading"><div class="spin"></div> Loading data...</div>');
   google.script.run
     .withSuccessHandler(function(r){
@@ -1202,7 +1231,7 @@ function closeDetail(){gid('detailBd').classList.remove('show');}
 <script>
 // ══ LABELERS PAGE ══
 function loadLabelers(){
-  var from=getFilterISO('lFrom','lFromTime'),to=getFilterISO('lTo','lToTime');
+  var from=getFilterISO(true),to=getFilterISO(false);
   shtml('labelersArea','<div class="loading"><div class="spin"></div> Loading...</div>');
   google.script.run
     .withSuccessHandler(function(r){if(r.err){shtml('labelersArea','<div class="empty">'+r.err+'</div>');return;}renderLabelersPage(r.data);})
@@ -1310,7 +1339,7 @@ function renderLabelersPage(data){
   setTimeout(function(){
     renderLabPage('total');
     var pillsEl=document.querySelector('#labPageSortPills');
-    if(pillsEl)pillsEl.addEventListener('click',function(e){var p=e.target.closest('.lab-sort-pill');if(!p)return;var k=p.getAttribute('data-sortkey');if(k)renderLabPage(k);});
+    if(pillsEl){pillsEl.addEventListener('click',function(e){var p=e.target.closest('.lab-sort-pill');if(!p)return;var k=p.getAttribute('data-sortkey');if(k)renderLabPage(k);});}
     document.querySelectorAll('#labPageCard .lab-tab').forEach(function(t){t.addEventListener('click',function(){var sh=t.getAttribute('data-labtab');var ca=document.querySelector('#labPageCard .lab-content-area');if(ca)ca.setAttribute('data-active-sh',sh);document.querySelectorAll('#labPageCard .lab-tab').forEach(function(x){var a=x.getAttribute('data-labtab')===sh;x.style.borderBottomColor=a?'var(--blue)':'transparent';x.style.color=a?'var(--blue)':'var(--gray)';});document.querySelectorAll('#labPageCard .lab-tab-content').forEach(function(c){c.style.display=c.getAttribute('data-labtabcontent')===sh?'block':'none';});setTimeout(function(){renderLabPage(labSortKey);},0);});});
     document.querySelectorAll('.lab-unit-btn').forEach(function(b){b.addEventListener('click',function(){var u=b.getAttribute('data-labunit');if(u==='all'){activeLabUnits.clear();activeLabUnits.add('all');}else{activeLabUnits.delete('all');if(activeLabUnits.has(u)){activeLabUnits.delete(u);if(activeLabUnits.size===0)activeLabUnits.add('all');}else activeLabUnits.add(u);}updateLabUnitBtns();rebuildContent();});});
   },0);
@@ -1320,7 +1349,7 @@ function renderLabelersPage(data){
 <script>
 // ══ QTC PAGE ══
 function loadQtc(){
-  var from=getFilterISO('qFrom','qFromTime'),to=getFilterISO('qTo','qToTime');
+  var from=getFilterISO(true),to=getFilterISO(false);
   shtml('qtcArea','<div class="loading"><div class="spin"></div> Loading...</div>');
   var fn=(SESSION&&SESSION.role==='qtc')?'getQtcStats':'getStats';
   google.script.run.withSuccessHandler(function(r){if(r.err){shtml('qtcArea','<div class="empty">'+r.err+'</div>');return;}renderQtcPage(r.data);}).withFailureHandler(function(e){shtml('qtcArea','<div class="empty">'+e.message+'</div>');})[fn](TOKEN,from,to);
@@ -1339,12 +1368,12 @@ function renderQtcPage(data){
     var rowShift=nShift(r[F.shift]||'');if(rowShift==='Over Shift')return;
     var sh=parseQtcShift(raw),name=cleanQtcName(raw),un=(r[F.unit]||'Unknown').trim();
     var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
-    var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1,isFP=pass==='FP',isQA=pass==='QA';
+    var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;
     var key=raw+'||'+un;
     if(!qtcs[key])qtcs[key]={name:name,shift:sh,unit:un,total:0,lfp:0,lqa:0,lifp:0,liqa:0,laneTotal:0,lidarTotal:0};
     qtcs[key].total++;
-    if(isL&&isFP){qtcs[key].lfp++;qtcs[key].laneTotal++;}if(isL&&isQA){qtcs[key].lqa++;qtcs[key].laneTotal++;}
-    if(isLi&&isFP){qtcs[key].lifp++;qtcs[key].lidarTotal++;}if(isLi&&isQA){qtcs[key].liqa++;qtcs[key].lidarTotal++;}
+    if(isL&&pass==='FP'){qtcs[key].lfp++;qtcs[key].laneTotal++;}if(isL&&pass==='QA'){qtcs[key].lqa++;qtcs[key].laneTotal++;}
+    if(isLi&&pass==='FP'){qtcs[key].lifp++;qtcs[key].lidarTotal++;}if(isLi&&pass==='QA'){qtcs[key].liqa++;qtcs[key].lidarTotal++;}
   });
   var allQtcs=Object.values(qtcs);
   if(!allQtcs.length){shtml('qtcArea','<div class="empty">No QTC records found.</div>');return;}
@@ -1462,8 +1491,7 @@ function wireQtcStatsBtns(){
 function loadQtcStatsFor(teamsName,userName,shift){
   var res=gid('qtcStatsResult');if(!res)return;
   res.innerHTML='<div class="loading"><div class="spin"></div> Loading...</div>';
-  var from=getFilterISO('qsFrom','qsFromTime')||todayISO()+'T00:00:00';
-  var to=getFilterISO('qsTo','qsToTime')||todayISO()+'T23:59:59';
+  var from=getFilterISO(true),to=getFilterISO(false);
   google.script.run
     .withSuccessHandler(function(r){
       if(r.err){res.innerHTML='<div class="empty">'+r.err+'</div>';return;}
@@ -1652,13 +1680,28 @@ window.onload=function(){
   gid('logoutBtn').addEventListener('click',doLogout);
   gid('changePwdBtn').addEventListener('click',openChangePwd);
 
-  // Home filter
-  gid('btnFilter').addEventListener('click',function(){SHARED.from=DP.getVal('fFrom');SHARED.to=DP.getVal('fTo');var ft=gid('fFromTime'),tt=gid('fToTime');SHARED.fromTime=ft?ft.value:'00:00';SHARED.toTime=tt?tt.value:'23:59';SHARED.syncAll();loadStats();});
-  gid('btnClear').addEventListener('click',function(){applyShiftDefaults(SESSION&&SESSION.shift);loadStats();});
+  // Global filter events
+  var btnGFilter=gid('btnGlobalFilter'),btnGClear=gid('btnGlobalClear');
+  if(btnGFilter) btnGFilter.addEventListener('click',function(){
+    SHARED.from=DP.getVal('gFrom');SHARED.to=DP.getVal('gTo');
+    var ft=gid('gFromTime'),tt=gid('gToTime');
+    SHARED.fromTime=ft?ft.value:'00:00';SHARED.toTime=tt?tt.value:'23:59';
+    SHARED.syncAll();SHARED.reloadActive();
+  });
+  if(btnGClear) btnGClear.addEventListener('click',function(){
+    applyShiftDefaults(SESSION&&SESSION.shift);SHARED.reloadActive();
+  });
 
-  // Data filter
-  gid('btnDFilter').addEventListener('click',function(){SHARED.from=DP.getVal('dFrom');SHARED.to=DP.getVal('dTo');var ft=gid('dFromTime'),tt=gid('dToTime');SHARED.fromTime=ft?ft.value:'00:00';SHARED.toTime=tt?tt.value:'23:59';SHARED.syncAll();loadData();});
-  gid('btnDClear').addEventListener('click',function(){applyShiftDefaults(SESSION&&SESSION.shift);loadData();});
+  // Data filter (adv)
+  gid('btnDFilter').addEventListener('click',function(){
+    SHARED.from=DP.getVal('dFrom');SHARED.to=DP.getVal('dTo');
+    var ft=gid('dFromTime'),tt=gid('dToTime');
+    SHARED.fromTime=ft?ft.value:'00:00';SHARED.toTime=tt?tt.value:'23:59';
+    SHARED.syncAll();loadData();
+  });
+  gid('btnDClear').addEventListener('click',function(){
+    applyShiftDefaults(SESSION&&SESSION.shift);loadData();
+  });
 
   // Mod buttons
   document.querySelectorAll('.mod-btn[data-mod]').forEach(function(b){b.addEventListener('click',function(){var mod=b.getAttribute('data-mod');if(mod==='all'){activeModFilters.clear();activeModFilters.add('all');}else{activeModFilters.delete('all');if(activeModFilters.has(mod)){activeModFilters.delete(mod);if(activeModFilters.size===0)activeModFilters.add('all');}else activeModFilters.add(mod);}dataPage=1;updateModBtns();renderDataFiltered();});});
@@ -1666,18 +1709,6 @@ window.onload=function(){
 
   // Shift buttons (data)
   document.querySelectorAll('.data-shift-btn').forEach(function(b){b.addEventListener('click',function(){toggleDataShift(b.getAttribute('data-dshift'));});});
-
-  // Labelers filter
-  gid('btnLFilter').addEventListener('click',function(){SHARED.from=DP.getVal('lFrom');SHARED.to=DP.getVal('lTo');var ft=gid('lFromTime'),tt=gid('lToTime');SHARED.fromTime=ft?ft.value:'00:00';SHARED.toTime=tt?tt.value:'23:59';SHARED.syncAll();loadLabelers();});
-  gid('btnLClear').addEventListener('click',function(){applyShiftDefaults(SESSION&&SESSION.shift);loadLabelers();});
-
-  // QTC filter
-  gid('btnQFilter').addEventListener('click',function(){SHARED.from=DP.getVal('qFrom');SHARED.to=DP.getVal('qTo');var ft=gid('qFromTime'),tt=gid('qToTime');SHARED.fromTime=ft?ft.value:'00:00';SHARED.toTime=tt?tt.value:'23:59';SHARED.syncAll();loadQtc();});
-  gid('btnQClear').addEventListener('click',function(){applyShiftDefaults(SESSION&&SESSION.shift);loadQtc();});
-
-  // QTC Stats filter
-  gid('btnQsFilter').addEventListener('click',function(){SHARED.from=DP.getVal('qsFrom');SHARED.to=DP.getVal('qsTo');var ft=gid('qsFromTime'),tt=gid('qsToTime');SHARED.fromTime=ft?ft.value:'00:00';SHARED.toTime=tt?tt.value:'23:59';SHARED.syncAll();initQtcStats();});
-  gid('btnQsClear').addEventListener('click',function(){applyShiftDefaults(SESSION&&SESSION.shift);initQtcStats();});
 
   // Search
   var si=gid('searchInput'),sf=gid('searchField'),sc=gid('searchClearBtn');
