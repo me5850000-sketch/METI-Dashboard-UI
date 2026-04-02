@@ -1393,7 +1393,28 @@ function renderLabelersPage(data){
   var labShifts=MAIN_SH.filter(function(s){return Object.keys(initLabs).some(function(k){return initLabs[k].shifts[s];});});
   if(!labShifts.length){shtml('labelersArea','<div class="empty">No labeler data found.</div>');return;}
 
-  var html='<div class="tbl-card" id="labPageCard">';
+  // Best per shift banner
+var bestHtml='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">';
+var SH_BEST=['Morning','Night','Over Night'];
+var SH_COLORS={Morning:{bg:'#fff3e0',border:'#e65100',color:'#e65100'},Night:{bg:'#e8eaf6',border:'#283593',color:'#283593'},'Over Night':{bg:'#e8f5e9',border:'#1b5e20',color:'#1b5e20'}};
+SH_BEST.forEach(function(sh){
+  var shLabs=Object.keys(initLabs).filter(function(k){return initLabs[k].shifts[sh]&&initLabs[k].shifts[sh].total>0;});
+  if(!shLabs.length){bestHtml+='<div style="background:#f8f9ff;border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;text-align:center"><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:6px">'+sh+'</div><div style="font-size:12px;color:var(--gray)">No data</div></div>';return;}
+  var best=shLabs.sort(function(a,b){return initLabs[b].shifts[sh].total-initLabs[a].shifts[sh].total;})[0];
+  var bd=initLabs[best].shifts[sh];
+  var sc=SH_COLORS[sh]||{bg:'#e8f0fe',border:'var(--blue)',color:'var(--blue)'};
+  bestHtml+='<div style="background:'+sc.bg+';border:1.5px solid '+sc.border+';border-radius:12px;padding:14px 16px">'
+    +'<div style="font-size:10px;font-weight:800;color:'+sc.color+';text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🏆 '+sh+'</div>'
+    +'<div style="font-size:14px;font-weight:800;color:var(--dark);margin-bottom:6px">'+best+'</div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
+    +'<span style="font-size:11px;font-weight:700;background:rgba(255,255,255,.6);padding:2px 8px;border-radius:6px;color:#1e8e3e">LFP: '+bd.lane.fp+'</span>'
+    +'<span style="font-size:11px;font-weight:700;background:rgba(255,255,255,.6);padding:2px 8px;border-radius:6px;color:#e37400">LQA: '+bd.lane.qa+'</span>'
+    +'<span style="font-size:11px;font-weight:700;background:rgba(255,255,255,.6);padding:2px 8px;border-radius:6px;color:var(--blue)">Total: '+bd.total+'</span>'
+    +'</div></div>';
+});
+bestHtml+='</div>';
+
+var html=bestHtml+'<div class="tbl-card" id="labPageCard">';
   html+='<div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--blue-lt);padding:0 12px 0 0;flex-wrap:wrap;gap:8px"><div style="display:flex;gap:0">';
   labShifts.forEach(function(sh,si){var isF=si===0;html+='<div class="lab-tab'+(isF?' lab-tab-active':'')+'" data-labtab="'+sh+'" style="padding:10px 16px;cursor:pointer;font-size:13px;font-weight:700;border-bottom:'+(isF?'2px solid var(--blue)':'2px solid transparent')+';color:'+(isF?'var(--blue)':'var(--gray)')+';margin-bottom:-2px;transition:all .15s"><span class="badge '+shiftBadge(sh)+'" style="margin-right:4px;font-size:10px">'+sh+'</span></div>';});
   html+='</div><div class="lab-sort-pills" id="labPageSortPills">';
