@@ -611,42 +611,38 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
 // BRIDGE: replaces google.script.run
 // Calls your deployed Apps Script via fetch()
 // ═══════════════════════════════════════════════
+// 1. استبدل جزء الـ BRIDGE في بداية الـ Javascript بهذا الكود الموحد:
 var google = {
   script: {
     run: {
-      _s: null,
-      _f: null,
-      withSuccessHandler: function(cb) {
-        var obj = Object.assign({}, google.script.run);
-        obj._s = cb;
-        return obj;
-      },
-      withFailureHandler: function(cb) {
-        var obj = Object.assign({}, google.script.run);
-        obj._f = cb;
-        return obj;
+      _s: null, _f: null,
+      withSuccessHandler: function(cb) { this._s = cb; return this; },
+      withFailureHandler: function(cb) { this._f = cb; return this; },
+      login: function(id, pwd) { this.execute('login', [id, pwd]); },
+      logout: function(t) { this.execute('logout', [t]); },
+      getStats: function(t, f, to) { this.execute('getStats', [t, f, to]); },
+      getQtcStats: function(t, f, to) { this.execute('getQtcStats', [t, f, to]); },
+      getQtcUsers: function(t) { this.execute('getQtcUsers', [t]); },
+      getUsers: function(t) { this.execute('getUsers', [t]); },
+      upsertUser: function(t, p) { this.execute('upsertUser', [t, p]); },
+      deleteUser: function(t, u) { this.execute('deleteUser', [t, u]); },
+      getAttendance: function(t, d, s) { this.execute('getAttendance', [t, d, s]); },
+      getTargets: function(t) { this.execute('getTargets', [t]); },
+      setTarget: function(t, k, v) { this.execute('setTarget', [t, k, v]); },
+      execute: function(fn, args) {
+        var s = this._s, f = this._f;
+        fetch(APPS_SCRIPT_URL, {
+          method: 'POST',
+          mode: 'cors',
+          body: JSON.stringify({ fn: fn, args: args })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) { if (s) s(data); })
+        .catch(function(e) { console.error(e); if (f) f(e); });
       }
     }
   }
 };
-
-// Add all API functions dynamically
-(function() {
-  var fns = ['login','logout','getStats','getQtcStats','getQtcUsers','getUsers',
-             'upsertUser','deleteUser','getAttendance','getTargets','setTarget'];
-  fns.forEach(function(fn) {
-    google.script.run[fn] = function() {
-      var args = Array.prototype.slice.call(arguments);
-      var s = this._s, f = this._f;
-      fetch(APPS_SCRIPT_URL + '?fn=' + encodeURIComponent(fn) + '&args=' + encodeURIComponent(JSON.stringify(args)), {
-        method: 'GET', mode: 'cors'
-      })
-      .then(function(r) { return r.json(); })
-      .then(function(data) { if (s) s(data); })
-      .catch(function(e) { if (f) f(e); });
-    };
-  });
-})();
 </script>
 
 <script>
@@ -744,18 +740,20 @@ function applyShiftDefaults(shift){var role=SESSION&&SESSION.role;var d=(role===
 <script>
 // ══ AUTH ══
 function doLogin() {
-    // استخدم الـ IDs الحقيقية الموجودة في الـ HTML تحت
+    // التأكد من استخدام الـ IDs الصحيحة الموجودة في الـ HTML بتاعك
     const id = gid('lEmail').value; 
     const pwd = gid('lPass').value; 
     const btn = gid('loginBtn');
+    const errEl = gid('loginErr');
 
     if (!id || !pwd) {
-        showLoginErr('يرجى إدخال الاسم وكلمة المرور');
+        showLoginErr('Please enter name and password');
         return;
     }
 
     btn.textContent = '...';
     btn.disabled = true;
+    if(errEl) errEl.style.display = 'none';
 
     google.script.run
         .withSuccessHandler(function(res) {
@@ -763,6 +761,7 @@ function doLogin() {
             btn.disabled = false;
 
             if (res && res.ok) {
+                // نجاح الدخول
                 SESSION = res.user;
                 TOKEN = res.token;
                 sessionStorage.setItem('dk_tok', TOKEN);
@@ -770,16 +769,17 @@ function doLogin() {
                 
                 hide('loginScreen');
                 show('dashScreen');
-                showDash(); 
-                loadStats();
+                showDash();  // تفعيل شكل الداشبورد
+                loadStats(); // جلب البيانات فوراً
             } else {
-                showLoginErr(res.msg || 'بيانات الدخول غير صحيحة');
+                // بيانات خطأ
+                showLoginErr(res.msg || 'Invalid credentials');
             }
         })
         .withFailureHandler(function(err) {
             btn.textContent = 'Sign In';
             btn.disabled = false;
-            showLoginErr('خطأ في الاتصال بالسيرفر');
+            showLoginErr('Connection failed');
         })
         .login(id, pwd);
 }
