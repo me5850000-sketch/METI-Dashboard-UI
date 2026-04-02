@@ -5,23 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>METI Dashboard</title>
 
-<!-- ══════════════════════════════════════════════════════════
-     IMPORTANT: Before deploying to GitHub Pages, you need to:
-
-     1. Replace APPS_SCRIPT_URL below with your deployed
-        Google Apps Script Web App URL.
-
-        How to deploy:
-        - In Google Apps Script → Deploy → New Deployment
-        - Type: Web app
-        - Execute as: Me
-        - Who has access: Anyone
-        - Copy the Web app URL and paste it below.
-
-     2. That's it! The HTML file talks to your existing
-        Apps Script backend via fetch() calls.
-══════════════════════════════════════════════════════════ -->
-
 <script>
   // ★ EDIT THIS LINE ONLY ★
   var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx1ULOosEGPVHuj0VFdKXnRFfksevvNdDZjA6q18omMSDbcSEC9wRvYIk7TyzX6VI3f/exec";
@@ -288,16 +271,37 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
   .cards{grid-template-columns:repeat(2,1fr)!important;gap:12px!important}.grid2{grid-template-columns:1fr!important}
   .target-cards{grid-template-columns:1fr 1fr;gap:14px}.modal{width:500px!important}.modal-wide{width:90%!important}
 }
+
+/* ══ ADVANCED FILTERS ══ */
+.adv-filters-wrap {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
+  opacity: 0;
+}
+.adv-filters-wrap.show {
+  max-height: 500px;
+  opacity: 1;
+}
+.filter-lbl {
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--gray);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  width: 50px;
+  display: inline-block;
+}
+body.dark .filter-lbl { color: #9aa0b4; }
+body.dark #searchField, body.dark #searchInput { background: #1e2130 !important; color: #e8eaf0 !important; border-color: #2d3250 !important; }
 </style>
 </head>
 <body>
 
-<!-- CONFIG NOTICE -->
 <div class="config-notice" id="configNotice">
   ⚠️ يجب تعيين <strong>APPS_SCRIPT_URL</strong> أولاً — اقرأ التعليمات في أعلى الكود
 </div>
 
-<!-- LOGIN -->
 <div id="loginScreen">
   <div class="login-screen">
     <div class="login-box">
@@ -324,16 +328,13 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
             </button>
           </div>
         </div>
-     <div id="loginErr" style="background: #fce8e6; color: #c5221f; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px; display: none; text-align: center;"></div>
-
-<button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+      <div id="loginErr" style="background: #fce8e6; color: #c5221f; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px; display: none; text-align: center;"></div>
+      <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
       </div>
-      <div class="login-err" id="loginErr"></div>
     </div>
   </div>
 </div>
 
-<!-- DASHBOARD -->
 <div id="dashScreen" style="display:none">
   <div class="dash">
     <div class="sidebar">
@@ -394,7 +395,6 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
       </div>
 
       <div class="content">
-        <!-- HOME -->
         <div id="pgHome">
           <div id="shiftBannerHome" style="display:none" class="shift-banner">Showing data for your shift: <strong id="shiftBannerHomeText"></strong></div>
           <div class="filter-bar">
@@ -410,51 +410,61 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
           <div id="statsArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
         </div>
 
-        <!-- DATA -->
         <div id="pgData" style="display:none">
-          <div id="shiftBannerData" style="display:none" class="shift-banner">Showing data for your shift: <strong id="shiftBannerDataText"></strong></div>
-          <div class="filter-bar">
-            <label>From</label>
-            <div class="dp-wrap" id="dpWrap-dFrom"><input type="text" class="dp-input" id="dFrom" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
-            <select class="fb-time" id="dFromTime"></select>
-            <label>To</label>
-            <div class="dp-wrap" id="dpWrap-dTo"><input type="text" class="dp-input" id="dTo" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
-            <select class="fb-time" id="dToTime"></select>
-            <button class="fbtn fbtn-primary" id="btnDFilter">Filter</button>
-            <button class="fbtn fbtn-ghost" id="btnDClear">✕ Clear</button>
-            <div style="width:100%;display:flex;gap:6px;flex-wrap:wrap;margin-top:6px" id="modBtns">
-              <button class="mod-btn" data-mod="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>
-              <button class="mod-btn" data-mod="lane">Lane</button><button class="mod-btn" data-mod="lidar">Lidar</button>
-              <button class="mod-btn" data-mod="lane_fp">Lane FP</button><button class="mod-btn" data-mod="lane_qa">Lane QA</button>
-              <button class="mod-btn" data-mod="lidar_fp">Lidar FP</button><button class="mod-btn" data-mod="lidar_qa">Lidar QA</button>
-            </div>
-            <div style="width:100%;display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px" id="unitBtns">
-              <span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Unit</span>
-              <button class="mod-btn data-unit-btn" data-dunit="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>
-            </div>
-            <div style="width:100%;display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:6px" id="shiftBtns">
-              <span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Shift</span>
-              <button class="mod-btn data-shift-btn" data-dshift="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>
-              <button class="mod-btn data-shift-btn" data-dshift="Morning">Morning</button>
-              <button class="mod-btn data-shift-btn" data-dshift="Night">Night</button>
-              <button class="mod-btn data-shift-btn" data-dshift="Over Night">Over Night</button>
-              <button class="mod-btn data-shift-btn" data-dshift="Over Shift">Over Shift</button>
-            </div>
-            <div style="width:100%;display:flex;align-items:center;gap:8px;margin-top:8px">
-              <select id="searchField" style="padding:7px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;font-weight:700;color:var(--dark);background:#fff;outline:none;cursor:pointer;min-width:120px">
+          <div id="dataStatsBar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:10px 14px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);font-size:12px;font-weight:700;display:none;"></div>
+
+          <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
+            <div style="flex:1; min-width:250px; display:flex; background:white; border:1px solid var(--border); border-radius:8px; overflow:hidden; box-shadow:var(--shadow)">
+              <select id="searchField" style="border:none; background:#f8f9ff; padding:8px 12px; font-size:13px; font-weight:700; color:var(--blue); outline:none; border-right:1px solid var(--border); cursor:pointer;">
                 <option value="labeler">Labeler</option><option value="queue">Queue</option><option value="unit">Unit</option>
                 <option value="qtc">QTC</option><option value="ubkey">Yubikey</option><option value="taskid">Task ID</option>
               </select>
-              <div style="flex:1;position:relative">
-                <input type="text" id="searchInput" placeholder="Search..." autocomplete="off" style="width:100%;padding:7px 34px 7px 12px;border:1.5px solid var(--border);border-radius:7px;font-size:13px;outline:none;color:var(--dark)">
-                <button id="searchClearBtn" style="position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;font-size:16px;color:var(--gray);cursor:pointer;display:none;padding:0;line-height:1">✕</button>
+              <input type="text" id="searchInput" placeholder="Search data..." autocomplete="off" style="flex:1; border:none; padding:8px 12px; font-size:13px; outline:none; color:var(--dark);">
+              <button id="searchClearBtn" style="background:none; border:none; padding:0 12px; color:var(--gray); cursor:pointer; display:none;">✕</button>
+            </div>
+            <button onclick="document.getElementById('advFilters').classList.toggle('show')" style="background:var(--blue); color:white; border:none; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; box-shadow:var(--shadow); display:flex; align-items:center; gap:6px;">
+              ⚙️ Filters
+            </button>
+          </div>
+
+          <div id="advFilters" class="adv-filters-wrap">
+            <div class="filter-bar" style="margin-bottom:12px;">
+              <div style="width:100%; display:flex; flex-wrap:wrap; gap:10px; align-items:center; margin-bottom:12px; padding-bottom:12px; border-bottom:1px solid var(--gray-lt);">
+                <label>From</label>
+                <div class="dp-wrap" id="dpWrap-dFrom"><input type="text" class="dp-input" id="dFrom" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
+                <select class="fb-time" id="dFromTime"></select>
+                <label>To</label>
+                <div class="dp-wrap" id="dpWrap-dTo"><input type="text" class="dp-input" id="dTo" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
+                <select class="fb-time" id="dToTime"></select>
+                <button class="fbtn fbtn-primary" id="btnDFilter">Apply Date</button>
+                <button class="fbtn fbtn-ghost" id="btnDClear">Clear</button>
+              </div>
+
+              <div style="width:100%;display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px" id="modBtns">
+                <span class="filter-lbl">Type:</span>
+                <button class="mod-btn" data-mod="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>
+                <button class="mod-btn" data-mod="lane">Lane</button><button class="mod-btn" data-mod="lidar">Lidar</button>
+                <button class="mod-btn" data-mod="lane_fp">Lane FP</button><button class="mod-btn" data-mod="lane_qa">Lane QA</button>
+                <button class="mod-btn" data-mod="lidar_fp">Lidar FP</button><button class="mod-btn" data-mod="lidar_qa">Lidar QA</button>
+              </div>
+              <div style="width:100%;display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:8px" id="unitBtns">
+                <span class="filter-lbl">Unit:</span>
+                <button class="mod-btn data-unit-btn" data-dunit="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>
+              </div>
+              <div style="width:100%;display:flex;align-items:center;gap:6px;flex-wrap:wrap;" id="shiftBtns">
+                <span class="filter-lbl">Shift:</span>
+                <button class="mod-btn data-shift-btn" data-dshift="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>
+                <button class="mod-btn data-shift-btn" data-dshift="Morning">Morning</button>
+                <button class="mod-btn data-shift-btn" data-dshift="Night">Night</button>
+                <button class="mod-btn data-shift-btn" data-dshift="Over Night">Over Night</button>
+                <button class="mod-btn data-shift-btn" data-dshift="Over Shift">Over Shift</button>
               </div>
             </div>
           </div>
-          <div id="dataArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
+
+          <div id="dataArea"><div class="loading"><div class="spin"></div> Loading data...</div></div>
         </div>
 
-        <!-- TOP LABELERS -->
         <div id="pgLabelers" style="display:none">
           <div class="filter-bar">
             <label>From</label>
@@ -469,7 +479,6 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
           <div id="labelersArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
         </div>
 
-        <!-- TOP QTC -->
         <div id="pgQtc" style="display:none">
           <div class="filter-bar">
             <label>From</label>
@@ -484,7 +493,6 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
           <div id="qtcArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
         </div>
 
-        <!-- QTC STATS -->
         <div id="pgQtcStats" style="display:none">
           <div class="filter-bar">
             <label>From</label>
@@ -499,7 +507,6 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
           <div id="qtcStatsArea"><div class="empty">Select a QTC to see their stats.</div></div>
         </div>
 
-        <!-- ATTENDANCE -->
         <div id="pgAttendance" style="display:none">
           <div class="filter-bar">
             <label>Date</label>
@@ -515,7 +522,6 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
           <div id="attendanceArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
         </div>
 
-        <!-- DETAILS OF ATTENDANCE -->
         <div id="pgAttDetails" style="display:none">
           <div class="filter-bar">
             <label>Date</label>
@@ -531,7 +537,6 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
           <div id="attDetailsArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
         </div>
 
-        <!-- USERS -->
         <div id="pgUsers" style="display:none">
           <div class="sec-toolbar">
             <div class="sec-hdr" style="margin:0;flex:1">All Dashboard Users</div>
@@ -554,7 +559,6 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
   </div>
 </div>
 
-<!-- MODALS -->
 <div class="modal-backdrop" id="modalBd">
   <div class="modal">
     <div class="modal-hdr"><h3 id="modalTitle">Add User</h3><button class="modal-close" id="modalCloseBtn">✕</button></div>
@@ -603,21 +607,11 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
 
 <div class="toast" id="toast"></div>
 
-<!-- ══════════════════════════════════════════════════════════
-     JAVASCRIPT
-══════════════════════════════════════════════════════════ -->
 <script>
 // ═══════════════════════════════════════════════
 // BRIDGE: replaces google.script.run
 // Calls your deployed Apps Script via fetch()
 // ═══════════════════════════════════════════════
-// 1. استبدل جزء الـ BRIDGE في بداية الـ Javascript بهذا الكود الموحد:
-// ═══════════════════════════════════════════════
-// BRIDGE: replaces google.script.run
-// Calls your deployed Apps Script via fetch()
-// ═══════════════════════════════════════════════
-var APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx1ULOosEGPVHuj0VFdKXnRFfksevvNdDZjA6q18omMSDbcSEC9wRvYIk7TyzX6VI3f/exec";
-
 var google = {
   script: {
     run: {
@@ -635,7 +629,6 @@ var google = {
         .then(data => { if (s) s(data); })
         .catch(e => { console.error(e); if (f) f(e); });
       },
-      // هنا ضفنا كل الوظائف الناقصة عشان الموقع ميضربش إيرور
       login: function(id, pwd) { this.execute('login', [id, pwd]); },
       logout: function(t) { this.execute('logout', [t]); },
       getStats: function(t, f, to) { this.execute('getStats', [t, f, to]); },
@@ -747,7 +740,6 @@ function applyShiftDefaults(shift){var role=SESSION&&SESSION.role;var d=(role===
 <script>
 // ══ AUTH ══
 function doLogin() {
-    // التأكد من استخدام الـ IDs الصحيحة الموجودة في الـ HTML بتاعك
     const id = gid('lEmail').value; 
     const pwd = gid('lPass').value; 
     const btn = gid('loginBtn');
@@ -768,7 +760,6 @@ function doLogin() {
             btn.disabled = false;
 
             if (res && res.ok) {
-                // نجاح الدخول
                 SESSION = res.user;
                 TOKEN = res.token;
                 sessionStorage.setItem('dk_tok', TOKEN);
@@ -776,10 +767,9 @@ function doLogin() {
                 
                 hide('loginScreen');
                 show('dashScreen');
-                showDash();  // تفعيل شكل الداشبورد
-                loadStats(); // جلب البيانات فوراً
+                showDash();  
+                loadStats(); 
             } else {
-                // بيانات خطأ
                 showLoginErr(res.msg || 'Invalid credentials');
             }
         })
@@ -791,46 +781,37 @@ function doLogin() {
         .login(id, pwd);
 }
 
-// وظيفة لإظهار الخطأ تحت الخانات
 function showLoginErr(msg) {
-    const errEl = gid('loginErr'); // تأكد من وجود عنصر بهذا الـ ID في الـ HTML
+    const errEl = gid('loginErr'); 
     if (errEl) {
         errEl.textContent = msg;
         errEl.style.display = 'block';
     } else {
-        alert(msg); // حل احتياطي إذا لم يوجد عنصر نصي
+        alert(msg); 
     }
 }
 
 function doLogout() {
-  // 1. مسح البيانات من ذاكرة المتصفح فوراً (أهم خطوة)
   sessionStorage.clear();
-  localStorage.removeItem('meti_token'); // لو كنت بتستخدمها
+  localStorage.removeItem('meti_token'); 
   
-  // 2. إعادة ضبط المتغيرات العالمية
   SESSION = null;
   TOKEN = null;
   cachedStats = null;
 
-  // 3. تغيير الواجهة فوراً لشاشة اللوجن
   document.getElementById('dashScreen').style.display = 'none';
   document.getElementById('loginScreen').style.display = 'flex';
   
-  // 4. مسح خانة الباسورد لزيادة الأمان
   if (document.getElementById('lPass')) document.getElementById('lPass').value = '';
 
-  // 5. محاولة إبلاغ السيرفر (اختياري، لن يعطل الخروج لو فشل)
   if (TOKEN) {
     google.script.run
       .withSuccessHandler(function() { console.log("Server session cleared"); })
       .logout(TOKEN);
   }
   
-  // تنبيه بسيط
   toast("Signed out successfully", "ok");
 }
-
-function showLoginErr(m){var el=gid('loginErr');el.textContent=m;el.style.display='block';}
 
 function showDash(){
   hide('loginScreen');gid('dashScreen').style.display='block';
@@ -1119,15 +1100,20 @@ function renderDataFiltered(){
   var s=(dataPage-1)*PAGE_SZ,e2=Math.min(s+PAGE_SZ,filtered.length);
   var pg=filtered.slice(s,e2),tp=Math.ceil(filtered.length/PAGE_SZ)||1;
 
-  var html='<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:14px;padding:12px 16px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow)">';
-  html+='<span style="font-size:12px;font-weight:700;color:var(--gray)">'+filtered.length+' records</span><span style="color:var(--border)">|</span>';
-  if(lf>0)html+='<span style="font-size:13px;font-weight:800;color:#1e8e3e;background:#e8f5e9;padding:3px 10px;border-radius:8px">LFP: '+lf+'</span>';
-  if(lq>0)html+='<span style="font-size:13px;font-weight:800;color:#e37400;background:#fff3cd;padding:3px 10px;border-radius:8px">LQA: '+lq+'</span>';
-  if(lif>0)html+='<span style="font-size:13px;font-weight:800;color:#007b83;background:#e0f7fa;padding:3px 10px;border-radius:8px">LiFP: '+lif+'</span>';
-  if(liq>0)html+='<span style="font-size:13px;font-weight:800;color:#7b1fa2;background:#f3e5f5;padding:3px 10px;border-radius:8px">LiQA: '+liq+'</span>';
-  if(lf+lq+lif+liq>0)html+='<span style="font-size:13px;font-weight:800;color:var(--blue);background:var(--blue-bg);padding:3px 10px;border-radius:8px">Total: '+(lf+lq+lif+liq)+'</span>';
-  html+='</div>';
-  html+='<div class="tbl-card"><table><thead><tr><th>#</th><th class="left">Labeler</th><th>Shift</th><th>Unit</th><th>Modality</th><th>Pass</th><th>QTC</th><th>PC</th><th>Yubikey</th><th>Task ID</th><th>Queue</th><th>Obj</th><th>Date</th><th>Time</th></tr></thead><tbody>';
+  var statsBar = gid('dataStatsBar');
+  if(statsBar) {
+    var stHtml = '<span style="color:var(--gray)">'+filtered.length+' records</span><span style="color:var(--border)">|</span>';
+    if(lf>0) stHtml+='<span style="color:#1e8e3e;background:#e8f5e9;padding:2px 8px;border-radius:6px">LFP: '+lf+'</span>';
+    if(lq>0) stHtml+='<span style="color:#e37400;background:#fff3cd;padding:2px 8px;border-radius:6px">LQA: '+lq+'</span>';
+    if(lif>0) stHtml+='<span style="color:#007b83;background:#e0f7fa;padding:2px 8px;border-radius:6px">LiFP: '+lif+'</span>';
+    if(liq>0) stHtml+='<span style="color:#7b1fa2;background:#f3e5f5;padding:2px 8px;border-radius:6px">LiQA: '+liq+'</span>';
+    if(lf+lq+lif+liq>0) stHtml+='<span style="color:var(--blue);background:var(--blue-bg);padding:2px 8px;border-radius:6px;font-weight:800">Total: '+(lf+lq+lif+liq)+'</span>';
+    statsBar.innerHTML = stHtml;
+    statsBar.style.display = 'flex';
+  }
+
+  var html='<div class="tbl-card"><table><thead><tr><th>#</th><th class="left">Labeler</th><th>Shift</th><th>Unit</th><th>Modality</th><th>Pass</th><th>QTC</th><th>PC</th><th>Yubikey</th><th>Task ID</th><th>Queue</th><th>Obj</th><th>Date</th><th>Time</th></tr></thead><tbody>';
+  
   if(!pg.length){html+='<tr><td colspan="14" class="empty">No records</td></tr>';}
   else{
     pg.forEach(function(r,i){
@@ -1160,9 +1146,18 @@ function renderDataFiltered(){
   html+='</tbody></table><div class="pagination"><button class="pg-btn" id="pgPrev" '+(dataPage<=1?'disabled':'')+'>Prev</button><span class="pg-info">Page '+dataPage+' / '+tp+' · '+filtered.length+'</span><button class="pg-btn" id="pgNext" '+(dataPage>=tp?'disabled':'')+'>Next</button></div></div>';
   shtml('dataArea',html);
 
-  if(gid('pgPrev'))gid('pgPrev').addEventListener('click',function(){dataPage--;renderDataFiltered();});
-  if(gid('pgNext'))gid('pgNext').addEventListener('click',function(){dataPage++;renderDataFiltered();});
-  gid('dataArea').addEventListener('click',function(e){var row=e.target.closest('tr.data-row');if(!row)return;var idx=parseInt(row.getAttribute('data-ridx'));var rec=getFilteredData()[idx];if(rec)openDetail(rec);});
+  var dp=gid('pgPrev'),dn=gid('pgNext'),da=gid('dataArea');
+  if(dp){var pdp=dp.cloneNode(true);dp.parentNode.replaceChild(pdp,dp);pdp.addEventListener('click',function(){dataPage--;renderDataFiltered();});}
+  if(dn){var pdn=dn.cloneNode(true);dn.parentNode.replaceChild(pdn,dn);pdn.addEventListener('click',function(){dataPage++;renderDataFiltered();});}
+  
+  if(!da._clickWired) {
+    da.addEventListener('click',function(e){
+      var row=e.target.closest('tr.data-row');if(!row)return;
+      var idx=parseInt(row.getAttribute('data-ridx'));
+      var rec=getFilteredData()[idx];if(rec)openDetail(rec);
+    });
+    da._clickWired = true;
+  }
 }
 </script>
 
