@@ -1175,7 +1175,62 @@ function loadData(){
 }
 
 function toggleDataShift(s){if(s==='all'){activeDataShifts.clear();activeDataShifts.add('all');}else{activeDataShifts.delete('all');if(activeDataShifts.has(s)){activeDataShifts.delete(s);if(activeDataShifts.size===0)activeDataShifts.add('all');}else activeDataShifts.add(s);}dataPage=1;renderDataFiltered();}
-function toggleDataUnit(u){if(u==='all'){activeDataUnits.clear();activeDataUnits.add('all');}else{activeDataUnits.delete('all');if(activeDataUnits.has(u)){activeDataUnits.delete(u);if(activeDataUnits.size===0)activeDataUnits.add('all');}else activeDataUnits.add(u);}dataPage=1;renderDataFiltered();}
+// 1. وظيفة تبديل الوحدات (Unit)
+function toggleDataUnit(u) {
+  if (u === 'all') {
+    activeDataUnits.clear();
+    activeDataUnits.add('all');
+  } else {
+    activeDataUnits.delete('all');
+    if (activeDataUnits.has(u)) {
+      activeDataUnits.delete(u);
+    } else {
+      activeDataUnits.add(u);
+    }
+    // لو مفيش أي حاجة مختارة، ارجع لـ All تلقائياً
+    if (activeDataUnits.size === 0) activeDataUnits.add('all');
+  }
+  dataPage = 1;
+  renderDataFiltered();
+}
+
+// 2. وظيفة تبديل الشفتات (Shift)
+function toggleDataShift(s) {
+  if (s === 'all') {
+    activeDataShifts.clear();
+    activeDataShifts.add('all');
+  } else {
+    activeDataShifts.delete('all');
+    if (activeDataShifts.has(s)) {
+      activeDataShifts.delete(s);
+    } else {
+      activeDataShifts.add(s);
+    }
+    if (activeDataShifts.size === 0) activeDataShifts.add('all');
+  }
+  dataPage = 1;
+  renderDataFiltered();
+}
+
+// 3. تحديث أزرار النوع (Type/Modality) - ابحث عن السطر ده في window.onload وعدله
+// الجزء ده يتغير جوه الـ window.onload عند الـ modBtns
+document.querySelectorAll('.mod-btn[data-mod]').forEach(function(b){
+  b.addEventListener('click',function(){
+    var mod = b.getAttribute('data-mod');
+    if(mod === 'all'){
+      activeModFilters.clear();
+      activeModFilters.add('all');
+    } else {
+      activeModFilters.delete('all');
+      if(activeModFilters.has(mod)) activeModFilters.delete(mod);
+      else activeModFilters.add(mod);
+      if(activeModFilters.size === 0) activeModFilters.add('all');
+    }
+    dataPage = 1;
+    updateModBtns();
+    renderDataFiltered();
+  });
+});
 function updateModBtns(){document.querySelectorAll('.mod-btn').forEach(function(b){var mod=b.getAttribute('data-mod'),act=mod&&activeModFilters.has(mod);if(mod){b.style.background=act?MOD_COLORS[mod].bg:'white';b.style.color=act?'white':'var(--gray)';b.style.borderColor=act?MOD_COLORS[mod].border:'var(--border)';}});}
 
 function getFilteredData(){
@@ -1197,8 +1252,22 @@ function renderDataFiltered(){
     unitsInData.sort(function(a,b){var ai=ROOM_ORD.indexOf(a),bi=ROOM_ORD.indexOf(b);if(ai===-1&&bi===-1)return a.localeCompare(b);if(ai===-1)return 1;if(bi===-1)return -1;return ai-bi;});
     var existing=unitBar.querySelectorAll('.data-unit-btn[data-dunit]:not([data-dunit="all"])');
     if(existing.length!==unitsInData.length){existing.forEach(function(b){b.remove();});unitsInData.forEach(function(u){var b=document.createElement('button');b.className='mod-btn data-unit-btn';b.setAttribute('data-dunit',u);b.textContent=u;unitBar.appendChild(b);b.addEventListener('click',function(){toggleDataUnit(u);});});}
-    unitBar.querySelectorAll('.data-unit-btn').forEach(function(b){var u=b.getAttribute('data-dunit'),act=activeDataUnits.has(u)||(u==='all'&&activeDataUnits.has('all'));b.style.background=act?'var(--blue)':'white';b.style.color=act?'white':'var(--gray)';b.style.borderColor=act?'var(--blue)':'var(--border)';});
-  }
+    unitBar.querySelectorAll('.data-unit-btn').forEach(function(b){
+  var u = b.getAttribute('data-dunit');
+  var act = activeDataUnits.has(u);
+  b.style.background = act ? 'var(--blue)' : 'white';
+  b.style.color = act ? 'white' : 'var(--gray)';
+  b.style.borderColor = act ? 'var(--blue)' : 'var(--border)';
+});
+
+// تحديث ألوان الشفتات
+shiftBar.querySelectorAll('.data-shift-btn').forEach(function(b){
+  var s = b.getAttribute('data-dshift');
+  var act = activeDataShifts.has(s);
+  b.style.background = act ? 'var(--blue)' : 'white';
+  b.style.color = act ? 'white' : 'var(--gray)';
+  b.style.borderColor = act ? 'var(--blue)' : 'var(--border)';
+});
   var shiftBar=gid('shiftBtns');
   if(shiftBar){shiftBar.querySelectorAll('.data-shift-btn').forEach(function(b){var s=b.getAttribute('data-dshift'),act=activeDataShifts.has(s)||(s==='all'&&activeDataShifts.has('all'));b.style.background=act?'var(--blue)':'white';b.style.color=act?'white':'var(--gray)';b.style.borderColor=act?'var(--blue)':'var(--border)';});}
 
