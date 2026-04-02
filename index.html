@@ -324,7 +324,9 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
             </button>
           </div>
         </div>
-        <button class="login-btn" id="loginBtn">Sign In</button>
+     <div id="loginErr" style="background: #fce8e6; color: #c5221f; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px; display: none; text-align: center;"></div>
+
+<button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
       </div>
       <div class="login-err" id="loginErr"></div>
     </div>
