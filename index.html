@@ -1397,7 +1397,7 @@ function renderLabelersPage(data){
       var sd=initLabs[k].shifts[sh];
       var topUnit=Object.keys(initLabs[k].units).sort(function(a,b){return initLabs[k].units[b]-initLabs[k].units[a];})[0]||'';
       var topPc=Object.keys(initLabs[k].pcs).sort(function(a,b){return initLabs[k].pcs[b]-initLabs[k].pcs[a];})[0]||'';
-      return{name:k,total:sd.total,lfp:sd.lane.fp,lqa:sd.lane.qa,lifp:sd.lidar.fp,liqa:sd.lidar.qa,laneTotal:sd.lane.fp+sd.lane.qa,lidarTotal:sd.lidar.fp+sd.lidar.qa,unit:topUnit,pc:topPc};
+      return{name:k,total:sd.total,lfp:sd.lane.fp,lqa:sd.lane.qa,lifp:sd.lidar.fp,liqa:sd.lidar.qa,laneTotal:sd.lane.fp+sd.lane.qa,lidarTotal:sd.lidar.fp+sd.lidar.qa,unit:topUnit,pc:topPc,shift:sh};
     });
     html+='<div class="lab-tab-content" data-labtabcontent="'+sh+'" data-labs="'+encodeURIComponent(JSON.stringify(shLabs))+'" style="display:'+(isF?'block':'none')+'"><div class="lab-list-wrap"></div></div>';
   });
@@ -1418,7 +1418,7 @@ function renderLabelersPage(data){
       var sd=labelers[k].shifts[sh];
       var topUnit=Object.keys(labelers[k].units).sort(function(a,b){return labelers[k].units[b]-labelers[k].units[a];})[0]||'';
       var topPc=Object.keys(labelers[k].pcs).sort(function(a,b){return labelers[k].pcs[b]-labelers[k].pcs[a];})[0]||'';
-      return{name:k,total:sd.total,lfp:sd.lane.fp,lqa:sd.lane.qa,lifp:sd.lidar.fp,liqa:sd.lidar.qa,laneTotal:sd.lane.fp+sd.lane.qa,lidarTotal:sd.lidar.fp+sd.lidar.qa,unit:topUnit,pc:topPc};
+      return{name:k,total:sd.total,lfp:sd.lane.fp,lqa:sd.lane.qa,lifp:sd.lidar.fp,liqa:sd.lidar.qa,laneTotal:sd.lane.fp+sd.lane.qa,lidarTotal:sd.lidar.fp+sd.lidar.qa,unit:topUnit,pc:topPc,shift:sh};
     });
       h+='<div class="lab-tab-content" data-labtabcontent="'+sh+'" data-labs="'+encodeURIComponent(JSON.stringify(shLabs))+'" style="display:'+(isF?'block':'none')+'"><div class="lab-list-wrap"></div></div>';
     });
@@ -1454,6 +1454,7 @@ function renderLabelersPage(data){
         +'<div style="display:flex;gap:5px;margin-bottom:4px;flex-wrap:wrap">'
         +(lb.unit?'<span style="font-size:10px;font-weight:700;background:var(--blue-bg);color:var(--blue);padding:2px 7px;border-radius:5px;border:1px solid var(--blue-lt)">📍 '+lb.unit+'</span>':'')
         +(lb.pc&&lb.pc!=='-'?'<span style="font-size:10px;font-weight:700;background:#f0faf3;color:#1e8e3e;padding:2px 7px;border-radius:5px;border:1px solid #c3e6cb">🖥 PC '+lb.pc+'</span>':'')
+        +(lb.shift?'<span class="badge '+shiftBadge(lb.shift)+'" style="font-size:10px;padding:2px 7px">'+lb.shift+'</span>':'')
         +'</div>'
         +'<div style="height:5px;border-radius:3px;background:var(--blue-lt);overflow:hidden;display:flex"><div style="width:'+lw+'%;background:var(--green);transition:width .4s"></div><div style="width:'+liw+'%;background:var(--teal);transition:width .4s"></div></div></div>';
       subCols.forEach(function(k){h+=cell(lb[k],k);});
