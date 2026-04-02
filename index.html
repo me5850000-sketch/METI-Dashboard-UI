@@ -699,8 +699,8 @@ var DP={
   getVal:function(id){return DP.vals[id]||'';},
   onChange:function(id){
     var fi=['gFrom'],ti=['gTo'];
-    if(fi.indexOf(id)!==-1){SHARED.from=DP.vals[id];SHARED.syncAll();}
-    if(ti.indexOf(id)!==-1){SHARED.to=DP.vals[id];SHARED.syncAll();}
+    if(fi.indexOf(id)!==-1){SHARED.from=DP.vals[id];SHARED.syncAll();if(SESSION)SHARED.reloadActive();}
+    if(ti.indexOf(id)!==-1){SHARED.to=DP.vals[id];SHARED.syncAll();if(SESSION)SHARED.reloadActive();}
     if(id==='attDate'&&SESSION&&TOKEN){loadAttendance();return;}
     if(id==='attDate2'&&SESSION&&TOKEN){loadAttDetails();return;}
   },
@@ -745,6 +745,7 @@ function buildTimeSelects(){
       if(id === 'gFromTime') SHARED.fromTime = el.value;
       else SHARED.toTime = el.value;
       SHARED.syncAll();
+      if(SESSION)SHARED.reloadActive(); // 🔴 السطر ده هو اللي بيعمل التحديث التلقائي للوقت
     });
   });
 }
