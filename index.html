@@ -954,10 +954,42 @@ function renderStats(data, user){
   var sortedSH=SH_ORD.filter(function(s){return!!shifts[s];});
   
   html+='<div><div class="sec-hdr">By Shift '+(activeRFilter?'— '+activeRFilter:'')+'</div><div class="tbl-card"><table><thead><tr><th class="left">Shift</th><th>L-FP</th><th>L-QA</th><th>Li-FP</th><th>Li-QA</th><th>Total</th></tr></thead><tbody>';
-  var shT={lfp:0,lqa:0,lifp:0,liqa:0,t:0};
+ var shT={lfp:0,lqa:0,lifp:0,liqa:0,t:0};
+  var SH_ROOM_ORD=['NC Room 102','NC Room 106','NC Room 108','4th Floor','2nd Floor'];
   sortedSH.forEach(function(s){
     var d=shifts[s],ia=activeSFilter===s;
-    html+='<tr class="clickable'+(ia?' row-active':'')+'" data-ftype="sft" data-fval="'+s+'"><td class="left"><span class="badge '+shiftBadge(s)+'">'+s+'</span></td><td>'+d.lane.fp+'</td><td>'+d.lane.qa+'</td><td>'+d.lidar.fp+'</td><td>'+d.lidar.qa+'</td><td class="bold">'+d.total+'</td></tr>';
+    html+='<tr class="clickable'+(ia?' row-active':'')+'" data-ftype="sft" data-fval="'+s+'" style="cursor:pointer"><td class="left"><span class="badge '+shiftBadge(s)+'">'+s+'</span></td><td>'+d.lane.fp+'</td><td>'+d.lane.qa+'</td><td>'+d.lidar.fp+'</td><td>'+d.lidar.qa+'</td><td class="bold">'+d.total+' <span style="font-size:10px;color:'+(ia?'var(--blue)':'#ccc')+'">'+(ia?'▲':'▼')+'</span></td></tr>';
+    if(ia){
+      var su={};
+      data.forEach(function(r){
+        if(activeRFilter&&(r[F.unit]||'').trim()!==activeRFilter)return;
+        if(nShift(r[F.shift]||'')!==s)return;
+        var un=(r[F.unit]||'Unknown').trim(),mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
+        var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;
+        if(!su[un])su[un]={lane:{fp:0,qa:0},lidar:{fp:0,qa:0},total:0};
+        su[un].total++;
+        if(isL&&pass==='FP')su[un].lane.fp++;if(isL&&pass==='QA')su[un].lane.qa++;
+        if(isLi&&pass==='FP')su[un].lidar.fp++;if(isLi&&pass==='QA')su[un].lidar.qa++;
+      });
+      var sU=SH_ROOM_ORD.filter(function(u){return!!su[u];});
+      Object.keys(su).forEach(function(u){if(sU.indexOf(u)===-1)sU.push(u);});
+      var mxT=sU.reduce(function(m,u){return Math.max(m,su[u].total);},1);
+      html+='<tr><td colspan="6" style="padding:0;background:var(--blue-bg)"><div style="padding:10px 16px"><div style="font-size:10px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">📍 Unit Breakdown — '+s+'</div><table style="width:100%;border-collapse:collapse"><tbody>';
+      sU.forEach(function(u){
+        var ud=su[u],pct=Math.round(ud.total/mxT*100);
+        html+='<tr style="border-bottom:1px solid rgba(28,69,135,.06)">'
+          +'<td style="text-align:left;padding:6px 10px;font-size:12px;font-weight:700;min-width:130px">'+u
+          +'<div style="height:3px;background:#c9daf8;border-radius:2px;margin-top:3px"><div style="height:100%;width:'+pct+'%;background:var(--blue);border-radius:2px"></div></div>'
+          +'</td>'
+          +'<td style="padding:6px 10px;text-align:center;font-size:12px;font-weight:700;color:#1e8e3e">'+ud.lane.fp+'</td>'
+          +'<td style="padding:6px 10px;text-align:center;font-size:12px;font-weight:700;color:#e37400">'+ud.lane.qa+'</td>'
+          +'<td style="padding:6px 10px;text-align:center;font-size:12px;font-weight:700;color:#007b83">'+ud.lidar.fp+'</td>'
+          +'<td style="padding:6px 10px;text-align:center;font-size:12px;font-weight:700;color:#7b1fa2">'+ud.lidar.qa+'</td>'
+          +'<td style="padding:6px 10px;text-align:center;font-size:13px;font-weight:800;color:var(--blue)">'+ud.total+'</td>'
+          +'</tr>';
+      });
+      html+='</tbody></table></div></td></tr>';
+    }
     shT.lfp+=d.lane.fp;shT.lqa+=d.lane.qa;shT.lifp+=d.lidar.fp;shT.liqa+=d.lidar.qa;shT.t+=d.total;
   });
   html+='<tr class="total-row"><td class="left bold">TOTAL</td><td>'+shT.lfp+'</td><td>'+shT.lqa+'</td><td>'+shT.lifp+'</td><td>'+shT.liqa+'</td><td class="bold">'+shT.t+'</td></tr></tbody></table></div></div>';
