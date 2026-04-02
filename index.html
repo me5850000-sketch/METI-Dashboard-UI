@@ -618,17 +618,7 @@ var google = {
       _s: null, _f: null,
       withSuccessHandler: function(cb) { this._s = cb; return this; },
       withFailureHandler: function(cb) { this._f = cb; return this; },
-      login: function(id, pwd) { this.execute('login', [id, pwd]); },
-      logout: function(t) { this.execute('logout', [t]); },
-      getStats: function(t, f, to) { this.execute('getStats', [t, f, to]); },
-      getQtcStats: function(t, f, to) { this.execute('getQtcStats', [t, f, to]); },
-      getQtcUsers: function(t) { this.execute('getQtcUsers', [t]); },
-      getUsers: function(t) { this.execute('getUsers', [t]); },
-      upsertUser: function(t, p) { this.execute('upsertUser', [t, p]); },
-      deleteUser: function(t, u) { this.execute('deleteUser', [t, u]); },
-      getAttendance: function(t, d, s) { this.execute('getAttendance', [t, d, s]); },
-      getTargets: function(t) { this.execute('getTargets', [t]); },
-      setTarget: function(t, k, v) { this.execute('setTarget', [t, k, v]); },
+      // وظيفة التنفيذ الموحدة لإرسال الطلبات لـ Apps Script
       execute: function(fn, args) {
         var s = this._s, f = this._f;
         fetch(APPS_SCRIPT_URL, {
@@ -639,7 +629,12 @@ var google = {
         .then(function(r) { return r.json(); })
         .then(function(data) { if (s) s(data); })
         .catch(function(e) { console.error(e); if (f) f(e); });
-      }
+      },
+      // تعريف الوظائف
+      login: function(id, pwd) { this.execute('login', [id, pwd]); },
+      getStats: function(t, f, to) { this.execute('getStats', [t, f, to]); },
+      getQtcUsers: function(t) { this.execute('getQtcUsers', [t]); },
+      getTargets: function(t) { this.execute('getTargets', [t]); }
     }
   }
 };
