@@ -1053,14 +1053,6 @@ function renderStats(data, user){
       google.script.run.withSuccessHandler(function(r){initWeekTarget(r&&!r.err?r.data:cachedStats);}).withFailureHandler(function(){initWeekTarget(cachedStats);}).getStats(TOKEN,_wf,null);
     },0);
   }
-  setTimeout(function(){renderBestQtc(data);},0);
-
-  if(activeDrillCard){
-    gid('statsArea').querySelectorAll('.card').forEach(function(c){if(c.getAttribute('data-dtype')===activeDrillCard)c.classList.add('card-active');});
-    renderDrill(buildShifts(data));
-  }
-}
-
 function initStatsListener(){
   var sa = gid('statsArea');
   if(!sa) return;
