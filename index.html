@@ -314,7 +314,8 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
   #advFilters .mod-btn{padding:4px 9px!important;font-size:11px!important;border-radius:6px!important;}
   #advFilters .filter-lbl{font-size:9px!important;width:38px!important;}
   #advFilters #modBtns,#advFilters #unitBtns,#advFilters #shiftBtns{gap:4px!important;margin-bottom:5px!important;}
-}
+#labTabsRow { flex-wrap: wrap !important; overflow-x: visible !important; }
+#labTabsRow .lab-tab { flex-shrink: 0; font-size: 12px !important; padding: 8px 10px !important; }}
 @media(min-width:769px) and (max-width:1024px){.sidebar{width:200px}.main{margin-left:200px}.content{padding:16px 20px}
   .cards{grid-template-columns:repeat(2,1fr)!important;gap:12px!important}.grid2{grid-template-columns:1fr!important}
   .target-cards{grid-template-columns:1fr 1fr;gap:14px}.modal{width:500px!important}.modal-wide{width:90%!important}
@@ -1448,8 +1449,8 @@ function renderLabelersPage(data){
   var html=bestHtml+'<div class="tbl-card" id="labPageCard">';
 
   // Tabs row + sort pills + filter btn
-  html+='<div style="display:flex;align-items:center;border-bottom:2px solid var(--blue-lt);flex-wrap:nowrap;overflow:hidden">'
-    +'<div style="display:flex;gap:0;overflow-x:auto;flex:1" id="labTabsRow">';
+ html+='<div style="display:flex;align-items:center;border-bottom:2px solid var(--blue-lt);flex-wrap:wrap;gap:0">'
+    +'<div style="display:flex;gap:0;overflow-x:auto;flex:1;scrollbar-width:none;-ms-overflow-style:none" id="labTabsRow">';
   tabList.forEach(function(sh,si){
     var isF=si===0;
     var inner=sh==='All'?'All':'<span class="badge '+shiftBadge(sh)+'" style="margin-right:4px;font-size:10px">'+sh+'</span>';
