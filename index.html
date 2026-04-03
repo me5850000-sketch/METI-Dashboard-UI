@@ -1046,8 +1046,14 @@ function renderStats(data, user){
   html+='<div class="sec-hdr" style="margin-top:20px">Best QTC in Day</div><div id="bestQtcArea"></div>';
   shtml('statsArea',html);
 
-  if(!isQtcRole){
-    setTimeout(function(){renderBestQtc(data);},0);
+ if(!isQtcRole){
+    setTimeout(function(){
+      var _wd=new Date();_wd.setDate(_wd.getDate()-35);
+      var _wf=_wd.getFullYear()+'-'+('0'+(_wd.getMonth()+1)).slice(-2)+'-'+('0'+_wd.getDate()).slice(-2)+'T00:00:00';
+      google.script.run.withSuccessHandler(function(r){initWeekTarget(r&&!r.err?r.data:cachedStats);}).withFailureHandler(function(){initWeekTarget(cachedStats);}).getStats(TOKEN,_wf,null);
+    },0);
+  }
+  setTimeout(function(){renderBestQtc(data);},0);
 
   if(activeDrillCard){
     gid('statsArea').querySelectorAll('.card').forEach(function(c){if(c.getAttribute('data-dtype')===activeDrillCard)c.classList.add('card-active');});
