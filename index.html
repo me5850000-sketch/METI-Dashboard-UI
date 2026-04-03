@@ -1047,12 +1047,14 @@ function renderStats(data, user){
   shtml('statsArea',html);
 
   if(!isQtcRole){
-    setTimeout(function(){
-      var _wd=new Date();_wd.setDate(_wd.getDate()-35);
-      var _wf=_wd.getFullYear()+'-'+('0'+(_wd.getMonth()+1)).slice(-2)+'-'+('0'+_wd.getDate()).slice(-2)+'T00:00:00';
-      google.script.run.withSuccessHandler(function(r){initWeekTarget(r&&!r.err?r.data:cachedStats);}).withFailureHandler(function(){initWeekTarget(cachedStats);}).getStats(TOKEN,_wf,null);
-    },0);
+    setTimeout(function(){renderBestQtc(data);},0);
+
+  if(activeDrillCard){
+    gid('statsArea').querySelectorAll('.card').forEach(function(c){if(c.getAttribute('data-dtype')===activeDrillCard)c.classList.add('card-active');});
+    renderDrill(buildShifts(data));
   }
+}
+
 function initStatsListener(){
   var sa = gid('statsArea');
   if(!sa) return;
@@ -1578,140 +1580,7 @@ function renderLabelersPage(data){
     document.querySelectorAll('.lab-mini-card').forEach(function(card){card.addEventListener('click',function(){card.classList.toggle('expanded');});});
   },0);
 }
-  function getRows(){var rows=data;if(userSeeOwnOnly())rows=rows.filter(function(r){return nShift(r[F.shift]||'')===SESSION.shift;});if(!activeLabUnits.has('all'))rows=rows.filter(function(r){return activeLabUnits.has((r[F.unit]||'').trim());});return rows;}
 
- function buildLabelers(rows){
-    var labelers={};
-    rows.forEach(function(r){
-      var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
-      var sh=nShift(r[F.shift]||'Unknown'),lb=titleCase(r[F.labeler]||'Unknown');
-      var un=(r[F.unit]||'').trim(),pc=(r[F.pc]||'').toString().trim();
-      var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1,isFP=pass==='FP',isQA=pass==='QA';
-      function bump(o){o.total++;if(isFP)o.fp++;if(isQA)o.qa++;}
-      if(!labelers[lb])labelers[lb]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0},shifts:{},units:{},pcs:{}};
-      if(!labelers[lb].shifts[sh])labelers[lb].shifts[sh]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0}};
-      labelers[lb].total++;labelers[lb].shifts[sh].total++;
-      if(un)labelers[lb].units[un]=(labelers[lb].units[un]||0)+1;
-      if(pc&&pc!=='-')labelers[lb].pcs[pc]=(labelers[lb].pcs[pc]||0)+1;
-      if(isL){bump(labelers[lb].lane);bump(labelers[lb].shifts[sh].lane);}
-      if(isLi){bump(labelers[lb].lidar);bump(labelers[lb].shifts[sh].lidar);}
-    });
-    return labelers;
-  }
-
-  var initLabs=buildLabelers(getRows());
-  var labShifts=MAIN_SH.filter(function(s){return Object.keys(initLabs).some(function(k){return initLabs[k].shifts[s];});});
-  if(!labShifts.length){shtml('labelersArea','<div class="empty">No labeler data found.</div>');return;}
-
-  // Best per shift banner
-var bestHtml='<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px">';
-var SH_BEST=['Morning','Night','Over Night'];
-var SH_COLORS={Morning:{bg:'#fff3e0',border:'#e65100',color:'#e65100'},Night:{bg:'#e8eaf6',border:'#283593',color:'#283593'},'Over Night':{bg:'#e8f5e9',border:'#1b5e20',color:'#1b5e20'}};
-SH_BEST.forEach(function(sh){
-  var shLabs=Object.keys(initLabs).filter(function(k){return initLabs[k].shifts[sh]&&initLabs[k].shifts[sh].total>0;});
-  if(!shLabs.length){bestHtml+='<div style="background:#f8f9ff;border:1.5px solid var(--border);border-radius:12px;padding:14px 16px;text-align:center"><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-bottom:6px">'+sh+'</div><div style="font-size:12px;color:var(--gray)">No data</div></div>';return;}
-  var best=shLabs.sort(function(a,b){return initLabs[b].shifts[sh].total-initLabs[a].shifts[sh].total;})[0];
-  var bd=initLabs[best].shifts[sh];
-  var sc=SH_COLORS[sh]||{bg:'#e8f0fe',border:'var(--blue)',color:'var(--blue)'};
-  bestHtml+='<div style="background:'+sc.bg+';border:1.5px solid '+sc.border+';border-radius:12px;padding:14px 16px">'
-    +'<div style="font-size:10px;font-weight:800;color:'+sc.color+';text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">🏆 '+sh+'</div>'
-    +'<div style="font-size:14px;font-weight:800;color:var(--dark);margin-bottom:6px">'+best+'</div>'
-    +'<div style="display:flex;gap:6px;flex-wrap:wrap">'
-    +'<span style="font-size:11px;font-weight:700;background:rgba(255,255,255,.6);padding:2px 8px;border-radius:6px;color:#1e8e3e">LFP: '+bd.lane.fp+'</span>'
-    +'<span style="font-size:11px;font-weight:700;background:rgba(255,255,255,.6);padding:2px 8px;border-radius:6px;color:#e37400">LQA: '+bd.lane.qa+'</span>'
-    +'<span style="font-size:11px;font-weight:700;background:rgba(255,255,255,.6);padding:2px 8px;border-radius:6px;color:var(--blue)">Total: '+bd.total+'</span>'
-    +'</div></div>';
-});
-bestHtml+='</div>';
-
-var html=bestHtml+'<div class="tbl-card" id="labPageCard">';
-  html+='<div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--blue-lt);padding:0 12px 0 0;flex-wrap:wrap;gap:8px"><div style="display:flex;gap:0">';
-  labShifts.forEach(function(sh,si){var isF=si===0;html+='<div class="lab-tab'+(isF?' lab-tab-active':'')+'" data-labtab="'+sh+'" style="padding:10px 16px;cursor:pointer;font-size:13px;font-weight:700;border-bottom:'+(isF?'2px solid var(--blue)':'2px solid transparent')+';color:'+(isF?'var(--blue)':'var(--gray)')+';margin-bottom:-2px;transition:all .15s"><span class="badge '+shiftBadge(sh)+'" style="margin-right:4px;font-size:10px">'+sh+'</span></div>';});
-  html+='</div><div class="lab-sort-pills" id="labPageSortPills">';
-  SORT_PILLS.forEach(function(p){html+='<button class="lab-sort-pill'+(p.key==='total'?' '+p.ac:'')+'" data-sortkey="'+p.key+'">'+p.label+'</button>';});
-  html+='</div></div>';
-  if(unitsSet.length>1){html+='<div id="labUnitBar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:#f8f9ff;border-bottom:1px solid var(--border)"><span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Unit</span><button class="mod-btn lab-unit-btn" data-labunit="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>';unitsSet.forEach(function(u){html+='<button class="mod-btn lab-unit-btn" data-labunit="'+u+'">'+u+'</button>';});html+='</div>';}
-  html+='<div class="lab-content-area" data-active-sh="'+labShifts[0]+'">';
-  labShifts.forEach(function(sh,si){
-    var isF=si===0;
-    var shLabs=Object.keys(initLabs).filter(function(k){return initLabs[k].shifts[sh]&&initLabs[k].shifts[sh].total>0;}).map(function(k){
-      var sd=initLabs[k].shifts[sh];
-      var topUnit=Object.keys(initLabs[k].units).sort(function(a,b){return initLabs[k].units[b]-initLabs[k].units[a];})[0]||'';
-      var topPc=Object.keys(initLabs[k].pcs).sort(function(a,b){return initLabs[k].pcs[b]-initLabs[k].pcs[a];})[0]||'';
-      return{name:k,total:sd.total,lfp:sd.lane.fp,lqa:sd.lane.qa,lifp:sd.lidar.fp,liqa:sd.lidar.qa,laneTotal:sd.lane.fp+sd.lane.qa,lidarTotal:sd.lidar.fp+sd.lidar.qa,unit:topUnit,pc:topPc,shift:sh};
-    });
-    html+='<div class="lab-tab-content" data-labtabcontent="'+sh+'" data-labs="'+encodeURIComponent(JSON.stringify(shLabs))+'" style="display:'+(isF?'block':'none')+'"><div class="lab-list-wrap"></div></div>';
-  });
-  html+='</div></div>';
-  shtml('labelersArea',html);
-
-  function updateLabUnitBtns(){document.querySelectorAll('.lab-unit-btn').forEach(function(b){var u=b.getAttribute('data-labunit'),act=activeLabUnits.has(u)||(u==='all'&&activeLabUnits.has('all'));b.style.background=act?'var(--blue)':'white';b.style.color=act?'white':'var(--gray)';b.style.borderColor=act?'var(--blue)':'var(--border)';});}
-
-  function rebuildContent(){
-    var labelers=buildLabelers(getRows());
-    var ls=MAIN_SH.filter(function(s){return Object.keys(labelers).some(function(k){return labelers[k].shifts[s];});});
-    var wrap=document.querySelector('#labPageCard .lab-content-area');if(!wrap)return;
-    var activeSh=wrap.getAttribute('data-active-sh')||ls[0]||'';
-    var h='';
-    ls.forEach(function(sh,si){
-      var isF=activeSh?sh===activeSh:si===0;
-     var shLabs=Object.keys(labelers).filter(function(k){return labelers[k].shifts[sh]&&labelers[k].shifts[sh].total>0;}).map(function(k){
-      var sd=labelers[k].shifts[sh];
-      var topUnit=Object.keys(labelers[k].units).sort(function(a,b){return labelers[k].units[b]-labelers[k].units[a];})[0]||'';
-      var topPc=Object.keys(labelers[k].pcs).sort(function(a,b){return labelers[k].pcs[b]-labelers[k].pcs[a];})[0]||'';
-      return{name:k,total:sd.total,lfp:sd.lane.fp,lqa:sd.lane.qa,lifp:sd.lidar.fp,liqa:sd.lidar.qa,laneTotal:sd.lane.fp+sd.lane.qa,lidarTotal:sd.lidar.fp+sd.lidar.qa,unit:topUnit,pc:topPc,shift:sh};
-    });
-      h+='<div class="lab-tab-content" data-labtabcontent="'+sh+'" data-labs="'+encodeURIComponent(JSON.stringify(shLabs))+'" style="display:'+(isF?'block':'none')+'"><div class="lab-list-wrap"></div></div>';
-    });
-    wrap.innerHTML=h;
-    document.querySelectorAll('#labPageCard .lab-tab').forEach(function(t){var sh=t.getAttribute('data-labtab'),a=ls.indexOf(sh)!==-1,isF=activeSh?sh===activeSh:sh===ls[0];t.style.display=a?'':'none';t.style.borderBottomColor=isF?'var(--blue)':'transparent';t.style.color=isF?'var(--blue)':'var(--gray)';});
-    setTimeout(function(){renderLabPage(labSortKey);},0);
-  }
-
-  function renderLabPage(sortKey){
-    labSortKey=sortKey;
-    var pillsEl=document.querySelector('#labPageSortPills');
-    if(pillsEl){pillsEl.querySelectorAll('.lab-sort-pill').forEach(function(p){SORT_PILLS.forEach(function(sp){p.classList.remove(sp.ac);});if(p.getAttribute('data-sortkey')===sortKey){var sp=SORT_PILLS.filter(function(x){return x.key===sortKey;})[0];if(sp)p.classList.add(sp.ac);}});}
-    var activeTab=document.querySelector('#labPageCard .lab-tab-content[style*="block"]')||document.querySelector('#labPageCard .lab-tab-content');
-    if(!activeTab)return;
-    var wrap=activeTab.querySelector('.lab-list-wrap');if(!wrap)return;
-    var allLabs=tryParse(decodeURIComponent(activeTab.getAttribute('data-labs')||'[]'))||[];
-    if(!allLabs.length){wrap.innerHTML='<div class="empty" style="padding:24px">No data</div>';return;}
-    var sorted=allLabs.slice().sort(function(a,b){return(b[sortKey]||0)-(a[sortKey]||0);});
-    var maxV=sorted.length?Math.max(sorted[0][sortKey]||0,1):1;
-    var allSubs=['lfp','lqa','lifp','liqa'],subCols=allSubs.filter(function(k){return sorted.some(function(lb){return(lb[k]||0)>0;});});
-    var subHdrs={lfp:'L-FP',lqa:'L-QA',lifp:'Li-FP',liqa:'Li-QA'},subClrs={lfp:'#1e8e3e',lqa:'#e37400',lifp:'#007b83',liqa:'#7b1fa2'};
-    var colW=subCols.length===1?'80px':subCols.length===2?'repeat(2,60px)':subCols.length===3?'repeat(3,52px)':'repeat(4,46px)';
-    var gridCols='26px 1fr '+colW+' 70px';
-    function cell(val,key){var isSort=key===sortKey;return'<span style="font-size:12px;font-weight:'+(isSort?'800':'700')+';color:'+(sortColors[key]||'var(--dark)')+';background:'+(isSort?sortBg[key]:'transparent')+';border-radius:6px;padding:2px 4px;'+(isSort?'outline:1.5px solid '+(sortColors[key]||'var(--blue)')+';':'')+' ">'+val+'</span>';}
-    var h='<div style="display:grid;grid-template-columns:'+gridCols+';gap:10px;align-items:center;padding:8px 14px 6px;font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)"><span>#</span><span>Labeler</span>';
-    subCols.forEach(function(k){h+='<span style="text-align:center;color:'+subClrs[k]+'">'+subHdrs[k]+'</span>';});
-    h+='<span style="text-align:right;color:'+(sortColors[sortKey]||'var(--blue)')+'">'+sortLabels[sortKey]+'</span></div>';
-    sorted.forEach(function(lb,i){
-      var sv=lb[sortKey]||0,pct=Math.round(sv/maxV*100),lw=lb.total>0?Math.round(lb.laneTotal/lb.total*pct):0,liw=pct-lw;
-      var rc=i<3?rankColors[i]:'';
-     h+='<div style="display:grid;grid-template-columns:'+gridCols+';gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid #f5f5f5"><div class="labeler-rank '+rc+'">'+(i+1)+'</div><div>'
-        +'<div style="font-weight:700;font-size:13px;margin-bottom:4px">'+lb.name+'</div>'
-        +'<div style="display:flex;gap:5px;margin-bottom:4px;flex-wrap:wrap">'
-        +(lb.unit?'<span style="font-size:10px;font-weight:700;background:var(--blue-bg);color:var(--blue);padding:2px 7px;border-radius:5px;border:1px solid var(--blue-lt)">📍 '+lb.unit+'</span>':'')
-        +(lb.pc&&lb.pc!=='-'?'<span style="font-size:10px;font-weight:700;background:#f0faf3;color:#1e8e3e;padding:2px 7px;border-radius:5px;border:1px solid #c3e6cb">🖥 PC '+lb.pc+'</span>':'')
-        +(lb.shift?'<span class="badge '+shiftBadge(lb.shift)+'" style="font-size:10px;padding:2px 7px">'+lb.shift+'</span>':'')
-        +'</div>'
-        +'<div style="height:5px;border-radius:3px;background:var(--blue-lt);overflow:hidden;display:flex"><div style="width:'+lw+'%;background:var(--green);transition:width .4s"></div><div style="width:'+liw+'%;background:var(--teal);transition:width .4s"></div></div></div>';
-      subCols.forEach(function(k){h+=cell(lb[k],k);});
-      h+='<div style="font-size:20px;font-weight:800;color:'+(sortColors[sortKey]||'var(--blue)')+';text-align:right">'+sv+'</div></div>';
-    });
-    wrap.innerHTML=h;
-  }
-
-  setTimeout(function(){
-    renderLabPage('total');
-    var pillsEl=document.querySelector('#labPageSortPills');
-    if(pillsEl){pillsEl.addEventListener('click',function(e){var p=e.target.closest('.lab-sort-pill');if(!p)return;var k=p.getAttribute('data-sortkey');if(k)renderLabPage(k);});}
-    document.querySelectorAll('#labPageCard .lab-tab').forEach(function(t){t.addEventListener('click',function(){var sh=t.getAttribute('data-labtab');var ca=document.querySelector('#labPageCard .lab-content-area');if(ca)ca.setAttribute('data-active-sh',sh);document.querySelectorAll('#labPageCard .lab-tab').forEach(function(x){var a=x.getAttribute('data-labtab')===sh;x.style.borderBottomColor=a?'var(--blue)':'transparent';x.style.color=a?'var(--blue)':'var(--gray)';});document.querySelectorAll('#labPageCard .lab-tab-content').forEach(function(c){c.style.display=c.getAttribute('data-labtabcontent')===sh?'block':'none';});setTimeout(function(){renderLabPage(labSortKey);},0);});});
-    document.querySelectorAll('.lab-unit-btn').forEach(function(b){b.addEventListener('click',function(){var u=b.getAttribute('data-labunit');if(u==='all'){activeLabUnits.clear();activeLabUnits.add('all');}else{activeLabUnits.delete('all');if(activeLabUnits.has(u)){activeLabUnits.delete(u);if(activeLabUnits.size===0)activeLabUnits.add('all');}else activeLabUnits.add(u);}updateLabUnitBtns();rebuildContent();});});
-  },0);
-}
 </script>
 
 <script>
