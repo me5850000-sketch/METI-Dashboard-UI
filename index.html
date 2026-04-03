@@ -270,7 +270,40 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.3)}}
 @keyframes slideUpModal{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
 
-@media(max-width:768px){
+@media(max-width:768px){/* إصلاح زرار Filter */
+#labFilterBtn { 
+  font-size: 11px !important; 
+  padding: 5px 8px !important;
+  white-space: nowrap !important;
+}
+
+/* إصلاح شريط التابز والفلتر */
+#labPageCard > div:first-child {
+  flex-wrap: wrap !important;
+}
+#labPageCard > div:first-child > div:last-child {
+  width: 100% !important;
+  border-left: none !important;
+  border-top: 1px solid var(--border) !important;
+  padding: 6px 8px !important;
+  flex-wrap: wrap !important;
+  gap: 4px !important;
+}
+#labPageSortPills {
+  flex-wrap: wrap !important;
+  gap: 4px !important;
+}
+.lab-sort-pill {
+  font-size: 10px !important;
+  padding: 4px 8px !important;
+}
+
+/* إصلاح الجدول - تقليل العمود الأول */
+#labPageCard .lab-list-wrap > div {
+  grid-template-columns: 22px 1fr repeat(4,36px) 50px !important;
+  gap: 4px !important;
+  padding: 7px 8px !important;
+}
   .sidebar{transform:translateX(-100%);z-index:200}.sidebar.open{transform:translateX(0)}
   .hamburger{display:flex}.main{margin-left:0!important;padding-bottom:72px}
   .topbar{padding:10px 14px!important;gap:8px}.tb-left .tb-title{font-size:16px!important}
