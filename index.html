@@ -271,93 +271,29 @@ body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
 @keyframes slideUpModal{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
 
 @media(max-width:768px){
-  .sidebar{transform:translateX(-100%);z-index:200}.sidebar.open{transform:translateX(0)}
-  .hamburger{display:flex}.main{margin-left:0!important;padding-bottom:72px}
-  .topbar{padding:10px 14px!important;gap:8px}.tb-left .tb-title{font-size:16px!important}
-  .tb-left .tb-sub,#topClock{display:none}
-  .content{padding:12px!important}
-  /* Hide Queue + Objects on mobile */
-  #pgData table th:nth-child(11),
-  #pgData table td:nth-child(11),
-  #pgData table th:nth-child(12),
-  #pgData table td:nth-child(12){ display:none!important; }
-  #pgData table{ min-width:unset!important; }
-  #pgData th{ font-size:9px!important; padding:7px 4px!important; }
-  #pgData td{ font-size:10px!important; padding:6px 4px!important; }
-  #pgData .badge{ font-size:9px!important; padding:2px 4px!important; }
-  #pgData table td:nth-child(9),
-  #pgData table td:nth-child(10){ font-size:9px!important; max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-  /* التعديلات الجديدة لشريط الفلتر الموحد على الموبايل */
+  .sidebar{transform:translateX(-100%)}
+  .sidebar.open{transform:translateX(0)}
+  .main{margin-left:0!important}
   .global-filter-bar { padding: 14px!important; top: 54px; }
-  .global-filter-bar > div { flex-direction:row!important; flex-wrap:wrap!important; gap:8px!important; }
-  .global-filter-bar label { width:100%; margin-bottom:-6px; font-size:10px!important; margin-left:0!important; }
-  .global-filter-bar .dp-wrap, .global-filter-bar .fb-time { width:calc(50% - 4px)!important; min-width:unset!important; flex:none!important; }
-  #btnGlobalFilter, #btnGlobalClear { width:calc(50% - 4px)!important; padding:10px!important; margin-top:6px; }
+  .global-filter-bar label { width:100%; margin-bottom:-6px; font-size:10px!important}
+  .global-filter-bar .dp-wrap, .global-filter-bar .fb-time { width:calc(50% - 4px)!important; }
   
-  /* إصلاح فلاتر الداتا الداخلية */
-  .filter-bar{padding:10px 12px!important;gap:8px!important;flex-direction:column;align-items:stretch!important}
-  .dp-input,.fb-time{width:100%!important;font-size:13px!important;min-width:unset!important}
-  .fbtn{width:100%!important;text-align:center;padding:10px!important;font-size:13px!important}
-  
-  .cards{grid-template-columns:repeat(2,1fr)!important;gap:10px!important;margin-bottom:16px}
-  .card{padding:16px 12px 14px!important}.card-val{font-size:28px!important}.card-lbl{font-size:9px!important}
-  .tbl-card{overflow-x:auto}table{min-width:520px}
-  th{padding:9px 10px!important;font-size:10px!important}td{padding:8px 10px!important;font-size:12px!important}
-  .grid2{grid-template-columns:1fr!important;gap:12px!important}.target-cards{grid-template-columns:1fr!important;gap:12px!important}
-  .target-card{padding:20px 16px!important}.target-card-cur{font-size:44px!important}
-  .modal-backdrop{align-items:flex-end!important}
-  .modal{width:100%!important;border-radius:18px 18px 0 0!important;padding:22px 16px 28px!important;max-height:88vh!important;animation:slideUpModal .25s ease!important}
-  .modal-wide{width:100%!important}.detail-grid{grid-template-columns:1fr!important;gap:10px!important}
-  .login-box{width:92%!important;padding:28px 18px 24px!important}
-  .bottom-nav{display:flex!important}.toast{bottom:74px!important;right:10px!important;left:10px!important;text-align:center}
-}#advFilters .filter-bar{padding:8px 10px!important;gap:5px!important;}
-  #advFilters .mod-btn{padding:4px 9px!important;font-size:11px!important;border-radius:6px!important;}
-  #advFilters .filter-lbl{font-size:9px!important;width:38px!important;}
-  #advFilters #modBtns,#advFilters #unitBtns,#advFilters #shiftBtns{gap:4px!important;margin-bottom:5px!important;}
-}
-@media(min-width:769px) and (max-width:1024px){.sidebar{width:200px}.main{margin-left:200px}.content{padding:16px 20px}
-  .cards{grid-template-columns:repeat(2,1fr)!important;gap:12px!important}.grid2{grid-template-columns:1fr!important}
-  .target-cards{grid-template-columns:1fr 1fr;gap:14px}.modal{width:500px!important}.modal-wide{width:90%!important}
+  /* تحويل الجدول لكروت في الموبايل */
+  #dataArea table, #dataArea thead { display: none !important; }
+  .mobile-card {
+    background: white; border-radius: 15px; padding: 16px; margin-bottom: 12px;
+    box-shadow: var(--shadow); border-left: 5px solid var(--blue);
+  }
+  .mc-row { display: flex; justify-content: space-between; margin-bottom: 8px; border-bottom: 1px solid #f8f9ff; padding-bottom: 6px; }
+  .mc-lbl { font-size: 10px; color: var(--gray); font-weight: 700; text-transform: uppercase; }
+  .mc-val { font-weight: 700; font-size: 13px; }
 }
 
-/* ══ ADVANCED FILTERS ══ */
-.adv-filters-wrap {
-  max-height: 0;
-  overflow: hidden;
-  transition: max-height 0.3s ease-out, opacity 0.3s ease-out;
-  opacity: 0;
-}
-.adv-filters-wrap.show {
-  max-height: 500px;
-  opacity: 1;
-}
-.filter-lbl {
-  font-size: 10px;
-  font-weight: 800;
-  color: var(--gray);
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  width: 50px;
-  display: inline-block;
-}
-body.dark .filter-lbl { color: #9aa0b4; }
-body.dark #searchField, body.dark #searchInput { background: #1e2130 !important; color: #e8eaf0 !important; border-color: #2d3250 !important; }
-
-/* ══ GLOBAL FILTER BAR ══ */
-.global-filter-bar {
-  background: white;
-  padding: 12px 28px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: sticky;
-  top: 65px; /* Below topbar */
-  z-index: 99;
-  box-shadow: var(--shadow);
-  flex-wrap: wrap;
-}
-body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
+.tbl-card{background:white;border-radius:12px;border:1px solid var(--border);overflow:hidden;margin-bottom:20px;box-shadow:var(--shadow)}
+table{width:100%;border-collapse:collapse}
+thead tr{background:var(--blue)}
+th{color:white;font-size:11px;font-weight:700;text-transform:uppercase;padding:12px 14px}
+td{padding:10px 14px;font-size:13px;text-align:center;border-bottom:1px solid #f5f5f5}
 </style>
 </head>
 <body>
