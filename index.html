@@ -1308,7 +1308,8 @@ function renderDataFiltered(){
     statsBar.style.display = 'flex';
   }
 
-  var html='<div class="tbl-card"><table><thead><tr><th>#</th><th class="left">Labeler</th><th>Shift</th><th>Unit</th><th>Modality</th><th>Pass</th><th>QTC</th><th>PC</th><th>Yubikey</th><th>Task ID</th><th>Queue</th><th>Obj</th><th>Date</th><th>Time</th></tr></thead><tbody>';
+  function _cfpTh(col,lbl,left){var ha=activeColFilters[col]&&activeColFilters[col].length>0;return'<th'+(left?' class="left"':'')+' style="white-space:nowrap">'+lbl+' <button class="cfp-btn" data-cfp-col="'+col+'" style="background:'+(ha?'rgba(255,255,255,.35)':'rgba(255,255,255,.1)')+';border:none;border-radius:4px;padding:0 5px;cursor:pointer;color:white;font-size:10px;vertical-align:middle;line-height:18px;display:inline-block'+(ha?';outline:1px solid rgba(255,255,255,.5)':'')+'">'+(ha?'🔍':'▼')+'</button></th>';}
+var html='<div class="tbl-card"><table><thead><tr><th>#</th>'+_cfpTh('labeler','Labeler',true)+_cfpTh('shift','Shift',false)+_cfpTh('unit','Unit',false)+_cfpTh('modality','Modality',false)+_cfpTh('pass','Pass',false)+_cfpTh('qtc','QTC',false)+_cfpTh('pc','PC',false)+'<th>Yubikey</th><th>Task ID</th><th>Queue</th><th>Obj</th><th>Date</th><th>Time</th></tr></thead><tbody>';
   
   if(!pg.length){html+='<tr><td colspan="14" class="empty">No records</td></tr>';}
   else{
@@ -1353,7 +1354,13 @@ function renderDataFiltered(){
       var rec=getFilteredData()[idx];if(rec)openDetail(rec);
     });
     da._clickWired = true;
-  }
+  }// Wire column filter buttons
+  document.querySelectorAll('#dataArea .cfp-btn').forEach(function(btn){
+    btn.addEventListener('click',function(e){
+      e.stopPropagation();
+      CFP.open(btn.getAttribute('data-cfp-col'),btn);
+    });
+  });
 }
 </script>
 
@@ -1685,7 +1692,7 @@ function renderQtcPage(data){
     wrap.innerHTML=h;
   }
 
-  var html='<div class="tbl-card" id="qtcCard"><div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--blue-lt);padding:0 12px 0 0;flex-wrap:wrap;gap:8px"><div style="display:flex;gap:0"><div class="qtc-tab active" data-qtcsh="all" style="padding:10px 16px;cursor:pointer;font-size:13px;font-weight:700;border-bottom:2px solid var(--blue);color:var(--blue);margin-bottom:-2px">All</div>';
+  var html='<div id="qtcTop4" style="margin-bottom:18px"></div><div class="tbl-card" id="qtcCard"><div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--blue-lt);padding:0 12px 0 0;flex-wrap:wrap;gap:8px"><div style="display:flex;gap:0"><div class="qtc-tab active" data-qtcsh="all" style="padding:10px 16px;cursor:pointer;font-size:13px;font-weight:700;border-bottom:2px solid var(--blue);color:var(--blue);margin-bottom:-2px">All</div>';
   availShifts.forEach(function(sh){html+='<div class="qtc-tab" data-qtcsh="'+sh+'" style="padding:10px 16px;cursor:pointer;font-size:13px;font-weight:700;border-bottom:2px solid transparent;color:var(--gray);margin-bottom:-2px"><span class="badge '+shiftBadge(sh)+'" style="margin-right:4px;font-size:10px">'+sh+'</span></div>';});
   html+='</div><div class="lab-sort-pills" id="qtcSortPills" style="padding:8px 0">';
   SORT_PILLS.forEach(function(p){html+='<button class="lab-sort-pill'+(p.key==='total'?' active-total':'')+'" data-qsortkey="'+p.key+'">'+p.label+'</button>';});
@@ -1696,10 +1703,41 @@ function renderQtcPage(data){
 
   function updateUnitBtns(){document.querySelectorAll('.qtc-unit-btn').forEach(function(b){var u=b.getAttribute('data-unit'),act=activeUnits.has(u)||(u==='all'&&activeUnits.has('all'));b.style.background=act?'var(--blue)':'white';b.style.color=act?'white':'var(--gray)';b.style.borderColor=act?'var(--blue)':'var(--border)';});}
 
-  setTimeout(function(){
+ setTimeout(function(){
+    function renderTop4(sh){
+      var el=gid('qtcTop4');if(!el)return;
+      var list=allQtcs.filter(function(q){return sh==='all'||q.shift===sh;});
+      var cats=[
+        {key:'lfp',label:'Lane FP',color:'#1e8e3e',bg:'#e8f5e9',border:'#c3e6cb'},
+        {key:'lqa',label:'Lane QA',color:'#e37400',bg:'#fff3cd',border:'#ffc107'},
+        {key:'lifp',label:'Lidar FP',color:'#007b83',bg:'#e0f7fa',border:'#80cbc4'},
+        {key:'liqa',label:'Lidar QA',color:'#7b1fa2',bg:'#f3e5f5',border:'#ce93d8'}
+      ];
+      var ranks=['🥇','🥈','🥉','4'];
+      var h='<div class="sec-hdr" style="margin-bottom:12px">Top 4 per Category'+(sh!=='all'?' — '+sh:'')+'</div>';
+      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:4px">';
+      cats.forEach(function(cat){
+        var sorted=list.slice().filter(function(q){return(q[cat.key]||0)>0;}).sort(function(a,b){return(b[cat.key]||0)-(a[cat.key]||0);}).slice(0,4);
+        h+='<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);border:1.5px solid '+cat.border+'">';
+        h+='<div style="background:'+cat.color+';padding:11px 16px"><span style="color:white;font-size:14px;font-weight:800">'+cat.label+'</span></div>';
+        if(!sorted.length){h+='<div style="padding:18px;text-align:center;color:var(--gray);font-size:12px">No data</div>';}
+        else{sorted.forEach(function(q,i){
+          var isF=i===0;
+          h+='<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:'+(isF?cat.bg:'')+';border-bottom:1px solid #f5f5f5">';
+          h+='<span style="font-size:18px;flex-shrink:0">'+ranks[i]+'</span>';
+          h+='<span style="flex:1;font-size:13px;font-weight:'+(isF?'800':'700')+';color:var(--dark)">'+q.name+(sh==='all'?'<span class="badge '+shiftBadge(q.shift)+'" style="margin-left:6px;font-size:10px;vertical-align:middle">'+q.shift+'</span>':'')+'</span>';
+          h+='<span style="font-size:16px;font-weight:800;color:'+cat.color+'">'+q[cat.key]+'</span>';
+          h+='</div>';
+        });}
+        h+='</div>';
+      });
+      h+='</div>';
+      el.innerHTML=h;
+    }
     renderQtcList();
+    renderTop4(activeShift);
     document.querySelectorAll('.qtc-unit-btn').forEach(function(b){b.addEventListener('click',function(){var u=b.getAttribute('data-unit');if(u==='all'){activeUnits.clear();activeUnits.add('all');}else{activeUnits.delete('all');if(activeUnits.has(u)){activeUnits.delete(u);if(activeUnits.size===0)activeUnits.add('all');}else activeUnits.add(u);}updateUnitBtns();renderQtcList();});});
-    document.querySelectorAll('#qtcCard .qtc-tab').forEach(function(t){t.addEventListener('click',function(){activeShift=t.getAttribute('data-qtcsh');document.querySelectorAll('#qtcCard .qtc-tab').forEach(function(x){var a=x.getAttribute('data-qtcsh')===activeShift;x.style.borderBottomColor=a?'var(--blue)':'transparent';x.style.color=a?'var(--blue)':'var(--gray)';});renderQtcList();});});
+    document.querySelectorAll('#qtcCard .qtc-tab').forEach(function(t){t.addEventListener('click',function(){activeShift=t.getAttribute('data-qtcsh');document.querySelectorAll('#qtcCard .qtc-tab').forEach(function(x){var a=x.getAttribute('data-qtcsh')===activeShift;x.style.borderBottomColor=a?'var(--blue)':'transparent';x.style.color=a?'var(--blue)':'var(--gray)';});renderQtcList();renderTop4(activeShift);});});
     var pillsEl=gid('qtcSortPills');
     if(pillsEl){pillsEl.addEventListener('click',function(e){var p=e.target.closest('.lab-sort-pill');if(!p)return;var key=p.getAttribute('data-qsortkey');if(!key)return;qtcSortKey=key;pillsEl.querySelectorAll('.lab-sort-pill').forEach(function(x){SORT_PILLS.forEach(function(sp){x.classList.remove(sp.ac);});if(x.getAttribute('data-qsortkey')===key){var sp=SORT_PILLS.filter(function(s){return s.key===key;})[0];if(sp)x.classList.add(sp.ac);}});renderQtcList();});}
   },0);
@@ -1926,6 +1964,71 @@ function closeChangePwd(){gid('changePwdBd').classList.remove('show');}
 function saveChangePwd(){var oldPwd=gid('cpOld').value.trim(),newPwd=gid('cpNew').value.trim(),conf=gid('cpConfirm').value.trim();var errEl=gid('changePwdErr');errEl.style.display='none';if(!oldPwd||!newPwd||!conf){errEl.textContent='All fields are required.';errEl.style.display='block';return;}if(newPwd!==conf){errEl.textContent='New passwords do not match.';errEl.style.display='block';return;}if(newPwd.length<4){errEl.textContent='Password must be at least 4 characters.';errEl.style.display='block';return;}var btn=gid('changePwdSaveBtn');btn.textContent='...';btn.disabled=true;google.script.run.withSuccessHandler(function(loginRes){if(!loginRes.ok){btn.textContent='Save';btn.disabled=false;errEl.textContent='Current password is incorrect.';errEl.style.display='block';return;}google.script.run.withSuccessHandler(function(r){btn.textContent='Save';btn.disabled=false;if(r.err){errEl.textContent=r.err;errEl.style.display='block';return;}closeChangePwd();toast('Password changed! ✅','ok');}).withFailureHandler(function(e){btn.textContent='Save';btn.disabled=false;errEl.textContent=e.message;errEl.style.display='block';}).upsertUser(TOKEN,{id:SESSION.id,name:SESSION.name,role:SESSION.role,active:true,password:newPwd,shift:SESSION.shift||''});}).withFailureHandler(function(e){btn.textContent='Save';btn.disabled=false;errEl.textContent=e.message;errEl.style.display='block';}).login(SESSION.email||SESSION.name,oldPwd);}
 </script>
 
+<script>
+// ══ COLUMN FILTER POPUP ══
+var CFP={
+  col:null,
+  open:function(col,btn){
+    if(CFP.col===col){CFP.close();return;}
+    CFP.close();
+    var allV={};
+    dataAll.forEach(function(r){var v=CFP.val(col,r);if(v&&v!=='-')allV[v]=(allV[v]||0)+1;});
+    var keys=Object.keys(allV).sort(function(a,b){return a.localeCompare(b);});
+    var sel=activeColFilters[col]?activeColFilters[col].slice():[];
+    var rect=btn.getBoundingClientRect();
+    var p=document.createElement('div');
+    p.id='cfpPop';p.setAttribute('data-cfp','1');
+    var dk=document.body.classList.contains('dark');
+    p.style.cssText='position:fixed;top:'+(rect.bottom+6)+'px;left:'+Math.min(rect.left,window.innerWidth-240)+'px;z-index:9999;background:'+(dk?'#1e2130':'white')+';border:1.5px solid var(--blue-lt);border-radius:12px;box-shadow:0 8px 32px rgba(28,69,135,.25);padding:10px;width:230px;animation:fadeUp .15s ease;';
+    var h='<input type="text" id="cfpSrch" placeholder="Search..." autocomplete="off" style="width:100%;padding:7px 10px;border:1.5px solid var(--border);border-radius:7px;font-size:12px;outline:none;background:'+(dk?'#252840':'#fafafa')+';color:var(--dark);box-sizing:border-box;margin-bottom:8px">';
+    h+='<div style="display:flex;gap:5px;margin-bottom:8px">';
+    h+='<button id="cfpAllBtn" style="flex:1;padding:4px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:var(--blue);color:white">Select All</button>';
+    h+='<button id="cfpClrBtn" style="flex:1;padding:4px;border:none;border-radius:6px;font-size:11px;font-weight:700;cursor:pointer;background:var(--gray-lt);color:var(--gray)">Clear</button>';
+    h+='</div>';
+    h+='<div id="cfpList" style="max-height:200px;overflow-y:auto;margin-bottom:8px">';
+    if(!keys.length)h+='<div style="text-align:center;padding:12px;font-size:12px;color:var(--gray)">No values</div>';
+    keys.forEach(function(v){
+      var c=allV[v],chk=sel.indexOf(v)!==-1?' checked':'';
+      h+='<label data-cfp="1" style="display:flex;align-items:center;gap:7px;padding:5px 6px;cursor:pointer;border-radius:6px">';
+      h+='<input type="checkbox" value="'+encodeURIComponent(v)+'"'+chk+' style="cursor:pointer;width:14px;height:14px;accent-color:var(--blue);flex-shrink:0">';
+      h+='<span style="flex:1;font-size:12px;font-weight:600;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="'+v+'">'+v+'</span>';
+      h+='<span style="font-size:10px;color:var(--gray);background:var(--gray-lt);padding:1px 6px;border-radius:10px;flex-shrink:0">'+c+'</span>';
+      h+='</label>';
+    });
+    h+='</div>';
+    h+='<div style="display:flex;gap:6px;border-top:1px solid var(--border);padding-top:8px">';
+    h+='<button id="cfpApply" style="flex:1;padding:7px;background:var(--blue);color:white;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer">✓ Apply</button>';
+    h+='<button id="cfpReset" title="Remove filter" style="padding:7px 10px;background:var(--red-lt);color:var(--red);border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer">✕</button>';
+    h+='</div>';
+    p.innerHTML=h;document.body.appendChild(p);CFP.col=col;
+    var si=gid('cfpSrch'),li=gid('cfpList');
+    li.addEventListener('mouseover',function(e){var l=e.target.closest('label');if(l)l.style.background='var(--blue-bg)';});
+    li.addEventListener('mouseout',function(e){var l=e.target.closest('label');if(l)l.style.background='';});
+    si.addEventListener('input',function(){var q=si.value.toLowerCase();li.querySelectorAll('label').forEach(function(l){var s=l.querySelector('span');l.style.display=(!q||s.textContent.toLowerCase().indexOf(q)!==-1)?'':'none';});});
+    gid('cfpAllBtn').addEventListener('click',function(){li.querySelectorAll('label:not([style*="none"]) input').forEach(function(cb){cb.checked=true;});});
+    gid('cfpClrBtn').addEventListener('click',function(){li.querySelectorAll('label:not([style*="none"]) input').forEach(function(cb){cb.checked=false;});});
+    gid('cfpApply').addEventListener('click',function(){
+      var sv=[];li.querySelectorAll('input:checked').forEach(function(cb){sv.push(decodeURIComponent(cb.value));});
+      if(sv.length&&sv.length<keys.length)activeColFilters[col]=sv;else delete activeColFilters[col];
+      dataPage=1;CFP.close();renderDataFiltered();
+    });
+    gid('cfpReset').addEventListener('click',function(){delete activeColFilters[col];dataPage=1;CFP.close();renderDataFiltered();});
+    si.focus();
+  },
+  val:function(col,r){
+    if(col==='labeler'){var v=titleCase(r[F.labeler]||'');return v==='-'?'':v;}
+    if(col==='shift')return nShift(r[F.shift]||'');
+    if(col==='unit')return(r[F.unit]||'').trim();
+    if(col==='modality')return(r[F.modality]||'');
+    if(col==='pass')return(r[F.pass]||'');
+    if(col==='qtc'){var v2=cleanQtcName(r[F.qc]||'');return v2==='-'?'':v2;}
+    if(col==='pc')return(r[F.pc]||'').toString().trim();
+    return'';
+  },
+  close:function(){var ex=gid('cfpPop');if(ex)ex.remove();CFP.col=null;}
+};
+document.addEventListener('mousedown',function(e){if(CFP.col&&!e.target.closest('[data-cfp]')&&!e.target.closest('.cfp-btn'))CFP.close();});
+</script>
 <script>
 // ══ INIT ══
 window.onload=function(){
