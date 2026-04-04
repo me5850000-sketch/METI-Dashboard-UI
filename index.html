@@ -1858,10 +1858,10 @@ SH_ORD2.forEach(function(sh){
   var d=myShiftData[sh];
   shiftRows+='<div style="display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--border);flex-wrap:wrap">'
     +'<span class="badge '+shiftBadge(sh)+'" style="font-size:10px;min-width:80px">'+sh+'</span>'
-    +'<span style="font-size:11px;font-weight:700;background:#e8f5e9;color:#1e8e3e;padding:2px 8px;border-radius:6px">LFP: '+d.lfp+'</span>'
-    +'<span style="font-size:11px;font-weight:700;background:#fff3cd;color:#e37400;padding:2px 8px;border-radius:6px">LQA: '+d.lqa+'</span>'
-    +'<span style="font-size:11px;font-weight:700;background:#e0f7fa;color:#007b83;padding:2px 8px;border-radius:6px">Li-FP: '+d.lifp+'</span>'
-    +'<span style="font-size:11px;font-weight:700;background:#f3e5f5;color:#7b1fa2;padding:2px 8px;border-radius:6px">Li-QA: '+d.liqa+'</span>'
+    +'<span style="font-size:11px;font-weight:700;background:#e8f5e9;color:#1e8e3e;padding:2px 8px;border-radius:6px">Lane-FP: '+d.lfp+'</span>'
+    +'<span style="font-size:11px;font-weight:700;background:#fff3cd;color:#e37400;padding:2px 8px;border-radius:6px">Lane-QA: '+d.lqa+'</span>'
+    +'<span style="font-size:11px;font-weight:700;background:#e0f7fa;color:#007b83;padding:2px 8px;border-radius:6px">Lidar-FP: '+d.lifp+'</span>'
+    +'<span style="font-size:11px;font-weight:700;background:#f3e5f5;color:#7b1fa2;padding:2px 8px;border-radius:6px">Lidar-QA: '+d.liqa+'</span>'
     +'<span style="margin-left:auto;font-size:13px;font-weight:800;color:var(--blue)">'+d.total+'</span>'
     +'</div>';
 });
@@ -1876,7 +1876,7 @@ var rankMedal=myRank===1?'🥇':myRank===2?'🥈':myRank===3?'🥉':'';
   +'</div></div>'
   +(shiftRows?'<div style="border-top:1px solid var(--border);padding-top:10px"><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Tasks per Shift</div>'+shiftRows+'</div>':'')
   +'</div>';
-  var cats=[{key:'lane-fp',label:'Lane FP',color:'#1e8e3e',bg:'#e8f5e9',border:'#c3e6cb'},{key:'lqa',label:'Lane QA',color:'#e37400',bg:'#fff3cd',border:'#ffc107'},{key:'lifp',label:'Lidar FP',color:'#007b83',bg:'#e0f7fa',border:'#80cbc4'},{key:'liqa',label:'Lidar QA',color:'#7b1fa2',bg:'#f3e5f5',border:'#ce93d8'}];
+  var cats=[{key:'lfp',label:'Lane FP',color:'#1e8e3e',bg:'#e8f5e9',border:'#c3e6cb'},{key:'lqa',label:'Lane QA',color:'#e37400',bg:'#fff3cd',border:'#ffc107'},{key:'lifp',label:'Lidar FP',color:'#007b83',bg:'#e0f7fa',border:'#80cbc4'},{key:'liqa',label:'Lidar QA',color:'#7b1fa2',bg:'#f3e5f5',border:'#ce93d8'}];
   html+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:18px">';
   cats.forEach(function(cat){
     var val=my[cat.key]||0,rank=getRank(cat.key),topVal=getTopVal(cat.key);
@@ -2390,4 +2390,4 @@ window.onload=function(){
 </script>
 
 </body>
-</html>
+</html>if(!myShiftData[sh])return;
