@@ -441,7 +441,7 @@ body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
 </div>
 
 <!-- شاشة Request Access -->
-<div id="registerScreen" style="display:none;min-height:100vh;display:none">
+<div id="registerScreen" style="display:none">
   <div class="login-screen">
     <div class="login-box">
       <div class="login-logo">
@@ -950,7 +950,7 @@ function doLogin() {
             } else {
                if (res.pending) {
   gid('loginScreen').style.display = 'none';
-  gid('waitingScreen').style.display = 'flex';
+  gid('waitingScreen').style.cssText = 'display:block';
 } else {
   showLoginErr(res.msg || 'Invalid credentials');
 }
@@ -2573,10 +2573,9 @@ window.onload=function(){
 <script>
 // ══ REGISTER & WAITING ══
 function showRegister() {
-  gid('loginScreen').style.display  = 'none';
-  gid('registerScreen').style.display = 'flex';
+  gid('loginScreen').style.display    = 'none';
+  gid('registerScreen').style.cssText = 'display:block';
 }
-
 function backToLogin() {
   gid('registerScreen').style.display = 'none';
   gid('waitingScreen').style.display  = 'none';
