@@ -1008,7 +1008,7 @@ function renderStats(data, user){
   });
   var sortedSH=SH_ORD.filter(function(s){return!!shifts[s];});
   
-  html+='<div><div class="sec-hdr">By Shift '+(activeRFilter?'— '+activeRFilter:'')+'</div><div class="tbl-card"><table><thead><tr><th class="left">Shift</th><th>L-FP</th><th>L-QA</th><th>Li-FP</th><th>Li-QA</th><th>Total</th></tr></thead><tbody>';
+  html+='<div><div class="sec-hdr">By Shift '+(activeRFilter?'— '+activeRFilter:'')+'</div><div class="tbl-card"><table><thead><tr><th class="left">Shift</th><th>Lane-FP</th><th>Lane-QA</th><th>Lidar-FP</th><th>Lidar-QA</th><th>Total</th></tr></thead><tbody>';
  var shT={lfp:0,lqa:0,lifp:0,liqa:0,t:0};
   var SH_ROOM_ORD=['NC Room 102','NC Room 106','NC Room 108','4th Floor','2nd Floor'];
   sortedSH.forEach(function(s){
