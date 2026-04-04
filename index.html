@@ -2014,6 +2014,10 @@ allPeople.sort(function(a,b){
       if(!units[u]){units[u]=[];unitOrder.push(u);}
       units[u].push(p);
     });
+unitOrder.forEach(function(u){
+  if(unitNames.indexOf(u)===-1&&u!=='Unknown'&&u!=='')unitNames.push(u);
+});
+
     html+='<div style="background:white;border-radius:14px;border:1px solid var(--border);margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow)">';
 
     // Shift header
