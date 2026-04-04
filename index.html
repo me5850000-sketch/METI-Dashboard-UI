@@ -1913,7 +1913,30 @@ function _buildAttCard(sh,sd,dateISO,isDetails){
   var h='<div style="background:white;border-radius:14px;border:1px solid var(--border);margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow)">';
   h+='<div style="background:var(--blue);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:16px;font-weight:800;color:white">'+sh+'</span><span class="badge '+shiftBadge(sh)+'" style="font-size:10px">'+sh.toUpperCase()+'</span></div><div style="display:flex;gap:7px;align-items:center"><button class="att-toggle-btn" '+shAttr+'><span>📋 Message</span><span class="arr">▼</span></button><button class="att-copy-inline '+(isDetails?'att-copy-btn2':'att-copy-btn')+'" '+shAttr+'>📄 Copy</button></div></div>';
   h+='<div style="padding:18px 24px;display:flex;align-items:center;gap:20px;flex-wrap:wrap"><div style="text-align:center"><div style="font-size:44px;font-weight:800;color:'+bc+';line-height:1">'+present.length+'</div><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-top:3px">Present</div></div><div style="font-size:26px;color:var(--border)">/</div><div style="text-align:center"><div style="font-size:44px;font-weight:800;color:var(--dark);line-height:1">'+total+'</div><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-top:3px">Total</div></div><div style="text-align:center"><div style="font-size:44px;font-weight:800;color:var(--red);line-height:1">'+absent.length+'</div><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-top:3px">Absent</div></div><div style="text-align:center;background:#e8f5e9;padding:9px 16px;border-radius:10px;border:1px solid #c3e6cb"><div style="font-size:26px;font-weight:800;color:#1e8e3e;line-height:1">'+prod+'</div><div style="font-size:10px;font-weight:700;color:#1e8e3e;text-transform:uppercase;margin-top:3px">Production</div></div><div style="text-align:center;background:#e3f2fd;padding:9px 16px;border-radius:10px;border:1px solid #90caf9"><div style="font-size:26px;font-weight:800;color:#0d47a1;line-height:1">'+train+'</div><div style="font-size:10px;font-weight:700;color:#0d47a1;text-transform:uppercase;margin-top:3px">Training</div></div><div style="text-align:center;background:#f3e5f5;padding:9px 16px;border-radius:10px;border:1px solid #ce93d8"><div style="font-size:26px;font-weight:800;color:#7b1fa2;line-height:1">'+(sd.empty?sd.empty.length:0)+'</div><div style="font-size:10px;font-weight:700;color:#7b1fa2;text-transform:uppercase;margin-top:3px">Empty</div></div><div style="flex:1;min-width:140px"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-size:12px;font-weight:700;color:var(--gray)">Rate</span><span style="font-size:20px;font-weight:800;color:'+bc+'">'+pct+'%</span></div><div style="height:12px;background:var(--gray-lt);border-radius:6px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+bc+';border-radius:6px;transition:width .5s"></div></div></div></div>';
-  h+='<div class="att-msg-preview"><pre class="att-msg-pre">'+msg+'</pre></div>';
+  +(sd.bufferStats && sd.bufferStats.total > 0 ?
+  '<div style="margin:0 18px 12px;background:#fff8e1;border:1.5px solid #ffe082;border-radius:10px;overflow:hidden">'
+  +'<div onclick="(function(el){var b=el.nextElementSibling;b.style.display=b.style.display===\'none\'?\'block\':\'none\';})(this)" '
+  +'style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer">'
+  +'<div style="display:flex;align-items:center;gap:10px">'
+  +'<span style="font-size:13px;font-weight:800;color:#f57f17">🔄 Buffer</span>'
+  +'<span style="background:#1e8e3e;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px">P: '+sd.bufferStats.present.length+'</span>'
+  +(sd.bufferStats.absent.length > 0 ? '<span style="background:#c5221f;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px">A: '+sd.bufferStats.absent.length+'</span>' : '')
+  +'<span style="background:#f57f17;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px">Total: '+sd.bufferStats.total+'</span>'
+  +'</div>'
+  +'<span style="color:#f57f17;font-size:12px">▼</span>'
+  +'</div>'
+  +'<div style="display:none;padding:8px 14px;border-top:1px solid #ffe082">'
+  +sd.bufferStats.present.concat(sd.bufferStats.absent).map(function(p){
+    var isA=sd.bufferStats.absent.indexOf(p)!==-1;
+    return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid #fff3cd">'
+      +(p.pc?'<span style="font-size:10px;font-weight:700;color:#f57f17">'+p.pc+'</span>':'')
+      +'<span style="flex:1;font-size:12px;font-weight:700;color:'+(isA?'#c5221f':'var(--dark)')+'">'+titleCase(p.name||'')+'</span>'
+      +'<span style="background:'+(isA?'#c5221f':'#1e8e3e')+';color:white;font-size:10px;font-weight:800;padding:2px 7px;border-radius:5px">'+(isA?'A':'P')+'</span>'
+      +'</div>';
+  }).join('')
+  +'</div></div>'
+  : '')
+    h+='<div class="att-msg-preview"><pre class="att-msg-pre">'+msg+'</pre></div>';
   h+='</div>';
   return h;
 }
