@@ -2064,8 +2064,8 @@ allPeople.sort(function(a,b){
         var isPT=st==='PT'||st==='TP';
         var statusLabel=isPT?'PT':isTraining?'T':isAbsent?'Absent':isPresent?'P':'Empty';
         var statusBg=isAbsent?'#c5221f':isTraining?'#0d47a1':isPT?'#5e35b1':isPresent?'#1e8e3e':'#9aa0a6';
-        var rowBg=isPresent?'#f8fdf9':isAbsent?'#fff8f8':'#fafafa';
-        var rowBorder=isPresent?'rgba(30,142,62,.15)':isAbsent?'rgba(197,34,31,.15)':'var(--border)';
+        var rowBg=isAbsent?'#fff0f0':isTraining?'#f0f4ff':isPT?'#f5f0ff':'#f8fdf9';
+var rowBorder=isAbsent?'rgba(197,34,31,.25)':isTraining?'rgba(13,71,161,.2)':isPT?'rgba(94,53,177,.2)':'rgba(30,142,62,.15)';
 
         // نبني الـ data كـ attributes بدل JSON.stringify في onclick
         var safeN=(p.name||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
@@ -2090,8 +2090,8 @@ allPeople.sort(function(a,b){
           +'onmouseout="this.style.background=\''+rowBg+'\'">';
         html+='<span style="font-size:11px;color:var(--gray);min-width:22px;font-weight:700">'+(parseInt(p.row)||idx+1)+'</span>';
         if(p.pc)html+='<span style="font-size:10px;font-weight:700;background:white;color:var(--blue);padding:2px 7px;border-radius:5px;border:1px solid var(--blue-lt);flex-shrink:0">'+p.pc+'</span>';
-        html+='<span style="flex:1;font-size:13px;font-weight:700;color:var(--dark)">'+titleCase(p.name||'-')+'</span>';
-        html+='<span style="background:'+statusBg+';color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;flex-shrink:0">'+statusLabel+'</span>';
+        html+='<span style="flex:1;font-size:13px;font-weight:700;color:'+(isAbsent?'#c5221f':'var(--dark)')+'">'+titleCase(p.name||'-')+'</span>';
+html+='<span style="background:'+statusBg+';color:white;font-size:11px;font-weight:800;padding:3px 12px;border-radius:6px;flex-shrink:0;min-width:36px;text-align:center">'+statusLabel+'</span>';
         html+='<span style="color:var(--gray);font-size:11px;flex-shrink:0">&#9654;</span>';
         html+='</div>';
       });
