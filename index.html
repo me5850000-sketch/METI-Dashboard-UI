@@ -409,7 +409,87 @@ body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
 <div class="config-notice" id="configNotice">
   ⚠️ يجب تعيين <strong>APPS_SCRIPT_URL</strong> أولاً — اقرأ التعليمات في أعلى الكود
 </div>
+<!-- شاشة الانتظار -->
+<div id="waitingScreen" style="display:none">
+  <div class="login-screen">
+    <div class="login-box" style="text-align:center">
+      <div class="login-logo">
+        <div class="logo-badge">
+          <svg width="50" height="50" viewBox="0 0 80 80">
+            <text x="50%" y="56" font-family="IBM Plex Sans,Arial" font-weight="900"
+              font-size="32" fill="#1c4587" letter-spacing="-1" text-anchor="middle">ME</text>
+          </svg>
+        </div>
+        <h1>Request Sent</h1>
+        <p>Your account is pending approval</p>
+      </div>
+      <div style="background:#e8f0fe;border-radius:14px;padding:24px;margin:16px 0">
+        <div style="font-size:48px;margin-bottom:12px">⏳</div>
+        <div style="font-size:15px;font-weight:700;color:#1c4587;margin-bottom:8px">
+          Waiting for Admin Approval
+        </div>
+        <div style="font-size:13px;color:#5f6368;line-height:1.6">
+          Your request has been submitted.<br>
+          Please wait for an admin to review and approve your account.
+        </div>
+      </div>
+      <button class="login-btn" style="background:#5f6368" onclick="backToLogin()">
+        ← Back to Login
+      </button>
+    </div>
+  </div>
+</div>
 
+<!-- شاشة Request Access -->
+<div id="registerScreen" style="display:none">
+  <div class="login-screen">
+    <div class="login-box">
+      <div class="login-logo">
+        <div class="logo-badge">
+          <svg width="50" height="50" viewBox="0 0 80 80">
+            <text x="50%" y="56" font-family="IBM Plex Sans,Arial" font-weight="900"
+              font-size="32" fill="#1c4587" letter-spacing="-1" text-anchor="middle">ME</text>
+          </svg>
+        </div>
+        <h1>Request Access</h1>
+        <p>Fill in your details to request an account</p>
+      </div>
+      <div class="inp-wrap">
+        <label>Full Name (Two Words)</label>
+        <input type="text" id="rName" placeholder="e.g. Ahmed Mohamed">
+      </div>
+      <div class="inp-wrap">
+        <label>Work Email</label>
+        <input type="email" id="rEmail" placeholder="email@meti.ai">
+      </div>
+      <div class="inp-wrap">
+        <label>Password</label>
+        <div class="pwd-wrap">
+          <input type="password" id="rPass" placeholder="Choose a password">
+          <button type="button" class="eye-btn" onclick="toggleEye('rPass',this)">👁</button>
+        </div>
+      </div>
+      <div class="inp-wrap">
+        <label>Shift</label>
+        <select id="rShift" class="sel-inp">
+          <option value="">— Select Shift —</option>
+          <option value="Morning">Morning</option>
+          <option value="Night">Night</option>
+          <option value="Over Night">Over Night</option>
+        </select>
+      </div>
+      <div id="regErr" style="background:#fce8e6;color:#c5221f;padding:10px;
+        border-radius:8px;font-size:13px;margin-bottom:10px;display:none;text-align:center">
+      </div>
+      <button class="login-btn" id="regBtn" onclick="doRegister()">Send Request</button>
+      <button onclick="backToLogin()" style="width:100%;margin-top:10px;padding:10px;
+        background:none;border:1.5px solid #e0e0e0;border-radius:9px;font-size:14px;
+        font-weight:700;cursor:pointer;color:#5f6368">
+        ← Back to Login
+      </button>
+    </div>
+  </div>
+</div>
 <div id="loginScreen">
   <div class="login-screen">
     <div class="login-box">
@@ -438,6 +518,13 @@ body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
         </div>
       <div id="loginErr" style="background: #fce8e6; color: #c5221f; padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px; display: none; text-align: center;"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+        <div style="text-align:center;margin-top:14px">
+  <span style="font-size:13px;color:#5f6368">Don't have an account?</span>
+  <button onclick="showRegister()" style="background:none;border:none;color:#1c4587;
+    font-size:13px;font-weight:700;cursor:pointer;text-decoration:underline;margin-left:4px">
+    Request Access
+  </button>
+</div>
       </div>
     </div>
   </div>
@@ -700,7 +787,8 @@ var google = {
         .catch(e => { console.error(e); if (f) f(e); });
       },
       login: function(id, pwd) { this.execute('login', [id, pwd]); },
-      logout: function(t) { this.execute('logout', [t]); },
+      logout: function(t) { this.execute('logout', [t]); },registerUser: function(p) { this.execute('registerUser', [p]); },
+      approveUser: function(t, id, action, rd) { this.execute('approveUser', [t, id, action, rd]); },
       getStats: function(t, f, to) { this.execute('getStats', [t, f, to]); },
       getQtcStats: function(t, f, to) { this.execute('getQtcStats', [t, f, to]); },
       getQtcUsers: function(t) { this.execute('getQtcUsers', [t]); },
@@ -860,7 +948,12 @@ function doLogin() {
                 showDash();  
                 loadStats(); 
             } else {
-                showLoginErr(res.msg || 'Invalid credentials');
+               if (res.pending) {
+  gid('loginScreen').style.display = 'none';
+  gid('waitingScreen').style.display = 'flex';
+} else {
+  showLoginErr(res.msg || 'Invalid credentials');
+}
             }
         })
         .withFailureHandler(function(err) {
@@ -2215,8 +2308,97 @@ window._openAttPopupWithData=function(p,statusLabel,statusBg){
 
 <script>
 // ══ USERS ══
-function loadUsers(){if(!SESSION||!hasRole(SESSION.role,ROLES_MANAGE_USERS))return;shtml('usersArea','<div class="loading"><div class="spin"></div> Loading...</div>');google.script.run.withSuccessHandler(function(r){if(r.err){shtml('usersArea','<div class="empty">'+r.err+'</div>');return;}renderUsers(r.users||[]);}).withFailureHandler(function(e){shtml('usersArea','<div class="empty">'+e.message+'</div>');}).getUsers(TOKEN);}
-function renderUsers(users){var ROLE_ORD=['admin','sm','svv','sv','qtc','wla'];var sorted=users.slice().sort(function(a,b){var ai=ROLE_ORD.indexOf(a.role),bi=ROLE_ORD.indexOf(b.role);return ai!==bi?ai-bi:(a.name||'').localeCompare(b.name||'');});shtml('usersArea','<div class="tbl-card"><table><thead><tr><th class="left">Name</th><th class="left">Email</th><th>Role</th><th>Shift</th><th>Status</th><th>Actions</th></tr></thead><tbody>'+sorted.map(function(u){return'<tr><td class="left bold">'+titleCase(u.name||'-')+'</td><td class="left" style="font-size:12px;color:var(--gray)">'+(u.email||'-')+'</td><td><span class="badge b-'+(u.role||'qtc')+'">'+(u.role||'-').toUpperCase()+'</span></td><td>'+(u.shift?'<span class="badge '+shiftBadge(u.shift)+'">'+u.shift+'</span>':'<span style="color:var(--gray);font-size:12px">All</span>')+'</td><td><span class="badge '+(u.active!==false?'b-active':'b-inactive')+'">'+(u.active!==false?'Active':'Inactive')+'</span></td><td><button class="icon-btn ib-edit" data-uid="'+encodeURIComponent(JSON.stringify(u))+'">✏️</button><button class="icon-btn ib-del" data-uid="'+(u.id||'')+'" data-uname="'+encodeURIComponent(u.name||'')+'">🗑</button></td></tr>';}).join('')+'</tbody></table></div>');}
+function loadUsers() {
+  if (!SESSION || !hasRole(SESSION.role, ['admin','sm','svv'])) return;
+  shtml('usersArea','<div class="loading"><div class="spin"></div> Loading...</div>');
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (r.err) { shtml('usersArea','<div class="empty">'+r.err+'</div>'); return; }
+      renderUsers(r.users || [], r.pending || []);
+    })
+    .withFailureHandler(function(e) {
+      shtml('usersArea','<div class="empty">'+e.message+'</div>');
+    })
+    .getUsers(TOKEN);
+}
+
+function renderUsers(users, pending) {
+  var ROLE_ORD = ['admin','sm','svv','sv','qt','qtc','wla'];
+  var sorted = users.slice().sort(function(a,b) {
+    var ai = ROLE_ORD.indexOf(a.role), bi = ROLE_ORD.indexOf(b.role);
+    return ai !== bi ? ai - bi : (a.name||'').localeCompare(b.name||'');
+  });
+
+  var pendingBadge = pending.length
+    ? ' <span style="background:#c5221f;color:white;font-size:10px;font-weight:800;'+
+      'padding:1px 7px;border-radius:10px;margin-left:4px">'+pending.length+'</span>'
+    : '';
+
+  var html =
+    '<div style="display:flex;gap:0;border-bottom:2px solid var(--blue-lt);margin-bottom:16px">' +
+    '<div class="qtc-tab active" id="uTabActive" onclick="switchUserTab(\'active\')" ' +
+    'style="border-bottom:2px solid var(--blue);color:var(--blue);margin-bottom:-2px">Active Users</div>' +
+    '<div class="qtc-tab" id="uTabPending" onclick="switchUserTab(\'pending\')" ' +
+    'style="margin-bottom:-2px">Pending'+pendingBadge+'</div>' +
+    '</div>' +
+
+    '<div id="uPanelActive">' +
+    '<div class="tbl-card"><table><thead><tr>' +
+    '<th class="left">Name</th><th class="left">Email</th>' +
+    '<th>Role</th><th>Shift</th><th>Status</th><th>Actions</th>' +
+    '</tr></thead><tbody>' +
+    sorted.map(function(u) {
+      return '<tr>' +
+        '<td class="left bold">'+titleCase(u.name||'-')+'</td>' +
+        '<td class="left" style="font-size:12px;color:var(--gray)">'+(u.email||'-')+'</td>' +
+        '<td><span class="badge b-'+(u.role||'qtc')+'">'+(u.role||'-').toUpperCase()+'</span></td>' +
+        '<td>'+(u.shift?'<span class="badge '+shiftBadge(u.shift)+'">'+u.shift+'</span>':
+          '<span style="color:var(--gray);font-size:12px">All</span>')+'</td>' +
+        '<td><span class="badge '+(u.active!==false?'b-active':'b-inactive')+'">' +
+        (u.active!==false?'Active':'Inactive')+'</span></td>' +
+        '<td>' +
+        '<button class="icon-btn ib-edit" data-uid="'+encodeURIComponent(JSON.stringify(u))+'">✏️</button>' +
+        '<button class="icon-btn ib-del" data-uid="'+(u.id||'')+
+        '" data-uname="'+encodeURIComponent(u.name||'')+'">🗑</button>' +
+        '</td></tr>';
+    }).join('') +
+    '</tbody></table></div></div>' +
+
+    '<div id="uPanelPending" style="display:none">' +
+    (pending.length === 0
+      ? '<div class="empty">No pending requests 🎉</div>'
+      : '<div class="tbl-card"><table><thead><tr>' +
+        '<th class="left">Name</th><th class="left">Email</th><th>Shift</th><th>Actions</th>' +
+        '</tr></thead><tbody>' +
+        pending.map(function(p) {
+          return '<tr>' +
+            '<td class="left bold">'+titleCase(p.name||'-')+'</td>' +
+            '<td class="left" style="font-size:12px;color:var(--gray)">'+(p.email||'-')+'</td>' +
+            '<td>'+(p.shift?'<span class="badge '+shiftBadge(p.shift)+'">'+p.shift+'</span>':'—')+'</td>' +
+            '<td style="display:flex;gap:6px;align-items:center">' +
+            '<button class="fbtn fbtn-primary" style="padding:6px 14px;font-size:12px" ' +
+            'onclick="openApproveModal('+p.id+',\''+encodeURIComponent(p.name)+'\')">✓ Approve</button>' +
+            '<button class="icon-btn ib-del" ' +
+            'onclick="declineUser('+p.id+',\''+encodeURIComponent(p.name)+'\')">✕ Decline</button>' +
+            '</td></tr>';
+        }).join('') +
+        '</tbody></table></div>'
+    ) +
+    '</div>';
+
+  shtml('usersArea', html);
+}
+
+function switchUserTab(tab) {
+  var isA = tab === 'active';
+  gid('uPanelActive').style.display  = isA ? 'block' : 'none';
+  gid('uPanelPending').style.display = isA ? 'none'  : 'block';
+  var tA = gid('uTabActive'), tP = gid('uTabPending');
+  if (tA) { tA.style.borderBottomColor = isA ? 'var(--blue)':'transparent';
+            tA.style.color = isA ? 'var(--blue)':'var(--gray)'; }
+  if (tP) { tP.style.borderBottomColor = !isA ? 'var(--blue)':'transparent';
+            tP.style.color = !isA ? 'var(--blue)':'var(--gray)'; }
+}
 function openModal(user){var isEdit=!!user;gid('modalTitle').textContent=isEdit?'Edit User':'Add User';gid('mId').value=isEdit?user.id:'';gid('mName').value=isEdit?user.name:'';gid('mEmail').value=isEdit?user.email:'';gid('mPwd').value='';gid('mTeamsName').value=isEdit?(user.teamsName||user.teams_name||''):'';gid('mRole').value=isEdit?(user.role||'qtc'):'qtc';gid('mShift').value=isEdit?(user.shift||''):'';gid('mActive').value=isEdit?(user.active!==false?'true':'false'):'true';gid('modalErr').style.display='none';gid('activeRow').style.display=isEdit?'block':'none';gid('modalBd').classList.add('show');}
 function closeModal(){gid('modalBd').classList.remove('show');}
 function saveUser(){var name=gid('mName').value.trim(),email=gid('mEmail').value.trim(),pwd=gid('mPwd').value.trim();var role=gid('mRole').value,shift=gid('mShift').value,active=gid('mActive').value==='true';var teamsName=gid('mTeamsName').value.trim(),id=gid('mId').value;var errEl=gid('modalErr');errEl.style.display='none';if(!name){errEl.textContent='Name is required.';errEl.style.display='block';return;}var btn=gid('modalSaveBtn');btn.textContent='...';btn.disabled=true;var payload={name:name,email:email,role:role,shift:shift,active:active,teamsName:teamsName};if(pwd)payload.password=pwd;if(id)payload.id=id;google.script.run.withSuccessHandler(function(r){btn.textContent='Save';btn.disabled=false;if(r.err){errEl.textContent=r.err;errEl.style.display='block';return;}closeModal();toast((id?'User updated':'User added')+' ✅','ok');loadUsers();}).withFailureHandler(function(e){btn.textContent='Save';btn.disabled=false;errEl.textContent=e.message;errEl.style.display='block';}).upsertUser(TOKEN,payload);}
@@ -2388,6 +2570,137 @@ window.onload=function(){
   setInterval(function(){if(SESSION&&TOKEN&&gid('pgHome').style.display!=='none')loadStats();},120000);
 };
 </script>
+<script>
+// ══ REGISTER & WAITING ══
+function showRegister() {
+  gid('loginScreen').style.display  = 'none';
+  gid('registerScreen').style.display = 'flex';
+}
 
+function backToLogin() {
+  gid('registerScreen').style.display = 'none';
+  gid('waitingScreen').style.display  = 'none';
+  gid('loginScreen').style.display    = 'flex';
+}
+
+function doRegister() {
+  var name  = (gid('rName').value  || '').trim();
+  var email = (gid('rEmail').value || '').trim();
+  var pass  = (gid('rPass').value  || '').trim();
+  var shift = gid('rShift').value;
+  var btn   = gid('regBtn');
+
+  gid('regErr').style.display = 'none';
+
+  if (!name || name.split(' ').filter(Boolean).length < 2)
+    return showRegErr('Please enter your full name (two words)');
+  if (!pass || pass.length < 4)
+    return showRegErr('Password must be at least 4 characters');
+  if (!shift)
+    return showRegErr('Please select your shift');
+
+  btn.textContent = '...';
+  btn.disabled    = true;
+
+  google.script.run
+    .withSuccessHandler(function(r) {
+      btn.textContent = 'Send Request';
+      btn.disabled    = false;
+      if (!r.ok) return showRegErr(r.msg || 'Registration failed');
+      gid('registerScreen').style.display = 'none';
+      gid('waitingScreen').style.display  = 'flex';
+    })
+    .withFailureHandler(function() {
+      btn.textContent = 'Send Request';
+      btn.disabled    = false;
+      showRegErr('Connection error. Try again.');
+    })
+    .registerUser({ name: name, email: email, password: pass, shift: shift });
+}
+
+function showRegErr(msg) {
+  var el = gid('regErr');
+  el.textContent   = msg;
+  el.style.display = 'block';
+}
+
+// ══ APPROVE / DECLINE ══
+var _approveRowId = null;
+
+function openApproveModal(rowId, encodedName) {
+  _approveRowId = rowId;
+  var name = decodeURIComponent(encodedName);
+  var bd   = document.createElement('div');
+  bd.id    = 'approveBd';
+  bd.className = 'modal-backdrop show';
+  bd.innerHTML =
+    '<div class="modal" style="width:420px">' +
+    '<div class="modal-hdr"><h3>Approve: ' + titleCase(name) + '</h3>' +
+    '<button class="modal-close" onclick="closeApproveModal()">✕</button></div>' +
+    '<div class="inp-wrap"><label>Role</label>' +
+    '<select id="apRole" class="sel-inp">' +
+    '<option value="qtc">QTC</option>' +
+    '<option value="sv">SV</option>' +
+    '<option value="svv">SVV</option>' +
+    '<option value="sm">SM</option>' +
+    '<option value="wla">WLA</option>' +
+    '<option value="qt">QT</option>' +
+    '<option value="admin">Admin</option>' +
+    '</select></div>' +
+    '<div class="inp-wrap"><label>Name In Teams ' +
+    '<span style="color:var(--gray);font-size:11px">(for QTC Stats)</span></label>' +
+    '<input type="text" id="apTeams" placeholder="e.g. Ahmed Mohamed (M)" value="' + name + '"></div>' +
+    '<div class="modal-footer">' +
+    '<button class="btn-cancel" onclick="closeApproveModal()">Cancel</button>' +
+    '<button class="btn-save" onclick="confirmApprove()">✓ Approve</button>' +
+    '</div><div class="modal-err" id="approveErr"></div></div>';
+  bd.addEventListener('click', function(e) { if (e.target === bd) closeApproveModal(); });
+  document.body.appendChild(bd);
+}
+
+function closeApproveModal() {
+  var bd = gid('approveBd');
+  if (bd) bd.remove();
+  _approveRowId = null;
+}
+
+function confirmApprove() {
+  var role  = gid('apRole').value;
+  var teams = (gid('apTeams').value || '').trim();
+  var errEl = gid('approveErr');
+  var btn   = document.querySelector('#approveBd .btn-save');
+  if (errEl) errEl.style.display = 'none';
+  if (btn)  { btn.textContent = '...'; btn.disabled = true; }
+
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (btn) { btn.textContent = '✓ Approve'; btn.disabled = false; }
+      if (r.err) {
+        if (errEl) { errEl.textContent = r.err; errEl.style.display = 'block'; }
+        return;
+      }
+      closeApproveModal();
+      toast('User approved ✅', 'ok');
+      loadUsers();
+    })
+    .withFailureHandler(function(e) {
+      if (btn) { btn.textContent = '✓ Approve'; btn.disabled = false; }
+      if (errEl) { errEl.textContent = e.message; errEl.style.display = 'block'; }
+    })
+    .approveUser(TOKEN, _approveRowId, 'approve', { role: role, teamsName: teams });
+}
+
+function declineUser(rowId, encodedName) {
+  var name = decodeURIComponent(encodedName);
+  if (!confirm('Decline request from "' + titleCase(name) + '"?')) return;
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (r.err) { toast(r.err, 'err'); return; }
+      toast('Request declined', 'ok');
+      loadUsers();
+    })
+    .withFailureHandler(function(e) { toast(e.message, 'err'); })
+    .approveUser(TOKEN, rowId, 'decline', {});
+}
+</script>
 </body>
-</html>if(!myShiftData[sh])return;
