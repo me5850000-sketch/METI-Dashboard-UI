@@ -2085,17 +2085,17 @@ unitOrder.forEach(function(u){if(unitNames.indexOf(u)===-1&&u!=='Unknown')unitNa
 var isAbsent = p._status === 'absent';
 var statusLabel = isAbsent ? '0' : (rawSt || 'P');
 var statusBg = isAbsent ? '#c5221f'
-  : rawSt === 'T' || rawSt.match(/^T\d$/) ? '#0d47a1'
+  : rawSt === 'T' || rawSt.match(/^T\d$/) ? '#f57f17'
   : rawSt === 'PT' ? '#1565c0'
   : rawSt === 'TP' ? '#5e35b1'
   : rawSt === 'E'  ? '#9aa0a6'
   : '#1e8e3e';
         var rowBg = isAbsent ? '#fff0f0'
-  : rawSt === 'T' || rawSt.match(/^T\d$/) ? '#f0f4ff'
+  : rawSt === 'T' || rawSt.match(/^T\d$/) ? '#fff8e1'
   : rawSt === 'PT' || rawSt === 'TP' ? '#f5f0ff'
   : '#f8fdf9';
 var rowBorder = isAbsent ? 'rgba(197,34,31,.25)'
-  : rawSt === 'T' || rawSt.match(/^T\d$/) ? 'rgba(13,71,161,.2)'
+ : rawSt === 'T' || rawSt.match(/^T\d$/) ? 'rgba(245,127,23,.2)'
   : rawSt === 'PT' || rawSt === 'TP' ? 'rgba(94,53,177,.2)'
   : 'rgba(30,142,62,.15)';
 
