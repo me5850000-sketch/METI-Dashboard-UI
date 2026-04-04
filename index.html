@@ -1286,7 +1286,7 @@ function getFilteredData(){
 }
 
 function renderDataFiltered(){
-  var ROOM_ORD=['NC Room 102','NC Room 106','NC Room 108','4th Floor','2nd Floor'];
+    var ROOM_ORD=['Room 102','Room 106','Room 108','Floor 2','2th Floor','Floor 4','4th Floor'];
   var unitBar=gid('unitBtns');
   if(unitBar&&dataAll.length){
     var unitsInData=[];
@@ -1653,7 +1653,8 @@ function parseQtcShift(name){var m=name.match(/\(([^)]+)\)\s*$/);if(!m)return 'U
 
 function renderQtcPage(data){
   if(!data||!data.length){shtml('qtcArea','<div class="empty">No QTC data found.</div>');return;}
-  var ROOM_ORD=['NC Room 102','NC Room 106','NC Room 108','4th Floor','2nd Floor'];
+   
+    var ROOM_ORD=['Room 102','Room 106','Room 108','Floor 2','2th Floor','Floor 4','4th Floor'];
   var unitsSet=[];data.forEach(function(r){var u=(r[F.unit]||'').trim();if(u&&unitsSet.indexOf(u)===-1)unitsSet.push(u);});
   unitsSet.sort(function(a,b){var ai=ROOM_ORD.indexOf(a),bi=ROOM_ORD.indexOf(b);if(ai===-1&&bi===-1)return a.localeCompare(b);if(ai===-1)return 1;if(bi===-1)return -1;return ai-bi;});
   var qtcs={};
@@ -1969,7 +1970,8 @@ function initAttDetailsPage(){
 
 function renderAttDetailsPage(r,dateISO){
   var shifts=r.shifts||{};var SHIFT_ORD=['Morning','Night','Over Night'];
-  var ROOM_ORD=['NC Room 102','NC Room 106','NC Room 108','4th Floor','2nd Floor'];
+ 
+    var ROOM_ORD=['Room 102','Room 106','Room 108','Floor 2','2th Floor','Floor 4','4th Floor'];
   var visible=_attShift2==='All'?SHIFT_ORD.filter(function(s){return shifts[s];}):([_attShift2].filter(function(s){return shifts[s];}));
   if(!visible.length){shtml('attDetailsArea','<div class="empty">No data for this date.</div>');return;}
 
