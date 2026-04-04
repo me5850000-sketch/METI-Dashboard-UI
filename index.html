@@ -1994,15 +1994,15 @@ function renderAttDetailsPage(r,dateISO){
     var shId='sh_'+sh.replace(/\s/g,'_');
 
     // دمج الكل وترتيب حسب row
-    var allPeople=[].concat(
-      present.map(function(p){return Object.assign({},p,{_status:'present'});}),
-      absent.map(function(p){return Object.assign({},p,{_status:'absent'});}),
-      (sd.empty||[]).map(function(p){return Object.assign({},p,{_status:'empty'});})
-    );
-    allPeople.sort(function(a,b){
-      var ar=parseInt(a.row)||9999,br=parseInt(b.row)||9999;
-      return ar-br;
-    });
+   var allPeople=[].concat(
+  present.map(function(p){return Object.assign({},p,{_status:'present'});}),
+  absent.map(function(p){return Object.assign({},p,{_status:'absent'});}),
+  (sd.empty||[]).map(function(p){return Object.assign({},p,{_status:'empty'});})
+);
+allPeople.sort(function(a,b){
+  var ar=parseInt(a.row)||9999,br=parseInt(b.row)||9999;
+  return ar-br;
+});
 
     // Group by unit مع الحفاظ على ترتيب الـ row
     var units={},unitOrder=[];
