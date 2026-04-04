@@ -2059,13 +2059,6 @@ function renderAttDetailsPage(r,dateISO){
   shtml('attDetailsArea',html);
   _wireAttCards('attDetailsArea',true);
 }
-    if(present.length){var prodList=present.filter(function(p){return p.type!=='T';});var trainList=present.filter(function(p){return p.type==='T';});if(prodList.length){html+='<div style="padding:14px 20px 0"><div style="font-size:11px;font-weight:700;color:#1e8e3e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">✅ Production ('+prodList.length+')</div><div style="display:grid;grid-template-columns:1fr;gap:6px">';prodList.forEach(function(p){html+=mkPersonCard(p,p.type==='PT'?'PT':'P');});html+='</div></div>';}if(trainList.length){html+='<div style="padding:14px 20px 0"><div style="font-size:11px;font-weight:700;color:#0d47a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📚 Training ('+trainList.length+')</div><div style="display:grid;grid-template-columns:1fr;gap:6px">';trainList.forEach(function(p){html+=mkPersonCard(p,'T');});html+='</div></div>';}}
-    if(absent.length){html+='<div style="padding:14px 20px 0"><div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">❌ Absent ('+absent.length+')</div><div style="display:grid;grid-template-columns:1fr;gap:6px">';absent.forEach(function(p){html+=mkPersonCard(p,'0');});html+='</div></div>';}
-    if(empty.length){html+='<div style="padding:14px 20px 0"><div style="font-size:11px;font-weight:700;color:#9aa0a6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">⬜ Empty ('+empty.length+')</div><div style="display:grid;grid-template-columns:1fr;gap:6px">';empty.forEach(function(p){html+=mkPersonCard(p,'E');});html+='</div></div>';}
-    html+='<div style="height:14px"></div></div>';
-  });
-  shtml('attDetailsArea',html);_wireAttCards('attDetailsArea',true);
-}
 </script>
 
 <script>
