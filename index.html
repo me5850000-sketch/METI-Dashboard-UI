@@ -983,7 +983,7 @@ function doLogout() {
   cachedStats = null;
 
   document.getElementById('dashScreen').style.display = 'none';
-  document.getElementById('loginScreen').style.display = 'flex';
+ document.getElementById('loginScreen').style.display = 'block';
   
   if (document.getElementById('lPass')) document.getElementById('lPass').value = '';
 
@@ -2577,11 +2577,10 @@ function showRegister() {
   gid('registerScreen').style.cssText = 'display:block';
 }
 function backToLogin() {
-  gid('registerScreen').style.display = 'none';
-  gid('waitingScreen').style.display  = 'none';
-  gid('loginScreen').style.display    = 'flex';
+  gid('registerScreen').style.cssText = 'display:none';
+  gid('waitingScreen').style.cssText  = 'display:none';
+  gid('loginScreen').style.cssText    = 'display:block';
 }
-
 function doRegister() {
   var name  = (gid('rName').value  || '').trim();
   var email = (gid('rEmail').value || '').trim();
