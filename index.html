@@ -1973,76 +1973,139 @@ function renderAttDetailsPage(r,dateISO){
   var visible=_attShift2==='All'?SHIFT_ORD.filter(function(s){return shifts[s];}):([_attShift2].filter(function(s){return shifts[s];}));
   if(!visible.length){shtml('attDetailsArea','<div class="empty">No data for this date.</div>');return;}
 
+  // ═══ POPUP HTML (once) ═══
+  if(!gid('attDetailPopup')){
+    var pop=document.createElement('div');
+    pop.id='attDetailPopup';
+    pop.style.cssText='display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:16px';
+    pop.innerHTML='<div id="attDetailPopupBox" style="background:white;border-radius:16px;width:100%;max-width:420px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);animation:fadeUp .2s ease"><div id="attDetailPopupInner"></div></div>';
+    pop.addEventListener('click',function(e){if(e.target===pop)closeAttPopup();});
+    document.body.appendChild(pop);
+  }
+
+  function openAttPopup(p,statusLabel,statusBg){
+    var box=gid('attDetailPopupBox');
+    if(document.body.classList.contains('dark'))box.style.background='#1e2130';
+    else box.style.background='white';
+
+    var fields=[
+      {label:'Name',val:titleCase(p.name||'-'),key:'name'},
+      {label:'PC',val:p.pc||'',key:'pc'},
+      {label:'Unit',val:p.location||'',key:'unit'},
+      {label:'Shift',val:p.shift||'',key:'shift'},
+      {label:'Status',val:statusLabel,key:'status'},
+      {label:'Email',val:p.email||'',key:'email'},
+      {label:'Phone',val:p.phone||'',key:'phone'},
+      {label:'Yubikey',val:p.yubikey||'',key:'yubikey'},
+    ];
+
+    var h='<div style="padding:0">';
+    // Header
+    h+='<div style="background:var(--blue);border-radius:16px 16px 0 0;padding:16px 20px;display:flex;align-items:center;justify-content:space-between">';
+    h+='<div>';
+    h+='<div style="color:white;font-size:16px;font-weight:800">'+titleCase(p.name||'-')+'</div>';
+    if(p.pc)h+='<div style="color:rgba(255,255,255,.6);font-size:12px;margin-top:2px">'+p.pc+(p.location?' · '+p.location:'')+'</div>';
+    h+='</div>';
+    h+='<div style="display:flex;align-items:center;gap:8px">';
+    h+='<span style="background:'+statusBg+';color:white;font-size:11px;font-weight:800;padding:4px 12px;border-radius:8px">'+statusLabel+'</span>';
+    h+='<button onclick="closeAttPopup()" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;color:white;font-size:16px;display:flex;align-items:center;justify-content:center;line-height:1">&#10005;</button>';
+    h+='</div></div>';
+
+    // Fields
+    h+='<div style="padding:14px 18px;display:flex;flex-direction:column;gap:8px">';
+    fields.forEach(function(f){
+      if(!f.val)return;
+      var isMono=f.key==='yubikey'||f.key==='email';
+      h+='<div style="display:flex;align-items:center;background:var(--gray-lt);border-radius:9px;padding:10px 14px;gap:10px">';
+      h+='<div style="flex:1">';
+      h+='<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">'+f.label+'</div>';
+      h+='<div style="font-size:13px;font-weight:700;color:var(--dark)'+(isMono?';font-family:var(--mono)':'')+'">'+f.val+'</div>';
+      h+='</div>';
+      h+='<button onclick="(function(btn,v){navigator.clipboard.writeText(v).then(function(){var o=btn.innerHTML;btn.innerHTML=\'&#10003;\';btn.style.color=\'#1e8e3e\';setTimeout(function(){btn.innerHTML=o;btn.style.color=\'\';},1500);});})(this,\''+f.val.replace(/'/g,"\\'")+'\')" style="background:none;border:none;cursor:pointer;color:var(--gray);font-size:15px;padding:4px;border-radius:5px;transition:color .15s;flex-shrink:0" title="Copy">&#128203;</button>';
+      h+='</div>';
+    });
+
+    // Copy All
+    var allText=fields.filter(function(f){return f.val;}).map(function(f){return f.label+': '+f.val;}).join('\n');
+    h+='<button onclick="(function(btn){navigator.clipboard.writeText(\''+allText.replace(/\n/g,'\\n').replace(/'/g,"\\'")+'\').then(function(){var o=btn.innerHTML;btn.innerHTML=\'&#10003; Copied!\';setTimeout(function(){btn.innerHTML=o;},1800);});})(this)" style="width:100%;padding:10px;background:var(--blue);color:white;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px">&#128203; Copy All</button>';
+    h+='</div></div>';
+    gid('attDetailPopupInner').innerHTML=h;
+    var pop=gid('attDetailPopup');pop.style.display='flex';
+    // Prevent body scroll
+    document.body.style.overflow='hidden';
+  }
+
+  // Build HTML
   var html='';
   visible.forEach(function(sh){
     var sd=shifts[sh];
     var present=sd.present||[],absent=sd.absent||[],total=sd.total||0;
     var prod=0,train=0;present.forEach(function(p){if(p.type==='T')train++;else prod++;});
     var pct=total>0?Math.round(present.length/total*100):0;
-    var bc=pct>=90?'#1e8e3e':pct>=70?'#e37400':'#c5221f';
     var shBg=sh==='Morning'?'#fff3e0':sh==='Night'?'#e8eaf6':'#e8f5e9';
     var shColor=sh==='Morning'?'#e65100':sh==='Night'?'#283593':'#1b5e20';
     var shBorder=sh==='Morning'?'#ffcc80':sh==='Night'?'#9fa8da':'#a5d6a7';
     var shId='sh_'+sh.replace(/\s/g,'_');
 
-    // Build units map
+    // Merge all people, sort by row number
     var allPeople=[].concat(
       present.map(function(p){return Object.assign({},p,{_status:'present'});}),
       absent.map(function(p){return Object.assign({},p,{_status:'absent'});}),
       (sd.empty||[]).map(function(p){return Object.assign({},p,{_status:'empty'});})
     );
-    var units={};
+    allPeople.sort(function(a,b){return(parseInt(a.row)||9999)-(parseInt(b.row)||9999);});
+
+    // Group by unit preserving row order
+    var units={},unitOrder=[];
     allPeople.forEach(function(p){
       var u=(p.location||'Unknown').trim();
-      if(!units[u])units[u]=[];
+      if(!units[u]){units[u]=[];unitOrder.push(u);}
       units[u].push(p);
     });
     var unitNames=ROOM_ORD.filter(function(u){return units[u];});
-    Object.keys(units).forEach(function(u){if(unitNames.indexOf(u)===-1)unitNames.push(u);});
+    unitOrder.forEach(function(u){if(unitNames.indexOf(u)===-1)unitNames.push(u);});
 
-    // ═══ SHIFT CARD (collapsible) ═══
+    // ═══ SHIFT CARD ═══
     html+='<div style="background:white;border-radius:14px;border:1px solid var(--border);margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow)">';
 
-    // Shift Header — clickable
-    html+='<div onclick="(function(el){var b=gid(\''+shId+'\');var open=b.style.maxHeight&&b.style.maxHeight!==\'0px\';b.style.maxHeight=open?\'0px\':\'99999px\';b.style.opacity=open?\'0\':\'1\';el.querySelector(\'.sh-chevron\').style.transform=open?\'rotate(0deg)\':\'rotate(180deg)\'})(this)" style="background:var(--blue);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;gap:10px;flex-wrap:wrap">';
-    html+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">';
+    // Shift header
+    html+='<div onclick="(function(el){var b=gid(\''+shId+'\');var open=b.style.maxHeight&&b.style.maxHeight!==\'0px\';b.style.maxHeight=open?\'0px\':\'99999px\';b.style.opacity=open?\'0\':\'1\';el.querySelector(\'.sh-ch\').style.transform=open?\'rotate(0)\':\'rotate(180deg)\'})(this)" style="background:var(--blue);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;gap:10px;flex-wrap:wrap">';
+    html+='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
     html+='<span style="background:'+shBg+';color:'+shColor+';font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;border:1px solid '+shBorder+'">'+sh+'</span>';
     html+='<span style="color:white;font-size:14px;font-weight:700">'+total+' Employee</span>';
-    html+='<span style="background:rgba(255,255,255,.12);color:#a5d6a7;font-size:12px;font-weight:700;padding:3px 10px;border-radius:8px">&#10003; '+present.length+' present</span>';
-    html+='<span style="background:rgba(255,255,255,.12);color:#ef9a9a;font-size:12px;font-weight:700;padding:3px 10px;border-radius:8px">&#10005; '+absent.length+' absent</span>';
-    html+='<span style="background:rgba(255,255,255,.12);color:#90caf9;font-size:12px;font-weight:700;padding:3px 10px;border-radius:8px">Prod: '+prod+'</span>';
-    html+='<span style="background:rgba(255,255,255,.12);color:#ce93d8;font-size:12px;font-weight:700;padding:3px 10px;border-radius:8px">Train: '+train+'</span>';
+    html+='<span style="background:rgba(255,255,255,.12);color:#a5d6a7;font-size:12px;font-weight:700;padding:3px 10px;border-radius:7px">&#10003; '+present.length+'</span>';
+    html+='<span style="background:rgba(255,255,255,.12);color:#ef9a9a;font-size:12px;font-weight:700;padding:3px 10px;border-radius:7px">&#10005; '+absent.length+'</span>';
+    html+='<span style="background:rgba(255,255,255,.12);color:#90caf9;font-size:12px;font-weight:700;padding:3px 10px;border-radius:7px">P:'+prod+'</span>';
+    html+='<span style="background:rgba(255,255,255,.12);color:#ce93d8;font-size:12px;font-weight:700;padding:3px 10px;border-radius:7px">T:'+train+'</span>';
     html+='</div>';
-    html+='<div style="display:flex;align-items:center;gap:8px"><div class="sh-chevron" style="color:white;font-size:14px;transition:transform .25s">&#9660;</div></div>';
+    html+='<div class="sh-ch" style="color:rgba(255,255,255,.7);font-size:12px;transition:transform .25s">&#9660;</div>';
     html+='</div>';
 
-    // Shift Body — collapsible
+    // Shift body
     html+='<div id="'+shId+'" style="max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .3s ease;opacity:0">';
-    html+='<div style="padding:10px 12px;background:#f8f9ff;display:flex;flex-direction:column;gap:6px">';
+    html+='<div style="padding:10px;background:#f8f9ff;display:flex;flex-direction:column;gap:6px">';
 
     unitNames.forEach(function(uname){
       var uPeople=units[uname];
       var upresent=uPeople.filter(function(p){return p._status==='present';}).length;
       var uabsent=uPeople.filter(function(p){return p._status==='absent';}).length;
-      var uid='unit_'+sh.replace(/\s/g,'_')+'_'+uname.replace(/\s/g,'_');
+      var uid='u_'+sh.replace(/\s/g,'_')+'_'+uname.replace(/\W/g,'_');
 
-      // ═══ UNIT ROW (collapsible) ═══
+      // ═══ UNIT ROW ═══
       html+='<div style="background:white;border-radius:10px;border:1px solid var(--border);overflow:hidden">';
-
-      // Unit header — clickable
-      html+='<div onclick="(function(el){var b=gid(\''+uid+'\');var open=b.style.maxHeight&&b.style.maxHeight!==\'0px\';b.style.maxHeight=open?\'0px\':\'99999px\';b.style.opacity=open?\'0\':\'1\';el.querySelector(\'.u-chevron\').style.transform=open?\'rotate(0deg)\':\'rotate(180deg)\'})(this)" style="background:var(--blue-bg);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none">';
+      html+='<div onclick="(function(el){var b=gid(\''+uid+'\');var open=b.style.maxHeight&&b.style.maxHeight!==\'0px\';b.style.maxHeight=open?\'0px\':\'99999px\';b.style.opacity=open?\'0\':\'1\';el.querySelector(\'.u-ch\').style.transform=open?\'rotate(0)\':\'rotate(180deg)\'})(this)" style="padding:10px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;background:var(--blue-bg)">';
       html+='<div style="display:flex;align-items:center;gap:10px">';
       html+='<span style="font-size:14px;font-weight:700;color:var(--blue)">&#128205; '+uname+'</span>';
       html+='<span style="font-size:11px;color:var(--gray)">'+uPeople.length+' emp</span>';
       html+='<span style="font-size:11px;font-weight:700;background:#e8f5e9;color:#1e8e3e;padding:2px 8px;border-radius:5px">'+upresent+' P</span>';
       if(uabsent>0)html+='<span style="font-size:11px;font-weight:700;background:#fce8e6;color:#c5221f;padding:2px 8px;border-radius:5px">'+uabsent+' A</span>';
       html+='</div>';
-      html+='<div class="u-chevron" style="color:var(--blue);font-size:13px;transition:transform .25s">&#9660;</div>';
+      html+='<div class="u-ch" style="color:var(--blue);font-size:12px;transition:transform .25s">&#9660;</div>';
       html+='</div>';
 
-      // Unit body — collapsible employees
+      // Unit employees
       html+='<div id="'+uid+'" style="max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .3s ease;opacity:0">';
-      html+='<div style="padding:8px;display:flex;flex-direction:column;gap:4px">';
+      html+='<div style="padding:8px;display:flex;flex-direction:column;gap:3px">';
 
       uPeople.forEach(function(p,idx){
         var st=p.status||'';
@@ -2053,55 +2116,91 @@ function renderAttDetailsPage(r,dateISO){
         var statusLabel=isPT?'PT':isTraining?'T':isAbsent?'Absent':isPresent?'P':'Empty';
         var statusBg=isPresent&&!isTraining?'#1e8e3e':isTraining?'#0d47a1':isPT?'#5e35b1':isAbsent?'#c5221f':'#9aa0a6';
         var rowBg=isPresent?'#f8fdf9':isAbsent?'#fff8f8':'#fafafa';
-        var rowBorder=isPresent?'#c3e6cb':isAbsent?'#f5c6cb':'#e0e0e0';
-        var empId='emp_'+sh.replace(/\s/g,'_')+'_'+uname.replace(/\s/g,'_')+'_'+idx;
-        var detId='det_'+sh.replace(/\s/g,'_')+'_'+uname.replace(/\s/g,'_')+'_'+idx;
+        var rowBorder=isPresent?'rgba(30,142,62,.15)':isAbsent?'rgba(197,34,31,.12)':'var(--border)';
 
-        // Build copy parts
-        var copyParts=['Name: '+(p.name||'-')];
-        if(p.pc)copyParts.push('PC: '+p.pc);
-        if(p.location)copyParts.push('Unit: '+p.location);
-        if(p.email)copyParts.push('Email: '+p.email);
-        if(p.phone)copyParts.push('Phone: '+p.phone);
-        if(p.yubikey)copyParts.push('Yubikey: '+p.yubikey);
-        copyParts.push('Status: '+statusLabel);
-        var copyText=copyParts.join('\n').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n');
+        // Serialize person for popup
+        var pSer=JSON.stringify({
+          name:p.name||'',pc:p.pc||'',location:p.location||'',
+          shift:sh,email:p.email||'',phone:p.phone||'',yubikey:p.yubikey||'',
+          status:statusLabel,_statusBg:statusBg
+        }).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
 
-        // ═══ EMPLOYEE ROW (collapsible detail) ═══
-        html+='<div style="border-radius:8px;border:1px solid '+rowBorder+';overflow:hidden">';
-
-        // Employee row — clickable
-        html+='<div id="'+empId+'" onclick="(function(el){var b=gid(\''+detId+'\');var open=b.style.maxHeight&&b.style.maxHeight!==\'0px\';b.style.maxHeight=open?\'0px\':\'500px\';b.style.opacity=open?\'0\':\'1\';el.querySelector(\'.e-chevron\').style.transform=open?\'rotate(0deg)\':\'rotate(180deg)\';el.style.background=open?\''+rowBg+'\':\'#e8f0fe\';})(this)" style="background:'+rowBg+';padding:9px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;transition:background .15s">';
-        html+='<span style="font-size:11px;color:var(--gray);min-width:20px;font-weight:700">'+(idx+1)+'</span>';
+        // ═══ EMPLOYEE ROW ═══
+        html+='<div onclick="openAttPersonPopup(\''+pSer+'\')" style="background:'+rowBg+';border:1px solid '+rowBorder+';border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .12s" onmouseover="this.style.background=\'var(--blue-bg)\'" onmouseout="this.style.background=\''+rowBg+'\'">';
+        html+='<span style="font-size:11px;color:var(--gray);min-width:22px;font-weight:700">'+(parseInt(p.row)||idx+1)+'</span>';
         if(p.pc)html+='<span style="font-size:10px;font-weight:700;background:white;color:var(--blue);padding:2px 7px;border-radius:5px;border:1px solid var(--blue-lt);flex-shrink:0">'+p.pc+'</span>';
         html+='<span style="flex:1;font-size:13px;font-weight:700;color:var(--dark)">'+titleCase(p.name||'-')+'</span>';
         html+='<span style="background:'+statusBg+';color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;flex-shrink:0">'+statusLabel+'</span>';
-        html+='<div class="e-chevron" style="color:var(--gray);font-size:11px;transition:transform .2s;flex-shrink:0">&#9660;</div>';
-        html+='</div>';
-
-        // Employee detail card — collapsible
-        html+='<div id="'+detId+'" style="max-height:0;overflow:hidden;transition:max-height .3s ease,opacity .25s ease;opacity:0">';
-        html+='<div style="padding:12px 14px;background:white;border-top:1px solid '+rowBorder+';display:grid;grid-template-columns:1fr 1fr;gap:8px">';
-        if(p.pc)html+='<div style="background:#f0f4ff;border-radius:7px;padding:8px 10px"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">PC</div><div style="font-size:13px;font-weight:700;color:var(--blue)">'+p.pc+'</div></div>';
-        if(p.location)html+='<div style="background:#f0f4ff;border-radius:7px;padding:8px 10px"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Unit</div><div style="font-size:13px;font-weight:700;color:var(--blue)">'+p.location+'</div></div>';
-        if(p.email)html+='<div style="background:#f8f9ff;border-radius:7px;padding:8px 10px;grid-column:1/-1"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Email</div><div style="font-size:12px;font-weight:700;color:var(--blue)">'+p.email+'</div></div>';
-        if(p.phone)html+='<div style="background:#f8f9ff;border-radius:7px;padding:8px 10px"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Phone</div><div style="font-size:13px;font-weight:700;color:var(--dark)">'+p.phone+'</div></div>';
-        if(p.yubikey)html+='<div style="background:#f8f9ff;border-radius:7px;padding:8px 10px;grid-column:1/-1"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Yubikey</div><div style="font-size:12px;font-weight:700;color:var(--blue);font-family:var(--mono)">'+p.yubikey+'</div></div>';
-        html+='<div style="grid-column:1/-1;margin-top:4px"><button onclick="event.stopPropagation();navigator.clipboard.writeText(\''+copyText+'\').then(function(){var b=this;}).catch(function(){});" style="width:100%;padding:8px;background:var(--blue);color:white;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer">&#128203; Copy All Details</button></div>';
-        html+='</div></div>';
-
+        html+='<span style="color:var(--gray);font-size:11px;flex-shrink:0">&#9654;</span>';
         html+='</div>';
       });
 
-      html+='</div></div>';
-      html+='</div>';
+      html+='</div></div></div>';
     });
 
-    html+='</div></div>';
-    html+='</div>';
+    html+='</div></div></div>';
   });
 
   shtml('attDetailsArea',html);
+}
+
+// ═══ POPUP FUNCTIONS (global) ═══
+window.openAttPersonPopup=function(pStr){
+  var p=tryParse(pStr);if(!p)return;
+  openAttPopupWithData(p,p.status,p._statusBg);
+};
+
+window.closeAttPopup=function(){
+  var pop=gid('attDetailPopup');
+  if(pop)pop.style.display='none';
+  document.body.style.overflow='';
+};
+
+function openAttPopupWithData(p,statusLabel,statusBg){
+  var pop=gid('attDetailPopup');
+  if(!pop)return;
+  var box=gid('attDetailPopupBox');
+  if(document.body.classList.contains('dark'))box.style.background='#1e2130';
+  else box.style.background='white';
+
+  var fields=[
+    {label:'Name',val:titleCase(p.name||'-')},
+    {label:'PC',val:p.pc||''},
+    {label:'Unit',val:p.location||''},
+    {label:'Shift',val:p.shift||''},
+    {label:'Status',val:statusLabel||''},
+    {label:'Email',val:p.email||''},
+    {label:'Phone',val:p.phone||''},
+    {label:'Yubikey',val:p.yubikey||''},
+  ];
+
+  var h='<div>';
+  h+='<div style="background:var(--blue);border-radius:16px 16px 0 0;padding:16px 20px;display:flex;align-items:center;justify-content:space-between">';
+  h+='<div><div style="color:white;font-size:16px;font-weight:800">'+titleCase(p.name||'-')+'</div>';
+  if(p.pc||p.location)h+='<div style="color:rgba(255,255,255,.6);font-size:12px;margin-top:2px">'+(p.pc||'')+' '+(p.location?'· '+p.location:'')+'</div>';
+  h+='</div>';
+  h+='<div style="display:flex;align-items:center;gap:8px">';
+  h+='<span style="background:'+statusBg+';color:white;font-size:11px;font-weight:800;padding:4px 12px;border-radius:8px">'+statusLabel+'</span>';
+  h+='<button onclick="closeAttPopup()" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;color:white;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center">&#10005;</button>';
+  h+='</div></div>';
+
+  h+='<div style="padding:14px 18px;display:flex;flex-direction:column;gap:7px">';
+  fields.forEach(function(f){
+    if(!f.val)return;
+    var isMono=f.label==='Yubikey'||f.label==='Email';
+    h+='<div style="display:flex;align-items:center;background:var(--gray-lt);border-radius:9px;padding:10px 14px;gap:10px">';
+    h+='<div style="flex:1"><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">'+f.label+'</div>';
+    h+='<div style="font-size:13px;font-weight:700;color:var(--dark)'+(isMono?';font-family:var(--mono)':'')+'">'+f.val+'</div></div>';
+    h+='<button onclick="(function(btn,v){navigator.clipboard.writeText(v).then(function(){var o=btn.innerHTML;btn.innerHTML=\'&#10003;\';btn.style.color=\'#1e8e3e\';setTimeout(function(){btn.innerHTML=o;btn.style.color=\'\';},1500);});})(this,\''+f.val.replace(/'/g,"\\'")+'\')" style="background:none;border:none;cursor:pointer;color:var(--gray);font-size:16px;padding:4px 6px;border-radius:5px;flex-shrink:0;transition:color .15s" title="Copy">&#128203;</button>';
+    h+='</div>';
+  });
+
+  var allText=fields.filter(function(f){return f.val;}).map(function(f){return f.label+': '+f.val;}).join('\n');
+  h+='<button onclick="(function(btn){navigator.clipboard.writeText(\''+allText.replace(/\n/g,'\\n').replace(/'/g,"\\'")+'\').then(function(){var o=btn.textContent;btn.textContent=\'Copied!\';setTimeout(function(){btn.textContent=o;},1800);});})(this)" style="width:100%;padding:10px;background:var(--blue);color:white;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px">&#128203; Copy All</button>';
+  h+='</div></div>';
+  gid('attDetailPopupInner').innerHTML=h;
+  pop.style.display='flex';
+  document.body.style.overflow='hidden';
 }
 </script>
 
