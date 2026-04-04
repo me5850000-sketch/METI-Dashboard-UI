@@ -1972,7 +1972,7 @@ function renderAttDetailsPage(r,dateISO){
   var ROOM_ORD=['NC Room 102','NC Room 106','NC Room 108','4th Floor','2nd Floor'];
   var visible=_attShift2==='All'?SHIFT_ORD.filter(function(s){return shifts[s];}):([_attShift2].filter(function(s){return shifts[s];}));
   if(!visible.length){shtml('attDetailsArea','<div class="empty">No data for this date.</div>');return;}
-  
+
   var html='';
   visible.forEach(function(sh){
     var sd=shifts[sh];
@@ -1983,24 +1983,12 @@ function renderAttDetailsPage(r,dateISO){
     var shBg=sh==='Morning'?'#fff3e0':sh==='Night'?'#e8eaf6':'#e8f5e9';
     var shColor=sh==='Morning'?'#e65100':sh==='Night'?'#283593':'#1b5e20';
     var shBorder=sh==='Morning'?'#ffcc80':sh==='Night'?'#9fa8da':'#a5d6a7';
-    
-    // Shift header
-    html+='<div style="margin-bottom:16px">';
-    html+='<div style="background:var(--blue);border-radius:12px 12px 0 0;padding:12px 18px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">';
-    html+='<div style="display:flex;align-items:center;gap:10px">';
-    html+='<span style="background:'+shBg+';color:'+shColor+';font-size:12px;font-weight:700;padding:4px 12px;border-radius:20px;border:1px solid '+shBorder+'">'+sh+'</span>';
-    html+='<span style="color:white;font-size:13px;font-weight:700">'+total+' Employee</span>';
-    html+='<span style="color:#a5d6a7;font-size:12px;font-weight:700">&#10003; '+present.length+' present</span>';
-    html+='<span style="color:#ef9a9a;font-size:12px;font-weight:700">&#10005; '+absent.length+' absent</span>';
-    html+='</div>';
-    // Copy shift summary
-    html+='<button onclick="(function(){var t=\'*'+sh+' Shift Report*\\nDate: '+dateISO+'\\nTotal: '+total+'\\nProduction: '+prod+'\\nTraining: '+train+'\\nAbsent: '+absent.length+'\\nEmpty: '+(sd.empty?sd.empty.length:0)+'\';navigator.clipboard.writeText(t).then(function(){});})();" style="background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:7px;color:white;font-size:12px;font-weight:700;padding:6px 14px;cursor:pointer">&#128203; Copy Shift</button>';
-    html+='</div>';
-    
-    // Build units
+    var shId='sh_'+sh.replace(/\s/g,'_');
+
+    // Build units map
     var allPeople=[].concat(
-      (sd.present||[]).map(function(p){return Object.assign({},p,{_status:'present'});}),
-      (sd.absent||[]).map(function(p){return Object.assign({},p,{_status:'absent'});}),
+      present.map(function(p){return Object.assign({},p,{_status:'present'});}),
+      absent.map(function(p){return Object.assign({},p,{_status:'absent'});}),
       (sd.empty||[]).map(function(p){return Object.assign({},p,{_status:'empty'});})
     );
     var units={};
@@ -2009,75 +1997,110 @@ function renderAttDetailsPage(r,dateISO){
       if(!units[u])units[u]=[];
       units[u].push(p);
     });
-    // Sort units by ROOM_ORD
     var unitNames=ROOM_ORD.filter(function(u){return units[u];});
     Object.keys(units).forEach(function(u){if(unitNames.indexOf(u)===-1)unitNames.push(u);});
-    
-    // Units grid
-    html+='<div style="background:var(--gray-lt);border:1px solid var(--border);border-top:none;border-radius:0 0 12px 12px;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px">';
-    
+
+    // ═══ SHIFT CARD (collapsible) ═══
+    html+='<div style="background:white;border-radius:14px;border:1px solid var(--border);margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow)">';
+
+    // Shift Header — clickable
+    html+='<div onclick="(function(el){var b=gid(\''+shId+'\');var open=b.style.maxHeight&&b.style.maxHeight!==\'0px\';b.style.maxHeight=open?\'0px\':\'99999px\';b.style.opacity=open?\'0\':\'1\';el.querySelector(\'.sh-chevron\').style.transform=open?\'rotate(0deg)\':\'rotate(180deg)\'})(this)" style="background:var(--blue);padding:14px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;gap:10px;flex-wrap:wrap">';
+    html+='<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">';
+    html+='<span style="background:'+shBg+';color:'+shColor+';font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;border:1px solid '+shBorder+'">'+sh+'</span>';
+    html+='<span style="color:white;font-size:14px;font-weight:700">'+total+' Employee</span>';
+    html+='<span style="background:rgba(255,255,255,.12);color:#a5d6a7;font-size:12px;font-weight:700;padding:3px 10px;border-radius:8px">&#10003; '+present.length+' present</span>';
+    html+='<span style="background:rgba(255,255,255,.12);color:#ef9a9a;font-size:12px;font-weight:700;padding:3px 10px;border-radius:8px">&#10005; '+absent.length+' absent</span>';
+    html+='<span style="background:rgba(255,255,255,.12);color:#90caf9;font-size:12px;font-weight:700;padding:3px 10px;border-radius:8px">Prod: '+prod+'</span>';
+    html+='<span style="background:rgba(255,255,255,.12);color:#ce93d8;font-size:12px;font-weight:700;padding:3px 10px;border-radius:8px">Train: '+train+'</span>';
+    html+='</div>';
+    html+='<div style="display:flex;align-items:center;gap:8px"><div class="sh-chevron" style="color:white;font-size:14px;transition:transform .25s">&#9660;</div></div>';
+    html+='</div>';
+
+    // Shift Body — collapsible
+    html+='<div id="'+shId+'" style="max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .3s ease;opacity:0">';
+    html+='<div style="padding:10px 12px;background:#f8f9ff;display:flex;flex-direction:column;gap:6px">';
+
     unitNames.forEach(function(uname){
       var uPeople=units[uname];
       var upresent=uPeople.filter(function(p){return p._status==='present';}).length;
       var uabsent=uPeople.filter(function(p){return p._status==='absent';}).length;
-      
-      html+='<div style="background:white;border-radius:10px;border:1px solid var(--border);overflow:hidden;box-shadow:var(--shadow)">';
-      // Unit header
-      html+='<div style="background:var(--blue-bg);padding:9px 14px;border-bottom:1px solid var(--blue-lt);display:flex;align-items:center;justify-content:space-between">';
-      html+='<div><span style="font-size:13px;font-weight:700;color:var(--blue)">&#128205; '+uname+'</span>';
-      html+='<span style="margin-left:8px;font-size:11px;color:var(--gray)">'+uPeople.length+' emp</span></div>';
-      html+='<div style="display:flex;gap:6px">';
-      html+='<span style="font-size:10px;font-weight:700;background:#e8f5e9;color:#1e8e3e;padding:2px 7px;border-radius:5px">'+upresent+' P</span>';
-      if(uabsent>0)html+='<span style="font-size:10px;font-weight:700;background:#fce8e6;color:#c5221f;padding:2px 7px;border-radius:5px">'+uabsent+' A</span>';
-      html+='</div></div>';
-      
-      // People cards
-      html+='<div style="padding:8px;display:flex;flex-direction:column;gap:6px">';
-      uPeople.forEach(function(p){
+      var uid='unit_'+sh.replace(/\s/g,'_')+'_'+uname.replace(/\s/g,'_');
+
+      // ═══ UNIT ROW (collapsible) ═══
+      html+='<div style="background:white;border-radius:10px;border:1px solid var(--border);overflow:hidden">';
+
+      // Unit header — clickable
+      html+='<div onclick="(function(el){var b=gid(\''+uid+'\');var open=b.style.maxHeight&&b.style.maxHeight!==\'0px\';b.style.maxHeight=open?\'0px\':\'99999px\';b.style.opacity=open?\'0\':\'1\';el.querySelector(\'.u-chevron\').style.transform=open?\'rotate(0deg)\':\'rotate(180deg)\'})(this)" style="background:var(--blue-bg);padding:10px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none">';
+      html+='<div style="display:flex;align-items:center;gap:10px">';
+      html+='<span style="font-size:14px;font-weight:700;color:var(--blue)">&#128205; '+uname+'</span>';
+      html+='<span style="font-size:11px;color:var(--gray)">'+uPeople.length+' emp</span>';
+      html+='<span style="font-size:11px;font-weight:700;background:#e8f5e9;color:#1e8e3e;padding:2px 8px;border-radius:5px">'+upresent+' P</span>';
+      if(uabsent>0)html+='<span style="font-size:11px;font-weight:700;background:#fce8e6;color:#c5221f;padding:2px 8px;border-radius:5px">'+uabsent+' A</span>';
+      html+='</div>';
+      html+='<div class="u-chevron" style="color:var(--blue);font-size:13px;transition:transform .25s">&#9660;</div>';
+      html+='</div>';
+
+      // Unit body — collapsible employees
+      html+='<div id="'+uid+'" style="max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .3s ease;opacity:0">';
+      html+='<div style="padding:8px;display:flex;flex-direction:column;gap:4px">';
+
+      uPeople.forEach(function(p,idx){
         var st=p.status||'';
         var isPresent=p._status==='present';
         var isAbsent=p._status==='absent';
         var isTraining=st.match(/^T\d?$/)&&isPresent;
         var isPT=st==='PT'||st==='TP';
-        var rowBg=isPresent?'#f0faf3':isAbsent?'#fff5f5':'#fafafa';
-        var rowBorder=isPresent?'#c3e6cb':isAbsent?'#f5c6cb':'#e0e0e0';
         var statusLabel=isPT?'PT':isTraining?'T':isAbsent?'Absent':isPresent?'P':'Empty';
         var statusBg=isPresent&&!isTraining?'#1e8e3e':isTraining?'#0d47a1':isPT?'#5e35b1':isAbsent?'#c5221f':'#9aa0a6';
-        
-        // Build copy text
+        var rowBg=isPresent?'#f8fdf9':isAbsent?'#fff8f8':'#fafafa';
+        var rowBorder=isPresent?'#c3e6cb':isAbsent?'#f5c6cb':'#e0e0e0';
+        var empId='emp_'+sh.replace(/\s/g,'_')+'_'+uname.replace(/\s/g,'_')+'_'+idx;
+        var detId='det_'+sh.replace(/\s/g,'_')+'_'+uname.replace(/\s/g,'_')+'_'+idx;
+
+        // Build copy parts
         var copyParts=['Name: '+(p.name||'-')];
         if(p.pc)copyParts.push('PC: '+p.pc);
-        if(p.location)copyParts.push('Location: '+p.location);
-        if(p.yubikey)copyParts.push('Yubikey: '+p.yubikey);
+        if(p.location)copyParts.push('Unit: '+p.location);
         if(p.email)copyParts.push('Email: '+p.email);
         if(p.phone)copyParts.push('Phone: '+p.phone);
+        if(p.yubikey)copyParts.push('Yubikey: '+p.yubikey);
         copyParts.push('Status: '+statusLabel);
-        var copyText=copyParts.join('\\n');
-        
-        html+='<div style="border-radius:8px;padding:10px 12px;border:1px solid '+rowBorder+';background:'+rowBg+'">';
-        // Person header row
-        html+='<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">';
-        html+='<span style="font-size:13px;font-weight:700;color:var(--dark)">'+titleCase(p.name||'-')+'</span>';
-        html+='<div style="display:flex;align-items:center;gap:6px">';
-        html+='<span style="background:'+statusBg+';color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px">'+statusLabel+'</span>';
-        html+='<button onclick="navigator.clipboard.writeText(\''+copyText.replace(/'/g,"\\'")+'\')" style="background:var(--blue-bg);color:var(--blue);border:none;border-radius:5px;font-size:10px;font-weight:700;padding:3px 8px;cursor:pointer">&#128203; Copy</button>';
-        html+='</div></div>';
-        
-        // Details grid
-        html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 12px">';
-        if(p.pc)html+='<div style="font-size:11px;color:var(--gray)">PC: <strong style="color:var(--dark)">'+p.pc+'</strong></div>';
-        if(p.location)html+='<div style="font-size:11px;color:var(--gray)">Unit: <strong style="color:var(--dark)">'+p.location+'</strong></div>';
-        if(p.email)html+='<div style="font-size:11px;color:var(--gray);grid-column:1/-1">Email: <strong style="color:var(--blue)">'+p.email+'</strong></div>';
-        if(p.phone)html+='<div style="font-size:11px;color:var(--gray)">Phone: <strong style="color:var(--dark)">'+p.phone+'</strong></div>';
-        if(p.yubikey)html+='<div style="font-size:11px;color:var(--gray);grid-column:1/-1">Yubikey: <strong style="font-family:var(--mono);color:var(--blue)">'+p.yubikey+'</strong></div>';
+        var copyText=copyParts.join('\n').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\n/g,'\\n');
+
+        // ═══ EMPLOYEE ROW (collapsible detail) ═══
+        html+='<div style="border-radius:8px;border:1px solid '+rowBorder+';overflow:hidden">';
+
+        // Employee row — clickable
+        html+='<div id="'+empId+'" onclick="(function(el){var b=gid(\''+detId+'\');var open=b.style.maxHeight&&b.style.maxHeight!==\'0px\';b.style.maxHeight=open?\'0px\':\'500px\';b.style.opacity=open?\'0\':\'1\';el.querySelector(\'.e-chevron\').style.transform=open?\'rotate(0deg)\':\'rotate(180deg)\';el.style.background=open?\''+rowBg+'\':\'#e8f0fe\';})(this)" style="background:'+rowBg+';padding:9px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;user-select:none;transition:background .15s">';
+        html+='<span style="font-size:11px;color:var(--gray);min-width:20px;font-weight:700">'+(idx+1)+'</span>';
+        if(p.pc)html+='<span style="font-size:10px;font-weight:700;background:white;color:var(--blue);padding:2px 7px;border-radius:5px;border:1px solid var(--blue-lt);flex-shrink:0">'+p.pc+'</span>';
+        html+='<span style="flex:1;font-size:13px;font-weight:700;color:var(--dark)">'+titleCase(p.name||'-')+'</span>';
+        html+='<span style="background:'+statusBg+';color:white;font-size:10px;font-weight:700;padding:2px 8px;border-radius:5px;flex-shrink:0">'+statusLabel+'</span>';
+        html+='<div class="e-chevron" style="color:var(--gray);font-size:11px;transition:transform .2s;flex-shrink:0">&#9660;</div>';
         html+='</div>';
+
+        // Employee detail card — collapsible
+        html+='<div id="'+detId+'" style="max-height:0;overflow:hidden;transition:max-height .3s ease,opacity .25s ease;opacity:0">';
+        html+='<div style="padding:12px 14px;background:white;border-top:1px solid '+rowBorder+';display:grid;grid-template-columns:1fr 1fr;gap:8px">';
+        if(p.pc)html+='<div style="background:#f0f4ff;border-radius:7px;padding:8px 10px"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">PC</div><div style="font-size:13px;font-weight:700;color:var(--blue)">'+p.pc+'</div></div>';
+        if(p.location)html+='<div style="background:#f0f4ff;border-radius:7px;padding:8px 10px"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Unit</div><div style="font-size:13px;font-weight:700;color:var(--blue)">'+p.location+'</div></div>';
+        if(p.email)html+='<div style="background:#f8f9ff;border-radius:7px;padding:8px 10px;grid-column:1/-1"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Email</div><div style="font-size:12px;font-weight:700;color:var(--blue)">'+p.email+'</div></div>';
+        if(p.phone)html+='<div style="background:#f8f9ff;border-radius:7px;padding:8px 10px"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Phone</div><div style="font-size:13px;font-weight:700;color:var(--dark)">'+p.phone+'</div></div>';
+        if(p.yubikey)html+='<div style="background:#f8f9ff;border-radius:7px;padding:8px 10px;grid-column:1/-1"><div style="font-size:10px;color:var(--gray);font-weight:700;text-transform:uppercase;letter-spacing:.4px;margin-bottom:3px">Yubikey</div><div style="font-size:12px;font-weight:700;color:var(--blue);font-family:var(--mono)">'+p.yubikey+'</div></div>';
+        html+='<div style="grid-column:1/-1;margin-top:4px"><button onclick="event.stopPropagation();navigator.clipboard.writeText(\''+copyText+'\').then(function(){var b=this;}).catch(function(){});" style="width:100%;padding:8px;background:var(--blue);color:white;border:none;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer">&#128203; Copy All Details</button></div>';
+        html+='</div></div>';
+
         html+='</div>';
       });
+
       html+='</div></div>';
+      html+='</div>';
     });
+
     html+='</div></div>';
+    html+='</div>';
   });
-  
+
   shtml('attDetailsArea',html);
 }
 </script>
