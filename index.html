@@ -2021,8 +2021,7 @@ function renderAttDetailsPage(r,dateISO){
     // دمج الكل وترتيب حسب row
  var allPeople=[].concat(
   present.map(function(p){return Object.assign({},p,{_status:'present'});}),
-  absent.map(function(p){return Object.assign({},p,{_status:'absent'});}),
-  (sd.empty||[]).map(function(p){return Object.assign({},p,{_status:'empty'});})
+  absent.map(function(p){return Object.assign({},p,{_status:'absent'});})
 );
 allPeople.sort(function(a,b){
   var ar=parseInt(a.row)||parseInt((a.pc||'').replace(/\D/g,''))||9999;
