@@ -2062,9 +2062,12 @@ allPeople.sort(function(a,b){
         var st=p.status||'';
         var isPresent=p._status==='present';
         var isAbsent=p._status==='absent';
-        var isTraining=isPresent&&st.match(/^T\d?$/);
-        var isPT=st==='PT'||st==='TP';
-        var statusLabel=isPT?'PT':isTraining?'T':isAbsent?'Absent':isPresent?'P':'Empty';
+        var isTraining=isPresent&&(st==='T'||st.match(/^T\d$/));
+var isPT=st==='PT';
+var isTP=st==='TP';
+var isEmpty=p._status==='empty'||st==='0'||st==='E';
+var statusLabel=isAbsent?'Absent':isEmpty?'E':isTP?'TP':isPT?'PT':isTraining?'T':isPresent?'P':st||'?';
+var statusBg=isAbsent?'#c5221f':isEmpty?'#9aa0a6':isTP?'#5e35b1':isPT?'#1565c0':isTraining?'#0d47a1':'#1e8e3e';
         var statusBg=isAbsent?'#c5221f':isTraining?'#0d47a1':isPT?'#5e35b1':isPresent?'#1e8e3e':'#9aa0a6';
         var rowBg=isAbsent?'#fff0f0':isTraining?'#f0f4ff':isPT?'#f5f0ff':'#f8fdf9';
 var rowBorder=isAbsent?'rgba(197,34,31,.25)':isTraining?'rgba(13,71,161,.2)':isPT?'rgba(94,53,177,.2)':'rgba(30,142,62,.15)';
