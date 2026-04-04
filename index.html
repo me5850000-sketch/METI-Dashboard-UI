@@ -1581,7 +1581,7 @@ function renderLabelersPage(data){
     var sorted=allLabs.slice().sort(function(a,b){return(b[sortKey]||0)-(a[sortKey]||0);});
     var maxV=sorted.length?Math.max(sorted[0][sortKey]||0,1):1;
     var allSubs=['lfp','lqa','lifp','liqa'],subCols=allSubs.filter(function(k){return sorted.some(function(lb){return(lb[k]||0)>0;});});
-    var subHdrs={lfp:'Lane-FP',lqa:'Lane-QA',lifp:'Lidar-FP',liqa:'Lidar-QA'},subClrs={lane-fp:'#1e8e3e',lane-qa:'#e37400',lidar-fp:'#007b83',lidar-qa:'#7b1fa2'};
+    var subHdrs={lfp:'L-FP',lqa:'L-QA',lifp:'Li-FP',liqa:'Li-QA'},subClrs={lfp:'#1e8e3e',lqa:'#e37400',lifp:'#007b83',liqa:'#7b1fa2'};
     var colW=subCols.length===1?'80px':subCols.length===2?'repeat(2,60px)':subCols.length===3?'repeat(3,52px)':'repeat(4,46px)';
     var gridCols='26px 1fr '+colW+' 70px';
     function cell(val,key){var isSort=key===sortKey;return'<span style="font-size:12px;font-weight:'+(isSort?'800':'700')+';color:'+(sortColors[key]||'var(--dark)')+';background:'+(isSort?sortBg[key]:'transparent')+';border-radius:6px;padding:2px 4px;'+(isSort?'outline:1.5px solid '+(sortColors[key]||'var(--blue)')+';':'')+' ">'+val+'</span>';}
@@ -1687,7 +1687,7 @@ function renderQtcPage(data){
     if(!list.length){wrap.innerHTML='<div class="empty" style="padding:32px">No data.</div>';return;}
     var maxV=list[0][qtcSortKey]||1;
     var allSubs=['lfp','lqa','lifp','liqa'],subCols=allSubs.filter(function(k){return list.some(function(q){return(q[k]||0)>0;});});
-    var subHdrs={lfp:'Lane-FP',lqa:'Lane-QA',lifp:'Lidar-FP',liqa:'Lidar-QA'},subClrs={lane-fp:'#1e8e3e',lidar-qa:'#e37400',lidar-fp:'#007b83',lidar-qa:'#7b1fa2'};
+    var subHdrs={lfp:'L-FP',lqa:'L-QA',lifp:'Li-FP',liqa:'Li-QA'},subClrs={lfp:'#1e8e3e',lqa:'#e37400',lifp:'#007b83',liqa:'#7b1fa2'};
     var colW=subCols.length===1?'80px':subCols.length===2?'repeat(2,62px)':subCols.length===3?'repeat(3,56px)':'repeat(4,50px)';
     var gridCols='26px 1fr '+colW+' 70px';
     function cell(val,key){var isSort=key===qtcSortKey;return'<span style="font-size:12px;font-weight:'+(isSort?'800':'700')+';color:'+(sortColors[key]||'var(--dark)')+';background:'+(isSort?sortBg[key]:'transparent')+';border-radius:6px;padding:2px 4px;'+(isSort?'outline:1.5px solid '+(sortColors[key]||'var(--blue)')+';':'')+' ">'+val+'</span>';}
