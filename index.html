@@ -1973,41 +1973,91 @@ function renderAttDetailsPage(r,dateISO){
   if(!visible.length){shtml('attDetailsArea','<div class="empty">No data for this date.</div>');return;}
   var html='';
   visible.forEach(function(sh){
-    var sd=shifts[sh],present=sd.present||[],absent=sd.absent||[],empty=sd.empty||[],total=sd.total||0;
-    var pct=total>0?Math.round(present.length/total*100):0;
-    var bc=pct>=90?'var(--green)':pct>=70?'var(--orange)':'var(--red)';
-    html+='<div style="background:white;border-radius:14px;border:1px solid var(--border);margin-bottom:20px;overflow:hidden;box-shadow:var(--shadow)">';
-    html+='<div style="background:var(--blue);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap"><div style="display:flex;align-items:center;gap:10px"><span style="font-size:16px;font-weight:800;color:white">'+sh+'</span><span class="badge '+shiftBadge(sh)+'" style="font-size:10px">'+sh.toUpperCase()+'</span></div><div style="display:flex;gap:7px;align-items:center"><button class="att-toggle-btn" data-sh2="'+sh+'"><span>📋 Message</span><span class="arr">▼</span></button><button class="att-copy-inline att-copy-btn2" data-sh2="'+sh+'">📄 Copy</button></div></div>';
-    html+='<div style="padding:10px 20px;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><span style="font-size:13px;font-weight:700;color:var(--dark)">Attendance: <strong style="color:'+bc+'">'+present.length+'</strong> / '+total+'</span><span style="font-size:16px;font-weight:800;color:'+bc+'">'+pct+'%</span></div><div style="height:9px;background:var(--gray-lt);border-radius:5px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+bc+';border-radius:5px;transition:width .5s"></div></div></div>';
+    var sd=shifts[sh];
+    var allPeople=[].concat(sd.present||[],sd.absent||[],sd.empty||[]);
+    allPeople.sort(function(a,b){return(parseInt(a.row)||999)-(parseInt(b.row)||999);});
+    var units={};
+    allPeople.forEach(function(p){
+      var u=p.location||'Unknown';
+      if(!units[u])units[u]=[];
+      units[u].push(p);
+    });
+    var unitNames=Object.keys(units).sort();
+    var shColor=sh==='Morning'?'#e65100':sh==='Night'?'#283593':'#1b5e20';
+    var shBg=sh==='Morning'?'#fff3e0':sh==='Night'?'#e8eaf6':'#e8f5e9';
+    var shBorder=sh==='Morning'?'#ffcc80':sh==='Night'?'#9fa8da':'#a5d6a7';
+    html+='<div style="border-radius:14px;overflow:hidden;margin-bottom:16px;box-shadow:var(--shadow);border:1.5px solid '+shBorder+'">';
+    // Shift Header
+    html+='<div style="background:var(--blue);padding:12px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none" onclick="(function(el){var b=el.nextElementSibling;var open=b.style.maxHeight&&b.style.maxHeight!==\'0px\';b.style.maxHeight=open?\'0px\':\'2000px\';b.style.opacity=open?\'0\':\'1\';el.querySelector(\'.sh-arr\').style.transform=open?\'rotate(0deg)\':\'rotate(180deg)\'})(this)">'
+      +'<div style="display:flex;align-items:center;gap:10px">'
+      +'<span style="background:'+shBg+';color:'+shColor+';font-size:12px;font-weight:800;padding:4px 12px;border-radius:20px">'+sh+'</span>'
+      +'<span style="color:white;font-size:13px;font-weight:700">'+allPeople.length+' Employee</span>'
+      +'<span style="color:#a5d6a7;font-size:12px">✅ '+(sd.present||[]).length+' present</span>'
+      +'<span style="color:#ef9a9a;font-size:12px">❌ '+(sd.absent||[]).length+' absent</span>'
+      +'</div>'
+      +'<div style="display:flex;gap:8px;align-items:center">'
+      +'<button class="att-toggle-btn" data-sh2="'+sh+'" onclick="event.stopPropagation()"><span>📋 Message</span><span class="arr">▼</span></button>'
+      +'<button class="att-copy-inline att-copy-btn2" data-sh2="'+sh+'" onclick="event.stopPropagation()">📄 Copy</button>'
+      +'<span class="sh-arr" style="color:white;font-size:12px;transition:transform .25s">▼</span>'
+      +'</div>'
+      +'</div>';
+    // Message Preview
     html+='<div class="att-msg-preview"><pre class="att-msg-pre">'+_genMsg(sh,sd,dateISO)+'</pre></div>';
-    function mkPersonCard(p,statusVal){
-  var isGreen=statusVal==='P'||statusVal==='PT'||statusVal==='T'||statusVal==='T1'||statusVal==='T2'||statusVal==='T3'||statusVal==='T4'||statusVal==='T5';
-  var isRed=statusVal==='0';
-  var dotColor=isGreen?'#1e8e3e':isRed?'var(--red)':'#9aa0a6';
-  var cardBg=isGreen?'#f0faf3':isRed?'#fff5f5':'#f8f9fa';
-  var border=isGreen?'#c3e6cb':isRed?'#f5c6cb':'#e0e0e0';
-  var label=statusVal==='PT'||statusVal==='TP'?'PT':statusVal==='T'||statusVal==='T1'||statusVal==='T2'||statusVal==='T3'||statusVal==='T4'||statusVal==='T5'?'T':statusVal;
-  var labelBg=isGreen?'#1e8e3e':isRed?'var(--red)':'#9aa0a6';
-  var labelColor=isGreen?'#e8f5e9':isRed?'#fce8e6':'#f1f3f4';
-  var uid='pc_'+Math.random().toString(36).slice(2,8);
-  return '<div style="background:'+cardBg+';border:1.5px solid '+border+';border-radius:10px;overflow:hidden;cursor:pointer" onclick="(function(el){el.querySelector(\'.att-card-details\').classList.toggle(\'open\');var arr=el.querySelector(\'.att-card-arr\');if(arr)arr.style.transform=el.querySelector(\'.att-card-details\').classList.contains(\'open\')?\'rotate(180deg)\':\'rotate(0deg)\'})(this)">'
-    // Row الأساسي
-    +'<div style="display:flex;align-items:center;gap:10px;padding:10px 14px">'
-    +'<span style="width:8px;height:8px;border-radius:50%;background:'+dotColor+';flex-shrink:0"></span>'
-    +(p.pc?'<span style="font-size:11px;font-weight:700;background:white;color:var(--blue);padding:2px 8px;border-radius:6px;border:1px solid var(--blue-lt);flex-shrink:0">'+p.pc+'</span>':'')
-    +(p.location?'<span style="font-size:11px;color:var(--gray);font-weight:600;flex-shrink:0">📍'+p.location+'</span>':'')
-    +'<span style="font-size:13px;font-weight:700;color:var(--dark);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+titleCase(p.name||'')+'</span>'
-    +'<span style="background:'+labelBg+';color:white;font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;flex-shrink:0">'+label+'</span>'
-    +'<span class="att-card-arr" style="font-size:10px;color:var(--gray);transition:transform .25s;flex-shrink:0">▼</span>'
-    +'</div>'
-    // التفاصيل (مخفية بالأساس)
-    +'<div class="att-card-details" style="max-height:0;overflow:hidden;transition:max-height .3s ease,opacity .25s ease;opacity:0;border-top:0px solid '+border+'">'
-    +'<div style="padding:10px 14px 12px;display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:12px">'
-    +(p.yubikey?'<div style="grid-column:1/-1;background:white;border-radius:7px;padding:6px 10px;border:1px solid var(--blue-lt)"><span style="color:var(--gray);font-weight:700">🔑 Yubikey: </span><span style="font-family:var(--mono);color:var(--blue);font-weight:700">'+p.yubikey+'</span></div>':'')
-    +(p.email?'<div style="grid-column:1/-1;background:white;border-radius:7px;padding:6px 10px;border:1px solid var(--border)"><span style="color:var(--gray);font-weight:700">✉️ </span><span style="color:var(--dark)">'+p.email+'</span></div>':'')
-    +(p.phone?'<div style="background:white;border-radius:7px;padding:6px 10px;border:1px solid var(--border)"><span style="color:var(--gray);font-weight:700">📞 </span><span style="color:var(--dark)">'+p.phone+'</span></div>':'')
-    +'</div></div>'
-    +'</div>';
+    // Units Container
+    html+='<div style="max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .3s ease;opacity:0;background:#f8f9ff">';
+    unitNames.forEach(function(uname){
+      var uPeople=units[uname];
+      html+='<div style="margin:10px 14px;border-radius:10px;overflow:hidden;border:1px solid var(--border);box-shadow:0 1px 4px rgba(0,0,0,.06)">';
+      // Unit Header
+      html+='<div style="background:var(--blue-bg);padding:9px 14px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;border-bottom:1px solid var(--blue-lt)" onclick="(function(el){var b=el.nextElementSibling;var open=b.style.maxHeight&&b.style.maxHeight!==\'0px\';b.style.maxHeight=open?\'0px\':\'3000px\';b.style.opacity=open?\'0\':\'1\';el.querySelector(\'.u-arr\').style.transform=open?\'rotate(0deg)\':\'rotate(180deg)\'})(this)">'
+        +'<div style="display:flex;align-items:center;gap:8px">'
+        +'<span style="font-size:13px;font-weight:800;color:var(--blue)">📍 '+uname+'</span>'
+        +'<span style="font-size:11px;color:var(--gray)">'+uPeople.length+' employee</span>'
+        +'</div>'
+        +'<span class="u-arr" style="font-size:11px;color:var(--gray);transition:transform .25s">▼</span>'
+        +'</div>';
+      // People List
+      html+='<div style="max-height:0;overflow:hidden;transition:max-height .35s ease,opacity .25s ease;opacity:0">';
+      uPeople.forEach(function(p,idx){
+        var st=p.status||'';
+        var isPresent=st==='P'||st==='PT'||st==='TP'||st.match(/^T\d?$/);
+        var isAbsent=st==='0';
+        var isEmpty=!st||st==='E';
+        var rowBg=isPresent?'#f0faf3':isAbsent?'#fff5f5':'#fafafa';
+        var rowBorder=isPresent?'#c3e6cb':isAbsent?'#f5c6cb':'#e0e0e0';
+        var statusLabel=st==='PT'||st==='TP'?'PT':st.match(/^T\d?$/)?'T':st==='0'?'Absent':st==='E'?'Empty':st||'-';
+        var statusBg=isPresent?'#1e8e3e':isAbsent?'var(--red)':'#9aa0a6';
+        html+='<div style="background:'+rowBg+';border-bottom:1px solid '+rowBorder+';padding:10px 14px">';
+        // Row الأساسي دايماً ظاهر
+        html+='<div style="display:flex;align-items:center;gap:10px;cursor:pointer" onclick="(function(el){var d=el.nextElementSibling;var open=d.style.maxHeight&&d.style.maxHeight!==\'0px\';d.style.maxHeight=open?\'0px\':\'300px\';d.style.opacity=open?\'0\':\'1\';el.querySelector(\'.p-arr\').style.transform=open?\'rotate(0deg)\':\'rotate(180deg)\'})(this)">'
+          +'<span style="font-size:11px;color:var(--gray);font-weight:700;min-width:22px">'+(idx+1)+'</span>'
+          +(p.pc?'<span style="font-size:10px;font-weight:800;background:white;color:var(--blue);padding:2px 7px;border-radius:5px;border:1px solid var(--blue-lt);flex-shrink:0">'+p.pc+'</span>':'')
+          +'<span style="flex:1;font-size:13px;font-weight:700;color:var(--dark);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+titleCase(p.name||'-')+'</span>'
+          +'<span style="background:'+statusBg+';color:white;font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;flex-shrink:0">'+statusLabel+'</span>'
+          +'<span class="p-arr" style="font-size:10px;color:var(--gray);transition:transform .25s;flex-shrink:0">▼</span>'
+          +'</div>';
+        // التفاصيل
+        html+='<div style="max-height:0;overflow:hidden;transition:max-height .3s ease,opacity .25s;opacity:0">'
+          +'<div style="margin-top:10px;display:grid;grid-template-columns:1fr 1fr;gap:6px">'
+          +'<div style="background:white;border-radius:7px;padding:7px 10px;border:1px solid '+rowBorder+';grid-column:1/-1;display:flex;justify-content:space-between;align-items:center">'
+          +'<div>'
+          +(p.yubikey?'<div style="font-size:11px;margin-bottom:3px"><span style="color:var(--gray);font-weight:700">🔑 </span><span style="font-family:var(--mono);color:var(--blue);font-weight:700">'+p.yubikey+'</span></div>':'')
+          +(p.email?'<div style="font-size:11px;margin-bottom:3px"><span style="color:var(--gray);font-weight:700">✉️ </span><span style="color:var(--dark)">'+p.email+'</span></div>':'')
+          +(p.phone?'<div style="font-size:11px;margin-bottom:3px"><span style="color:var(--gray);font-weight:700">📞 </span><span style="color:var(--dark)">'+p.phone+'</span></div>':'')
+          +(p.location?'<div style="font-size:11px"><span style="color:var(--gray);font-weight:700">📍 </span><span style="color:var(--dark)">'+p.location+'</span></div>':'')
+          +'</div>'
+          +'<button onclick="(function(btn,p){var t=[\'Name: \'+p.name,p.pc?\'PC: \'+p.pc:\'\',p.location?\'Location: \'+p.location:\'\',p.yubikey?\'Yubikey: \'+p.yubikey:\'\',p.email?\'Email: \'+p.email:\'\',p.phone?\'Phone: \'+p.phone:\'\',\'Status: \'+(p.status||\'-\')].filter(Boolean).join(\'\\n\');navigator.clipboard.writeText(t).then(function(){var o=btn.innerHTML;btn.innerHTML=\'✅\';setTimeout(function(){btn.innerHTML=o;},2000)}).catch(function(){});})(this,'+JSON.stringify(p)+')" style="background:var(--blue);color:white;border:none;border-radius:7px;padding:6px 12px;font-size:11px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap">📋 Copy</button>'
+          +'</div>'
+          +'</div>'
+          +'</div>';
+        html+='</div>';
+      });
+      html+='</div></div>';
+    });
+    html+='</div></div>';
+  });
+  shtml('attDetailsArea',html);
+  _wireAttCards('attDetailsArea',true);
 }
     if(present.length){var prodList=present.filter(function(p){return p.type!=='T';});var trainList=present.filter(function(p){return p.type==='T';});if(prodList.length){html+='<div style="padding:14px 20px 0"><div style="font-size:11px;font-weight:700;color:#1e8e3e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">✅ Production ('+prodList.length+')</div><div style="display:grid;grid-template-columns:1fr;gap:6px">';prodList.forEach(function(p){html+=mkPersonCard(p,p.type==='PT'?'PT':'P');});html+='</div></div>';}if(trainList.length){html+='<div style="padding:14px 20px 0"><div style="font-size:11px;font-weight:700;color:#0d47a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📚 Training ('+trainList.length+')</div><div style="display:grid;grid-template-columns:1fr;gap:6px">';trainList.forEach(function(p){html+=mkPersonCard(p,'T');});html+='</div></div>';}}
     if(absent.length){html+='<div style="padding:14px 20px 0"><div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">❌ Absent ('+absent.length+')</div><div style="display:grid;grid-template-columns:1fr;gap:6px">';absent.forEach(function(p){html+=mkPersonCard(p,'0');});html+='</div></div>';}
