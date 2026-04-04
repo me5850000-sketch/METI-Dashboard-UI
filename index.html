@@ -1999,8 +1999,15 @@ function renderAttDetailsPage(r,dateISO){
   absent.map(function(p){return Object.assign({},p,{_status:'absent'});}),
   (sd.empty||[]).map(function(p){return Object.assign({},p,{_status:'empty'});})
 );
+// ابحث عن هذا السطر في renderAttDetailsPage:
+var allPeople=[].concat(
+  present.map(function(p){return Object.assign({},p,{_status:'present'});}),
+  absent.map(function(p){return Object.assign({},p,{_status:'absent'});}),
+  (sd.empty||[]).map(function(p){return Object.assign({},p,{_status:'empty'});})
+);
 allPeople.sort(function(a,b){
-  var ar=parseInt(a.row)||9999,br=parseInt(b.row)||9999;
+  var ar=parseInt(a.row)||parseInt(a.rowNum)||9999;
+  var br=parseInt(b.row)||parseInt(b.rowNum)||9999;
   return ar-br;
 });
 
