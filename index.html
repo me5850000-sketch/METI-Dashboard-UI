@@ -1876,7 +1876,7 @@ var rankMedal=myRank===1?'🥇':myRank===2?'🥈':myRank===3?'🥉':'';
   +'</div></div>'
   +(shiftRows?'<div style="border-top:1px solid var(--border);padding-top:10px"><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px">Tasks per Shift</div>'+shiftRows+'</div>':'')
   +'</div>';
-  var cats=[{key:'lfp',label:'Lane FP',color:'#1e8e3e',bg:'#e8f5e9',border:'#c3e6cb'},{key:'lqa',label:'Lane QA',color:'#e37400',bg:'#fff3cd',border:'#ffc107'},{key:'lifp',label:'Lidar FP',color:'#007b83',bg:'#e0f7fa',border:'#80cbc4'},{key:'liqa',label:'Lidar QA',color:'#7b1fa2',bg:'#f3e5f5',border:'#ce93d8'}];
+  var cats=[{key:'lane-fp',label:'Lane FP',color:'#1e8e3e',bg:'#e8f5e9',border:'#c3e6cb'},{key:'lqa',label:'Lane QA',color:'#e37400',bg:'#fff3cd',border:'#ffc107'},{key:'lifp',label:'Lidar FP',color:'#007b83',bg:'#e0f7fa',border:'#80cbc4'},{key:'liqa',label:'Lidar QA',color:'#7b1fa2',bg:'#f3e5f5',border:'#ce93d8'}];
   html+='<div style="display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-bottom:18px">';
   cats.forEach(function(cat){
     var val=my[cat.key]||0,rank=getRank(cat.key),topVal=getTopVal(cat.key);
