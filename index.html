@@ -256,6 +256,11 @@ body.dark .ib-edit{background:#1a2040;color:#7eaaff}body.dark .ib-del{background
 body.dark .att-msg-pre{background:#1a2040;border-color:#2d3250;color:#e8eaf0}
 body.dark [style*="background:white"]{background:#1e2130!important}body.dark [style*="background:#f8f9ff"]{background:#252840!important}
 body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
+  att-card-details.open {
+  max-height: 200px !important;
+  opacity: 1 !important;
+  border-top-width: 1px !important;
+}
 /* ══ LAB BEST BANNER ══ */
 .lab-best-banner{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
 .lab-mini-card-stats{overflow:hidden;transition:max-height .25s ease,opacity .25s ease;max-height:200px;opacity:1}
@@ -392,6 +397,11 @@ body.dark #searchField, body.dark #searchInput { background: #1e2130 !important;
   flex-wrap: wrap;
 }
 body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
+  .att-card-details.open {
+  max-height: 200px !important;
+  opacity: 1 !important;
+  border-top-width: 1px !important;
+}
 </style>
 </head>
 <body>
@@ -1971,18 +1981,37 @@ function renderAttDetailsPage(r,dateISO){
     html+='<div style="padding:10px 20px;border-bottom:1px solid var(--border)"><div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:5px"><span style="font-size:13px;font-weight:700;color:var(--dark)">Attendance: <strong style="color:'+bc+'">'+present.length+'</strong> / '+total+'</span><span style="font-size:16px;font-weight:800;color:'+bc+'">'+pct+'%</span></div><div style="height:9px;background:var(--gray-lt);border-radius:5px;overflow:hidden"><div style="height:100%;width:'+pct+'%;background:'+bc+';border-radius:5px;transition:width .5s"></div></div></div>';
     html+='<div class="att-msg-preview"><pre class="att-msg-pre">'+_genMsg(sh,sd,dateISO)+'</pre></div>';
     function mkPersonCard(p,statusVal){
-      var isGreen=statusVal==='P'||statusVal==='PT'||statusVal==='T'||statusVal==='T1'||statusVal==='T2'||statusVal==='T3'||statusVal==='T4'||statusVal==='T5';
-      var isRed=statusVal==='0';
-      var dotColor=isGreen?'#1e8e3e':isRed?'var(--red)':'#9aa0a6';
-      var cardBg=isGreen?'#f0faf3':isRed?'#fff5f5':'#f8f9fa';
-      var border=isGreen?'#c3e6cb':isRed?'#f5c6cb':'#e0e0e0';
-      var label=statusVal==='PT'||statusVal==='TP'?'PT':statusVal==='T'||statusVal==='T1'||statusVal==='T2'||statusVal==='T3'||statusVal==='T4'||statusVal==='T5'?'T':statusVal;
-      var labelBg=isGreen?'#1e8e3e':isRed?'var(--red)':'#9aa0a6';
-      return '<div style="background:'+cardBg+';border:1.5px solid '+border+';border-radius:12px;padding:12px 14px;position:relative"><div style="position:absolute;top:10px;right:10px;background:'+labelBg+';color:white;font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px">'+label+'</div><div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span style="width:8px;height:8px;border-radius:50%;background:'+dotColor+';flex-shrink:0"></span><span style="font-size:13px;font-weight:800;color:var(--dark);padding-right:30px">'+titleCase(p.name||'')+'</span></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:4px 10px;font-size:11px">'+(p.location?'<div><span style="color:var(--gray);font-weight:700">📍 </span><span style="color:var(--dark)">'+p.location+'</span></div>':'')+(p.pc?'<div><span style="color:var(--gray);font-weight:700">🖥 </span><span style="color:var(--dark)">'+p.pc+'</span></div>':'')+(p.yubikey?'<div style="grid-column:1/-1"><span style="color:var(--gray);font-weight:700">🔑 </span><span style="font-family:var(--mono);color:#1c4587">'+p.yubikey+'</span></div>':'')+(p.email?'<div style="grid-column:1/-1"><span style="color:var(--gray);font-weight:700">✉️ </span><span style="color:var(--dark)">'+p.email+'</span></div>':'')+(p.phone?'<div style="grid-column:1/-1"><span style="color:var(--gray);font-weight:700">📞 </span><span style="color:var(--dark)">'+p.phone+'</span></div>':'')+'</div></div>';
-    }
-    if(present.length){var prodList=present.filter(function(p){return p.type!=='T';});var trainList=present.filter(function(p){return p.type==='T';});if(prodList.length){html+='<div style="padding:14px 20px 0"><div style="font-size:11px;font-weight:700;color:#1e8e3e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">✅ Production ('+prodList.length+')</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">';prodList.forEach(function(p){html+=mkPersonCard(p,p.type==='PT'?'PT':'P');});html+='</div></div>';}if(trainList.length){html+='<div style="padding:14px 20px 0"><div style="font-size:11px;font-weight:700;color:#0d47a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📚 Training ('+trainList.length+')</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">';trainList.forEach(function(p){html+=mkPersonCard(p,'T');});html+='</div></div>';}}
-    if(absent.length){html+='<div style="padding:14px 20px 0"><div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">❌ Absent ('+absent.length+')</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1Fr));gap:10px">';absent.forEach(function(p){html+=mkPersonCard(p,'0');});html+='</div></div>';}
-    if(empty.length){html+='<div style="padding:14px 20px 0"><div style="font-size:11px;font-weight:700;color:#9aa0a6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">⬜ Empty ('+empty.length+')</div><div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px">';empty.forEach(function(p){html+=mkPersonCard(p,'E');});html+='</div></div>';}
+  var isGreen=statusVal==='P'||statusVal==='PT'||statusVal==='T'||statusVal==='T1'||statusVal==='T2'||statusVal==='T3'||statusVal==='T4'||statusVal==='T5';
+  var isRed=statusVal==='0';
+  var dotColor=isGreen?'#1e8e3e':isRed?'var(--red)':'#9aa0a6';
+  var cardBg=isGreen?'#f0faf3':isRed?'#fff5f5':'#f8f9fa';
+  var border=isGreen?'#c3e6cb':isRed?'#f5c6cb':'#e0e0e0';
+  var label=statusVal==='PT'||statusVal==='TP'?'PT':statusVal==='T'||statusVal==='T1'||statusVal==='T2'||statusVal==='T3'||statusVal==='T4'||statusVal==='T5'?'T':statusVal;
+  var labelBg=isGreen?'#1e8e3e':isRed?'var(--red)':'#9aa0a6';
+  var labelColor=isGreen?'#e8f5e9':isRed?'#fce8e6':'#f1f3f4';
+  var uid='pc_'+Math.random().toString(36).slice(2,8);
+  return '<div style="background:'+cardBg+';border:1.5px solid '+border+';border-radius:10px;overflow:hidden;cursor:pointer" onclick="(function(el){el.querySelector(\'.att-card-details\').classList.toggle(\'open\');var arr=el.querySelector(\'.att-card-arr\');if(arr)arr.style.transform=el.querySelector(\'.att-card-details\').classList.contains(\'open\')?\'rotate(180deg)\':\'rotate(0deg)\'})(this)">'
+    // Row الأساسي
+    +'<div style="display:flex;align-items:center;gap:10px;padding:10px 14px">'
+    +'<span style="width:8px;height:8px;border-radius:50%;background:'+dotColor+';flex-shrink:0"></span>'
+    +(p.pc?'<span style="font-size:11px;font-weight:700;background:white;color:var(--blue);padding:2px 8px;border-radius:6px;border:1px solid var(--blue-lt);flex-shrink:0">'+p.pc+'</span>':'')
+    +(p.location?'<span style="font-size:11px;color:var(--gray);font-weight:600;flex-shrink:0">📍'+p.location+'</span>':'')
+    +'<span style="font-size:13px;font-weight:700;color:var(--dark);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+titleCase(p.name||'')+'</span>'
+    +'<span style="background:'+labelBg+';color:white;font-size:10px;font-weight:800;padding:2px 8px;border-radius:6px;flex-shrink:0">'+label+'</span>'
+    +'<span class="att-card-arr" style="font-size:10px;color:var(--gray);transition:transform .25s;flex-shrink:0">▼</span>'
+    +'</div>'
+    // التفاصيل (مخفية بالأساس)
+    +'<div class="att-card-details" style="max-height:0;overflow:hidden;transition:max-height .3s ease,opacity .25s ease;opacity:0;border-top:0px solid '+border+'">'
+    +'<div style="padding:10px 14px 12px;display:grid;grid-template-columns:1fr 1fr;gap:6px 12px;font-size:12px">'
+    +(p.yubikey?'<div style="grid-column:1/-1;background:white;border-radius:7px;padding:6px 10px;border:1px solid var(--blue-lt)"><span style="color:var(--gray);font-weight:700">🔑 Yubikey: </span><span style="font-family:var(--mono);color:var(--blue);font-weight:700">'+p.yubikey+'</span></div>':'')
+    +(p.email?'<div style="grid-column:1/-1;background:white;border-radius:7px;padding:6px 10px;border:1px solid var(--border)"><span style="color:var(--gray);font-weight:700">✉️ </span><span style="color:var(--dark)">'+p.email+'</span></div>':'')
+    +(p.phone?'<div style="background:white;border-radius:7px;padding:6px 10px;border:1px solid var(--border)"><span style="color:var(--gray);font-weight:700">📞 </span><span style="color:var(--dark)">'+p.phone+'</span></div>':'')
+    +'</div></div>'
+    +'</div>';
+}
+    if(present.length){var prodList=present.filter(function(p){return p.type!=='T';});var trainList=present.filter(function(p){return p.type==='T';});if(prodList.length){html+='<div style="padding:14px 20px 0"><div style="font-size:11px;font-weight:700;color:#1e8e3e;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">✅ Production ('+prodList.length+')</div><div style="display:grid;grid-template-columns:1fr;gap:6px">';prodList.forEach(function(p){html+=mkPersonCard(p,p.type==='PT'?'PT':'P');});html+='</div></div>';}if(trainList.length){html+='<div style="padding:14px 20px 0"><div style="font-size:11px;font-weight:700;color:#0d47a1;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📚 Training ('+trainList.length+')</div><div style="display:grid;grid-template-columns:1fr;gap:6px">';trainList.forEach(function(p){html+=mkPersonCard(p,'T');});html+='</div></div>';}}
+    if(absent.length){html+='<div style="padding:14px 20px 0"><div style="font-size:11px;font-weight:700;color:var(--red);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">❌ Absent ('+absent.length+')</div><div style="display:grid;grid-template-columns:1fr;gap:6px">';absent.forEach(function(p){html+=mkPersonCard(p,'0');});html+='</div></div>';}
+    if(empty.length){html+='<div style="padding:14px 20px 0"><div style="font-size:11px;font-weight:700;color:#9aa0a6;text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">⬜ Empty ('+empty.length+')</div><div style="display:grid;grid-template-columns:1fr;gap:6px">';empty.forEach(function(p){html+=mkPersonCard(p,'E');});html+='</div></div>';}
     html+='<div style="height:14px"></div></div>';
   });
   shtml('attDetailsArea',html);_wireAttCards('attDetailsArea',true);
