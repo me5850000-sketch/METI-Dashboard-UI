@@ -551,7 +551,7 @@ body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
         <div class="nav-section admin-only" style="display:none">Admin</div>
         <div class="nav-item" id="nav-attendance" data-page="attendance">📋 Attendance</div>
         <div class="nav-item" id="nav-attdetails" data-page="attdetails">👥 Details of Attendance</div>
-        <div class="nav-item admin-only" id="nav-users" data-page="users" style="display:none">👤 Users</div>
+        <div class="nav-item" id="nav-users" data-page="users" style="display:none">👤 Pending Requests</div>
       </nav>
       <div class="sb-footer">
         <div class="sb-user">
@@ -697,7 +697,7 @@ body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
         <div id="pgUsers" style="display:none">
           <div class="sec-toolbar">
             <div class="sec-hdr" style="margin:0;flex:1">All Dashboard Users</div>
-            <button class="add-btn" id="btnAddUser">+ Add User</button>
+            <button class="add-btn" id="btnAddUser" style="display:none">+ Add User</button>
           </div>
           <div id="usersArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
         </div>
@@ -805,7 +805,7 @@ var google = {
 
 <script>
 // ══ GLOBALS ══
-var ROLES_SEE_ALL=['admin','sm','svv','sv','wla'],ROLES_OWN=['qtc'],ROLES_MANAGE_USERS=['admin'],ROLES_VIEW_DATA=['admin','sm','svv','sv','qtc','wla'],ROLES_SET_TARGET=['admin','sm','svv'];
+var ROLES_SEE_ALL=['admin','sm','svv','sv','wla'],ROLES_OWN=['qtc'],ROLES_MANAGE_USERS=['admin','sm','svv','sv'],ROLES_VIEW_DATA=
 var F={labeler:'labeler_name',shift:'shift',unit:'unit',modality:'modality',pass:'pass',queue:'queue_name',objects:'object_count',date:'created_at',qc:'qtc_name',ubkey:'yubikey_email',link:'task_link',stage:'stage',pc:'pc_no'};
 var MOD_COLORS={all:{bg:'var(--blue)',border:'var(--blue)'},lane:{bg:'var(--green)',border:'var(--green)'},lidar:{bg:'var(--teal)',border:'var(--teal)'},lane_fp:{bg:'#2d5fa8',border:'#2d5fa8'},lane_qa:{bg:'var(--orange)',border:'var(--orange)'},lidar_fp:{bg:'#007b83',border:'#007b83'},lidar_qa:{bg:'var(--purple)',border:'var(--purple)'}};
 var SESSION=null,TOKEN=null;
@@ -996,14 +996,22 @@ function doLogout() {
   toast("Signed out successfully", "ok");
 }
 
-function showDash(){
+function showDash(){// Add User بيظهر للـ Admin بس
+var addBtn = gid('btnAddUser');
+if (addBtn) addBtn.style.display = hasRole(SESSION.role, ['admin']) ? 'flex' : 'none';
   hide('loginScreen');gid('dashScreen').style.display='block';
   gid('sbName').textContent=titleCase(SESSION.name);
   gid('sbEmail').textContent=SESSION.email||'';
   var shiftEl=gid('sbShift');
   if(SESSION.shift){shiftEl.innerHTML='Shift: <strong>'+SESSION.shift+'</strong>';shiftEl.style.display='block';}
   var rb=gid('sbRole');rb.textContent=SESSION.role.toUpperCase();rb.className='role-badge rb-'+SESSION.role;
-  if(hasRole(SESSION.role,ROLES_MANAGE_USERS))document.querySelectorAll('.admin-only').forEach(function(el){el.style.display='';});
+ if(hasRole(SESSION.role,['admin','sm','svv','sv'])){
+  var navUsers = gid('nav-users');
+  if(navUsers) navUsers.style.display = '';
+}
+if(hasRole(SESSION.role,['admin'])){
+  document.querySelectorAll('.admin-only').forEach(function(el){el.style.display='';});
+}
   if(!hasRole(SESSION.role,ROLES_VIEW_DATA)){var nd=gid('nav-data');if(nd)nd.style.display='none';}
   if(userSeeOwnOnly()){gid('shiftBannerHomeText').textContent=SESSION.shift;gid('shiftBannerDataText').textContent=SESSION.shift;gid('shiftBannerHome').style.display='flex';gid('shiftBannerData').style.display='flex';}
   
@@ -2309,7 +2317,7 @@ window._openAttPopupWithData=function(p,statusLabel,statusBg){
 <script>
 // ══ USERS ══
 function loadUsers() {
-  if (!SESSION || !hasRole(SESSION.role, ['admin','sm','svv'])) return;
+  if (!SESSION || !hasRole(SESSION.role, ['admin','sm','svv','sv'])) return;
   shtml('usersArea','<div class="loading"><div class="spin"></div> Loading...</div>');
   google.script.run
     .withSuccessHandler(function(r) {
@@ -2336,13 +2344,14 @@ function renderUsers(users, pending) {
 
   var html =
     '<div style="display:flex;gap:0;border-bottom:2px solid var(--blue-lt);margin-bottom:16px">' +
-    '<div class="qtc-tab active" id="uTabActive" onclick="switchUserTab(\'active\')" ' +
-    'style="border-bottom:2px solid var(--blue);color:var(--blue);margin-bottom:-2px">Active Users</div>' +
-    '<div class="qtc-tab" id="uTabPending" onclick="switchUserTab(\'pending\')" ' +
-    'style="margin-bottom:-2px">Pending'+pendingBadge+'</div>' +
+    (hasRole(SESSION.role, ['admin','sm']) ?
+'<div class="qtc-tab active" id="uTabActive" onclick="switchUserTab(\'active\')" ' +
+'style="border-bottom:2px solid var(--blue);color:var(--blue);margin-bottom:-2px">Active Users</div>' : '') +
+'<div class="qtc-tab '+(hasRole(SESSION.role,['admin','sm'])?'':'active')+'" id="uTabPending" onclick="switchUserTab(\'pending\')" ' +
+'style="border-bottom:2px solid var(--blue);color:var(--blue);margin-bottom:-2px">Pending'+pendingBadge+'</div>' +
     '</div>' +
 
-    '<div id="uPanelActive">' +
+    '<div id="uPanelActive" style="display:'+(hasRole(SESSION.role,['admin','sm'])?'block':'none')+'">' +
     '<div class="tbl-card"><table><thead><tr>' +
     '<th class="left">Name</th><th class="left">Email</th>' +
     '<th>Role</th><th>Shift</th><th>Status</th><th>Actions</th>' +
