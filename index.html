@@ -2090,9 +2090,14 @@ var statusBg = isAbsent ? '#c5221f'
   : rawSt === 'TP' ? '#5e35b1'
   : rawSt === 'E'  ? '#9aa0a6'
   : '#1e8e3e';
-        var statusBg=isAbsent?'#c5221f':isTraining?'#0d47a1':isPT?'#5e35b1':isPresent?'#1e8e3e':'#9aa0a6';
-        var rowBg=isAbsent?'#fff0f0':isTraining?'#f0f4ff':isPT?'#f5f0ff':'#f8fdf9';
-var rowBorder=isAbsent?'rgba(197,34,31,.25)':isTraining?'rgba(13,71,161,.2)':isPT?'rgba(94,53,177,.2)':'rgba(30,142,62,.15)';
+        var rowBg = isAbsent ? '#fff0f0'
+  : rawSt === 'T' || rawSt.match(/^T\d$/) ? '#f0f4ff'
+  : rawSt === 'PT' || rawSt === 'TP' ? '#f5f0ff'
+  : '#f8fdf9';
+var rowBorder = isAbsent ? 'rgba(197,34,31,.25)'
+  : rawSt === 'T' || rawSt.match(/^T\d$/) ? 'rgba(13,71,161,.2)'
+  : rawSt === 'PT' || rawSt === 'TP' ? 'rgba(94,53,177,.2)'
+  : 'rgba(30,142,62,.15)';
 
         // نبني الـ data كـ attributes بدل JSON.stringify في onclick
         var safeN=(p.name||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
