@@ -1973,89 +1973,38 @@ function renderAttDetailsPage(r,dateISO){
   var visible=_attShift2==='All'?SHIFT_ORD.filter(function(s){return shifts[s];}):([_attShift2].filter(function(s){return shifts[s];}));
   if(!visible.length){shtml('attDetailsArea','<div class="empty">No data for this date.</div>');return;}
 
-  // ═══ POPUP HTML (once) ═══
+  // Popup (once)
   if(!gid('attDetailPopup')){
     var pop=document.createElement('div');
     pop.id='attDetailPopup';
     pop.style.cssText='display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:16px';
-    pop.innerHTML='<div id="attDetailPopupBox" style="background:white;border-radius:16px;width:100%;max-width:420px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.35);animation:fadeUp .2s ease"><div id="attDetailPopupInner"></div></div>';
-    pop.addEventListener('click',function(e){if(e.target===pop)closeAttPopup();});
+    pop.innerHTML='<div id="attDetailPopupBox" style="background:white;border-radius:16px;width:100%;max-width:420px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.35)"><div id="attDetailPopupInner"></div></div>';
+    pop.addEventListener('click',function(e){if(e.target===pop)window.closeAttPopup();});
     document.body.appendChild(pop);
   }
 
-  function openAttPopup(p,statusLabel,statusBg){
-    var box=gid('attDetailPopupBox');
-    if(document.body.classList.contains('dark'))box.style.background='#1e2130';
-    else box.style.background='white';
-
-    var fields=[
-      {label:'Name',val:titleCase(p.name||'-'),key:'name'},
-      {label:'PC',val:p.pc||'',key:'pc'},
-      {label:'Unit',val:p.location||'',key:'unit'},
-      {label:'Shift',val:p.shift||'',key:'shift'},
-      {label:'Status',val:statusLabel,key:'status'},
-      {label:'Email',val:p.email||'',key:'email'},
-      {label:'Phone',val:p.phone||'',key:'phone'},
-      {label:'Yubikey',val:p.yubikey||'',key:'yubikey'},
-    ];
-
-    var h='<div style="padding:0">';
-    // Header
-    h+='<div style="background:var(--blue);border-radius:16px 16px 0 0;padding:16px 20px;display:flex;align-items:center;justify-content:space-between">';
-    h+='<div>';
-    h+='<div style="color:white;font-size:16px;font-weight:800">'+titleCase(p.name||'-')+'</div>';
-    if(p.pc)h+='<div style="color:rgba(255,255,255,.6);font-size:12px;margin-top:2px">'+p.pc+(p.location?' · '+p.location:'')+'</div>';
-    h+='</div>';
-    h+='<div style="display:flex;align-items:center;gap:8px">';
-    h+='<span style="background:'+statusBg+';color:white;font-size:11px;font-weight:800;padding:4px 12px;border-radius:8px">'+statusLabel+'</span>';
-    h+='<button onclick="closeAttPopup()" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;color:white;font-size:16px;display:flex;align-items:center;justify-content:center;line-height:1">&#10005;</button>';
-    h+='</div></div>';
-
-    // Fields
-    h+='<div style="padding:14px 18px;display:flex;flex-direction:column;gap:8px">';
-    fields.forEach(function(f){
-      if(!f.val)return;
-      var isMono=f.key==='yubikey'||f.key==='email';
-      h+='<div style="display:flex;align-items:center;background:var(--gray-lt);border-radius:9px;padding:10px 14px;gap:10px">';
-      h+='<div style="flex:1">';
-      h+='<div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">'+f.label+'</div>';
-      h+='<div style="font-size:13px;font-weight:700;color:var(--dark)'+(isMono?';font-family:var(--mono)':'')+'">'+f.val+'</div>';
-      h+='</div>';
-      h+='<button onclick="(function(btn,v){navigator.clipboard.writeText(v).then(function(){var o=btn.innerHTML;btn.innerHTML=\'&#10003;\';btn.style.color=\'#1e8e3e\';setTimeout(function(){btn.innerHTML=o;btn.style.color=\'\';},1500);});})(this,\''+f.val.replace(/'/g,"\\'")+'\')" style="background:none;border:none;cursor:pointer;color:var(--gray);font-size:15px;padding:4px;border-radius:5px;transition:color .15s;flex-shrink:0" title="Copy">&#128203;</button>';
-      h+='</div>';
-    });
-
-    // Copy All
-    var allText=fields.filter(function(f){return f.val;}).map(function(f){return f.label+': '+f.val;}).join('\n');
-    h+='<button onclick="(function(btn){navigator.clipboard.writeText(\''+allText.replace(/\n/g,'\\n').replace(/'/g,"\\'")+'\').then(function(){var o=btn.innerHTML;btn.innerHTML=\'&#10003; Copied!\';setTimeout(function(){btn.innerHTML=o;},1800);});})(this)" style="width:100%;padding:10px;background:var(--blue);color:white;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px">&#128203; Copy All</button>';
-    h+='</div></div>';
-    gid('attDetailPopupInner').innerHTML=h;
-    var pop=gid('attDetailPopup');pop.style.display='flex';
-    // Prevent body scroll
-    document.body.style.overflow='hidden';
-  }
-
-  // Build HTML
   var html='';
   visible.forEach(function(sh){
     var sd=shifts[sh];
     var present=sd.present||[],absent=sd.absent||[],total=sd.total||0;
     var prod=0,train=0;present.forEach(function(p){if(p.type==='T')train++;else prod++;});
-    var pct=total>0?Math.round(present.length/total*100):0;
     var shBg=sh==='Morning'?'#fff3e0':sh==='Night'?'#e8eaf6':'#e8f5e9';
     var shColor=sh==='Morning'?'#e65100':sh==='Night'?'#283593':'#1b5e20';
     var shBorder=sh==='Morning'?'#ffcc80':sh==='Night'?'#9fa8da':'#a5d6a7';
     var shId='sh_'+sh.replace(/\s/g,'_');
 
-    // Merge all people, sort by row number
+    // دمج الكل وترتيب حسب row
     var allPeople=[].concat(
       present.map(function(p){return Object.assign({},p,{_status:'present'});}),
       absent.map(function(p){return Object.assign({},p,{_status:'absent'});}),
       (sd.empty||[]).map(function(p){return Object.assign({},p,{_status:'empty'});})
     );
-    allPeople.sort(function(a,b){return(parseInt(a.row)||9999)-(parseInt(b.row)||9999);});
+    allPeople.sort(function(a,b){
+      var ar=parseInt(a.row)||9999,br=parseInt(b.row)||9999;
+      return ar-br;
+    });
 
-    // Group by unit preserving row order
+    // Group by unit مع الحفاظ على ترتيب الـ row
     var units={},unitOrder=[];
     allPeople.forEach(function(p){
       var u=(p.location||'Unknown').trim();
@@ -2065,7 +2014,6 @@ function renderAttDetailsPage(r,dateISO){
     var unitNames=ROOM_ORD.filter(function(u){return units[u];});
     unitOrder.forEach(function(u){if(unitNames.indexOf(u)===-1)unitNames.push(u);});
 
-    // ═══ SHIFT CARD ═══
     html+='<div style="background:white;border-radius:14px;border:1px solid var(--border);margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow)">';
 
     // Shift header
@@ -2091,8 +2039,8 @@ function renderAttDetailsPage(r,dateISO){
       var uabsent=uPeople.filter(function(p){return p._status==='absent';}).length;
       var uid='u_'+sh.replace(/\s/g,'_')+'_'+uname.replace(/\W/g,'_');
 
-      // ═══ UNIT ROW ═══
       html+='<div style="background:white;border-radius:10px;border:1px solid var(--border);overflow:hidden">';
+      // Unit header
       html+='<div onclick="(function(el){var b=gid(\''+uid+'\');var open=b.style.maxHeight&&b.style.maxHeight!==\'0px\';b.style.maxHeight=open?\'0px\':\'99999px\';b.style.opacity=open?\'0\':\'1\';el.querySelector(\'.u-ch\').style.transform=open?\'rotate(0)\':\'rotate(180deg)\'})(this)" style="padding:10px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;background:var(--blue-bg)">';
       html+='<div style="display:flex;align-items:center;gap:10px">';
       html+='<span style="font-size:14px;font-weight:700;color:var(--blue)">&#128205; '+uname+'</span>';
@@ -2103,7 +2051,7 @@ function renderAttDetailsPage(r,dateISO){
       html+='<div class="u-ch" style="color:var(--blue);font-size:12px;transition:transform .25s">&#9660;</div>';
       html+='</div>';
 
-      // Unit employees
+      // Employees
       html+='<div id="'+uid+'" style="max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .3s ease;opacity:0">';
       html+='<div style="padding:8px;display:flex;flex-direction:column;gap:3px">';
 
@@ -2111,22 +2059,34 @@ function renderAttDetailsPage(r,dateISO){
         var st=p.status||'';
         var isPresent=p._status==='present';
         var isAbsent=p._status==='absent';
-        var isTraining=st.match(/^T\d?$/)&&isPresent;
+        var isTraining=isPresent&&st.match(/^T\d?$/);
         var isPT=st==='PT'||st==='TP';
         var statusLabel=isPT?'PT':isTraining?'T':isAbsent?'Absent':isPresent?'P':'Empty';
-        var statusBg=isPresent&&!isTraining?'#1e8e3e':isTraining?'#0d47a1':isPT?'#5e35b1':isAbsent?'#c5221f':'#9aa0a6';
+        var statusBg=isAbsent?'#c5221f':isTraining?'#0d47a1':isPT?'#5e35b1':isPresent?'#1e8e3e':'#9aa0a6';
         var rowBg=isPresent?'#f8fdf9':isAbsent?'#fff8f8':'#fafafa';
-        var rowBorder=isPresent?'rgba(30,142,62,.15)':isAbsent?'rgba(197,34,31,.12)':'var(--border)';
+        var rowBorder=isPresent?'rgba(30,142,62,.15)':isAbsent?'rgba(197,34,31,.15)':'var(--border)';
 
-        // Serialize person for popup
-        var pSer=JSON.stringify({
-          name:p.name||'',pc:p.pc||'',location:p.location||'',
-          shift:sh,email:p.email||'',phone:p.phone||'',yubikey:p.yubikey||'',
-          status:statusLabel,_statusBg:statusBg
-        }).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        // نبني الـ data كـ attributes بدل JSON.stringify في onclick
+        var safeN=(p.name||'').replace(/'/g,'&#39;').replace(/"/g,'&quot;');
+        var safePC=(p.pc||'').replace(/'/g,'&#39;');
+        var safeLoc=(p.location||'').replace(/'/g,'&#39;');
+        var safeEmail=(p.email||'').replace(/'/g,'&#39;');
+        var safePhone=(p.phone||'').replace(/'/g,'&#39;');
+        var safeYubi=(p.yubikey||'').replace(/'/g,'&#39;');
 
-        // ═══ EMPLOYEE ROW ═══
-        html+='<div onclick="openAttPersonPopup(\''+pSer+'\')" style="background:'+rowBg+';border:1px solid '+rowBorder+';border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .12s" onmouseover="this.style.background=\'var(--blue-bg)\'" onmouseout="this.style.background=\''+rowBg+'\'">';
+        html+='<div class="att-person-row" '
+          +'data-name="'+safeN+'" '
+          +'data-pc="'+safePC+'" '
+          +'data-loc="'+safeLoc+'" '
+          +'data-shift="'+sh+'" '
+          +'data-email="'+safeEmail+'" '
+          +'data-phone="'+safePhone+'" '
+          +'data-yubikey="'+safeYubi+'" '
+          +'data-status="'+statusLabel+'" '
+          +'data-statusbg="'+statusBg+'" '
+          +'style="background:'+rowBg+';border:1px solid '+rowBorder+';border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .12s"'
+          +'onmouseover="this.style.background=\'var(--blue-bg)\'"'
+          +'onmouseout="this.style.background=\''+rowBg+'\'">';
         html+='<span style="font-size:11px;color:var(--gray);min-width:22px;font-weight:700">'+(parseInt(p.row)||idx+1)+'</span>';
         if(p.pc)html+='<span style="font-size:10px;font-weight:700;background:white;color:var(--blue);padding:2px 7px;border-radius:5px;border:1px solid var(--blue-lt);flex-shrink:0">'+p.pc+'</span>';
         html+='<span style="flex:1;font-size:13px;font-weight:700;color:var(--dark)">'+titleCase(p.name||'-')+'</span>';
@@ -2142,12 +2102,28 @@ function renderAttDetailsPage(r,dateISO){
   });
 
   shtml('attDetailsArea',html);
+
+  // Wire clicks بعد render
+  gid('attDetailsArea').addEventListener('click',function(e){
+    var row=e.target.closest('.att-person-row');
+    if(!row)return;
+    window.openAttPopupFromRow(row);
+  });
 }
 
-// ═══ POPUP FUNCTIONS (global) ═══
-window.openAttPersonPopup=function(pStr){
-  var p=tryParse(pStr);if(!p)return;
-  openAttPopupWithData(p,p.status,p._statusBg);
+window.openAttPopupFromRow=function(row){
+  var p={
+    name:row.getAttribute('data-name')||'',
+    pc:row.getAttribute('data-pc')||'',
+    location:row.getAttribute('data-loc')||'',
+    shift:row.getAttribute('data-shift')||'',
+    email:row.getAttribute('data-email')||'',
+    phone:row.getAttribute('data-phone')||'',
+    yubikey:row.getAttribute('data-yubikey')||'',
+  };
+  var statusLabel=row.getAttribute('data-status')||'';
+  var statusBg=row.getAttribute('data-statusbg')||'#9aa0a6';
+  window._openAttPopupWithData(p,statusLabel,statusBg);
 };
 
 window.closeAttPopup=function(){
@@ -2156,12 +2132,11 @@ window.closeAttPopup=function(){
   document.body.style.overflow='';
 };
 
-function openAttPopupWithData(p,statusLabel,statusBg){
+window._openAttPopupWithData=function(p,statusLabel,statusBg){
   var pop=gid('attDetailPopup');
   if(!pop)return;
   var box=gid('attDetailPopupBox');
-  if(document.body.classList.contains('dark'))box.style.background='#1e2130';
-  else box.style.background='white';
+  box.style.background=document.body.classList.contains('dark')?'#1e2130':'white';
 
   var fields=[
     {label:'Name',val:titleCase(p.name||'-')},
@@ -2177,31 +2152,32 @@ function openAttPopupWithData(p,statusLabel,statusBg){
   var h='<div>';
   h+='<div style="background:var(--blue);border-radius:16px 16px 0 0;padding:16px 20px;display:flex;align-items:center;justify-content:space-between">';
   h+='<div><div style="color:white;font-size:16px;font-weight:800">'+titleCase(p.name||'-')+'</div>';
-  if(p.pc||p.location)h+='<div style="color:rgba(255,255,255,.6);font-size:12px;margin-top:2px">'+(p.pc||'')+' '+(p.location?'· '+p.location:'')+'</div>';
-  h+='</div>';
-  h+='<div style="display:flex;align-items:center;gap:8px">';
+  if(p.pc||p.location)h+='<div style="color:rgba(255,255,255,.6);font-size:12px;margin-top:2px">'+(p.pc||'')+(p.location?' · '+p.location:'')+'</div>';
+  h+='</div><div style="display:flex;align-items:center;gap:8px">';
   h+='<span style="background:'+statusBg+';color:white;font-size:11px;font-weight:800;padding:4px 12px;border-radius:8px">'+statusLabel+'</span>';
-  h+='<button onclick="closeAttPopup()" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;color:white;font-size:14px;line-height:1;display:flex;align-items:center;justify-content:center">&#10005;</button>';
+  h+='<button onclick="closeAttPopup()" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;color:white;font-size:14px;display:flex;align-items:center;justify-content:center">&#10005;</button>';
   h+='</div></div>';
 
   h+='<div style="padding:14px 18px;display:flex;flex-direction:column;gap:7px">';
   fields.forEach(function(f){
     if(!f.val)return;
     var isMono=f.label==='Yubikey'||f.label==='Email';
+    var safeVal=f.val.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     h+='<div style="display:flex;align-items:center;background:var(--gray-lt);border-radius:9px;padding:10px 14px;gap:10px">';
     h+='<div style="flex:1"><div style="font-size:10px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:3px">'+f.label+'</div>';
     h+='<div style="font-size:13px;font-weight:700;color:var(--dark)'+(isMono?';font-family:var(--mono)':'')+'">'+f.val+'</div></div>';
-    h+='<button onclick="(function(btn,v){navigator.clipboard.writeText(v).then(function(){var o=btn.innerHTML;btn.innerHTML=\'&#10003;\';btn.style.color=\'#1e8e3e\';setTimeout(function(){btn.innerHTML=o;btn.style.color=\'\';},1500);});})(this,\''+f.val.replace(/'/g,"\\'")+'\')" style="background:none;border:none;cursor:pointer;color:var(--gray);font-size:16px;padding:4px 6px;border-radius:5px;flex-shrink:0;transition:color .15s" title="Copy">&#128203;</button>';
+    h+='<button onclick="(function(btn){navigator.clipboard.writeText(\''+safeVal+'\').then(function(){var o=btn.innerHTML;btn.innerHTML=\'&#10003;\';btn.style.color=\'#1e8e3e\';setTimeout(function(){btn.innerHTML=o;btn.style.color=\'\';},1500);});})(this)" style="background:none;border:none;cursor:pointer;color:var(--gray);font-size:16px;padding:4px 6px;border-radius:5px;flex-shrink:0">&#128203;</button>';
     h+='</div>';
   });
 
-  var allText=fields.filter(function(f){return f.val;}).map(function(f){return f.label+': '+f.val;}).join('\n');
-  h+='<button onclick="(function(btn){navigator.clipboard.writeText(\''+allText.replace(/\n/g,'\\n').replace(/'/g,"\\'")+'\').then(function(){var o=btn.textContent;btn.textContent=\'Copied!\';setTimeout(function(){btn.textContent=o;},1800);});})(this)" style="width:100%;padding:10px;background:var(--blue);color:white;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px">&#128203; Copy All</button>';
+  var allText=fields.filter(function(f){return f.val;}).map(function(f){return f.label+': '+f.val;}).join('\\n');
+  h+='<button onclick="(function(btn){navigator.clipboard.writeText(\''+allText.replace(/'/g,"\\'")+'\').then(function(){var o=btn.textContent;btn.textContent=\'Copied!\';setTimeout(function(){btn.textContent=o;},1800);});})(this)" style="width:100%;padding:10px;background:var(--blue);color:white;border:none;border-radius:9px;font-size:13px;font-weight:700;cursor:pointer;margin-top:4px">&#128203; Copy All</button>';
   h+='</div></div>';
+
   gid('attDetailPopupInner').innerHTML=h;
   pop.style.display='flex';
   document.body.style.overflow='hidden';
-}
+};
 </script>
 
 <script>
