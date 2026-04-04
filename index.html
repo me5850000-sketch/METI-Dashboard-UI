@@ -1994,20 +1994,14 @@ function renderAttDetailsPage(r,dateISO){
     var shId='sh_'+sh.replace(/\s/g,'_');
 
     // دمج الكل وترتيب حسب row
-   var allPeople=[].concat(
-  present.map(function(p){return Object.assign({},p,{_status:'present'});}),
-  absent.map(function(p){return Object.assign({},p,{_status:'absent'});}),
-  (sd.empty||[]).map(function(p){return Object.assign({},p,{_status:'empty'});})
-);
-// ابحث عن هذا السطر في renderAttDetailsPage:
-var allPeople=[].concat(
+ var allPeople=[].concat(
   present.map(function(p){return Object.assign({},p,{_status:'present'});}),
   absent.map(function(p){return Object.assign({},p,{_status:'absent'});}),
   (sd.empty||[]).map(function(p){return Object.assign({},p,{_status:'empty'});})
 );
 allPeople.sort(function(a,b){
-  var ar=parseInt(a.row)||parseInt(a.rowNum)||9999;
-  var br=parseInt(b.row)||parseInt(b.rowNum)||9999;
+  var ar=parseInt(a.row)||parseInt((a.pc||'').replace(/\D/g,''))||9999;
+  var br=parseInt(b.row)||parseInt((b.pc||'').replace(/\D/g,''))||9999;
   return ar-br;
 });
 
