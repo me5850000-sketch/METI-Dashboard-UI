@@ -306,6 +306,9 @@ body.dark #attDetailsArea [style*="color:var(--gray)"]{color:#9aa0b4!important}
 body.dark #attDetailsArea [style*="border-bottom:1px solid"]{border-color:#2d3250!important}
 body.dark #attDetailsArea .att-person-row [style*="background:white"]{background:#252840!important;border-color:#4d7fff!important}
 body.dark #attDetailsArea .att-person-row [style*="color:var(--blue)"]{color:#7eaaff!important}
+  body.dark #pgAttDetails .filter-bar{background:#1e2130!important;border-color:#2d3250!important}
+body.dark #pgAttDetails .mod-btn{background:#252840!important;color:#9aa0b4!important;border-color:#2d3250!important}
+body.dark #pgAttDetails .mod-btn[style*="background:var(--blue)"]{background:#1c4587!important;color:white!important}
   /* ══ QTC PAGE DARK MODE ══ */
 body.dark #qtcTop4 [style*="background:white"]{background:#1e2130!important}
 body.dark #qtcTop4 [style*="background:#e8f5e9"]{background:#1b2e1b!important}
@@ -2295,8 +2298,8 @@ var rowBorder = isAbsent ? 'rgba(197,34,31,.25)'
           +'data-status="'+statusLabel+'" '
           +'data-statusbg="'+statusBg+'" '
           +'style="background:'+rowBg+';border:1px solid '+rowBorder+';border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .12s"'
-        +'onmouseover="this.style.background=document.body.classList.contains(\'dark\')?\'#1a2040\':\'var(--blue-bg)\'"'
-+'onmouseout="this.style.background=\''+rowBg+'\'">';
+      +'onmouseover="this._bg=this.style.background;this.style.background=document.body.classList.contains(\'dark\')?\'#1a2040\':\'var(--blue-bg)\'"'
++'onmouseout="this.style.background=this._bg||\''+rowBg+'\'">';
         if(p.pc)html+='<span style="font-size:10px;font-weight:700;background:white;color:var(--blue);padding:2px 7px;border-radius:5px;border:1px solid var(--blue-lt);flex-shrink:0">'+p.pc+'</span>';
         html+='<span style="flex:1;font-size:13px;font-weight:700;color:'+(isAbsent?'#c5221f':'var(--dark)')+'">'+titleCase(p.name||'-')+'</span>';
 html+='<span style="background:'+statusBg+';color:white;font-size:11px;font-weight:800;padding:3px 12px;border-radius:6px;flex-shrink:0;min-width:36px;text-align:center">'+statusLabel+'</span>';
