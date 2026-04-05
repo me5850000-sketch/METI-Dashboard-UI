@@ -2715,31 +2715,196 @@ function declineUser(rowId, encodedName) {
 }
 </script>
   <script>
-var dodPage=1,DOD_PAGE_SZ=200;
-function renderDetailsOfData(){
-  var area=gid('dodArea');if(!area)return;
-  if(!dataAll||!dataAll.length){area.innerHTML='<div class="empty" style="padding:60px;text-align:center"><div style="font-size:40px;margin-bottom:16px">📋</div><div style="font-size:16px;font-weight:700;color:var(--blue);margin-bottom:8px">No Data Available</div><div style="font-size:13px;color:var(--gray)">Please select a date range using the filter bar above.</div></div>';return;}
-  var data=dataAll,total=data.length;
-  var s=(dodPage-1)*DOD_PAGE_SZ,e2=Math.min(s+DOD_PAGE_SZ,total),pg=data.slice(s,e2),tp=Math.ceil(total/DOD_PAGE_SZ)||1;
-  var lf=0,lq=0,lif=0,liq=0;
-  data.forEach(function(r){var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase(),isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;if(isL&&pass==='FP')lf++;if(isL&&pass==='QA')lq++;if(isLi&&pass==='FP')lif++;if(isLi&&pass==='QA')liq++;});
-  var stHtml='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;padding:10px 16px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);font-size:12px;font-weight:700"><span style="color:var(--gray)">📊 '+total+' tasks</span><span style="color:var(--border)">|</span>';
-  if(lf>0)stHtml+='<span style="color:#1e8e3e;background:#e8f5e9;padding:2px 8px;border-radius:6px">LFP: '+lf+'</span>';
-  if(lq>0)stHtml+='<span style="color:#e37400;background:#fff3cd;padding:2px 8px;border-radius:6px">LQA: '+lq+'</span>';
-  if(lif>0)stHtml+='<span style="color:#007b83;background:#e0f7fa;padding:2px 8px;border-radius:6px">LiFP: '+lif+'</span>';
-  if(liq>0)stHtml+='<span style="color:#7b1fa2;background:#f3e5f5;padding:2px 8px;border-radius:6px">LiQA: '+liq+'</span>';
-  if(lf+lq+lif+liq>0)stHtml+='<span style="color:var(--blue);background:var(--blue-bg);padding:2px 8px;border-radius:6px;font-weight:800">Total: '+(lf+lq+lif+liq)+'</span>';
-  stHtml+='</div>';
-  var html=stHtml+'<div class="tbl-card"><table><thead><tr><th>#</th><th class="left">Labeler</th><th>Shift</th><th>Unit</th><th>Modality</th><th>Pass</th><th>QTC</th><th>PC</th><th>Task ID</th><th>Date</th><th>Time</th></tr></thead><tbody>';
-  if(!pg.length){html+='<tr><td colspan="11" class="empty">No records</td></tr>';}
-  else{pg.forEach(function(r,i){var sh=nShift(r[F.shift]||''),ca=r[F.date]||'',timeStr=ca.length>10?toAMPM(ca.substring(11,16)):'-',qtcD=cleanQtcName(r[F.qc]||''),qtcCell=(qtcD&&qtcD!=='-')?'<span class="badge b-qtc" style="font-size:10px">'+qtcD+'</span>':'<span style="color:var(--gray)">-</span>',hasLink=(r[F.link]||'').toString().trim().indexOf('http')===0;
-  html+='<tr class="dod-row data-row'+(hasLink?' has-link':'')+'" data-dodidx="'+(s+i)+'">'+'<td style="color:var(--gray);font-size:12px">'+(s+i+1)+'</td>'+'<td class="left bold">'+titleCase(r[F.labeler]||'-')+'</td>'+'<td><span class="badge '+shiftBadge(sh)+'">'+sh+'</span></td>'+'<td style="font-size:12px">'+(r[F.unit]||'-')+'</td>'+'<td style="font-size:12px">'+(r[F.modality]||'-')+'</td>'+'<td><span class="badge '+(r[F.pass]==='FP'?'b-fp':'b-qa')+'">'+(r[F.pass]||'-')+'</span></td>'+'<td>'+qtcCell+'</td>'+'<td style="font-size:12px;font-weight:700">'+(r[F.pc]||'-')+'</td>'+'<td style="font-family:var(--mono);font-size:11px;color:var(--gray)">'+(r['task_id']||'-').toString()+'</td>'+'<td style="font-size:12px">'+(ca?ca.substring(0,10):'-')+'</td>'+'<td style="font-size:12px;color:var(--blue);font-weight:700">'+timeStr+(hasLink?' <span style="font-size:10px;opacity:.6;color:var(--green)">↗</span>':'')+'</td>'+'</tr>';});}
-  html+='</tbody></table><div class="pagination"><button class="pg-btn" id="dodPrev" '+(dodPage<=1?'disabled':'')+'>Prev</button><span class="pg-info">Page '+dodPage+' / '+tp+' · '+total+' records</span><button class="pg-btn" id="dodNext" '+(dodPage>=tp?'disabled':'')+'>Next</button></div></div>';
-  area.innerHTML=html;
-  var pv=gid('dodPrev'),nx=gid('dodNext');
-  if(pv){var pc=pv.cloneNode(true);pv.parentNode.replaceChild(pc,pv);pc.addEventListener('click',function(){dodPage--;renderDetailsOfData();gid('pgDetailsOfData').scrollIntoView({behavior:'smooth',block:'start'});});}
-  if(nx){var nc=nx.cloneNode(true);nx.parentNode.replaceChild(nc,nx);nc.addEventListener('click',function(){dodPage++;renderDetailsOfData();gid('pgDetailsOfData').scrollIntoView({behavior:'smooth',block:'start'});});}
-  if(!area._dodWired){area.addEventListener('click',function(e){var row=e.target.closest('tr.dod-row');if(!row)return;var rec=dataAll[parseInt(row.getAttribute('data-dodidx'))];if(rec)openDetail(rec);});area._dodWired=true;}
+// ══ DETAILS OF DATA — Card View ══
+var dodPage = 1;
+ 
+function renderDetailsOfData() {
+  var area = gid('dodArea');
+  if (!area) return;
+ 
+  if (!dataAll || !dataAll.length) {
+    area.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--gray)"><div style="font-size:40px;margin-bottom:12px">📋</div><div style="font-size:16px;font-weight:700;color:var(--blue);margin-bottom:8px">No Data Available</div><div style="font-size:13px">Please select a date range using the filter bar above.</div></div>';
+    return;
+  }
+ 
+  var UNIT_ORD = ['NC Room 102', 'NC Room 106', 'NC Room 108', '4th Floor', '2nd Floor'];
+  var SH_ORD   = ['Morning', 'Night', 'Over Night', 'Over Shift'];
+  var SH_ICON  = { Morning: '☀️', Night: '🌙', 'Over Night': '🦉', 'Over Shift': '🔄' };
+ 
+  // ── Build structure: shift → unit → labeler → stats ──
+  var shifts = {};
+  dataAll.forEach(function (r) {
+    var sh  = nShift(r[F.shift]  || 'Unknown');
+    var un  = (r[F.unit]         || 'Unknown').trim();
+    var lb  = titleCase(r[F.labeler] || 'Unknown');
+    var pc  = (r[F.pc]           || '').toString().trim();
+    var ub  = fmtUbkey(r[F.ubkey] || '');
+    var mod = (r[F.modality]     || '').toLowerCase();
+    var pas = (r[F.pass]         || '').toUpperCase();
+    var isL = mod.indexOf('lane')  !== -1;
+    var isLi= mod.indexOf('lidar') !== -1;
+ 
+    function ensure(o, k, extra) { if (!o[k]) o[k] = Object.assign({ lfp:0,lqa:0,lifp:0,liqa:0,total:0 }, extra||{}); }
+    function bump(o) { o.total++; if(isL&&pas==='FP')o.lfp++; if(isL&&pas==='QA')o.lqa++; if(isLi&&pas==='FP')o.lifp++; if(isLi&&pas==='QA')o.liqa++; }
+ 
+    ensure(shifts, sh);  bump(shifts[sh]);
+    if (!shifts[sh].units) shifts[sh].units = {};
+    ensure(shifts[sh].units, un); bump(shifts[sh].units[un]);
+    if (!shifts[sh].units[un].labelers) shifts[sh].units[un].labelers = {};
+    ensure(shifts[sh].units[un].labelers, lb, { pc: pc, ub: ub });
+    bump(shifts[sh].units[un].labelers[lb]);
+    // keep first non-empty PC / yubikey found
+    if (!shifts[sh].units[un].labelers[lb].pc && pc)  shifts[sh].units[un].labelers[lb].pc = pc;
+    if (!shifts[sh].units[un].labelers[lb].ub && ub && ub !== '-') shifts[sh].units[un].labelers[lb].ub = ub;
+  });
+ 
+  // ── Grand totals bar ──
+  var grand = { lfp:0, lqa:0, lifp:0, liqa:0, total:0 };
+  Object.keys(shifts).forEach(function (sh) {
+    var d = shifts[sh];
+    grand.lfp += d.lfp; grand.lqa += d.lqa; grand.lifp += d.lifp; grand.liqa += d.liqa; grand.total += d.total;
+  });
+ 
+  var html = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;padding:10px 16px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);font-size:12px;font-weight:700">'
+    + '<span style="color:var(--gray)">📊 ' + grand.total + ' tasks</span>'
+    + '<span style="color:var(--border)">|</span>'
+    + (grand.lfp  ? '<span style="color:#1e8e3e;background:#e8f5e9;padding:2px 8px;border-radius:6px">LFP: '  + grand.lfp  + '</span>' : '')
+    + (grand.lqa  ? '<span style="color:#e37400;background:#fff3cd;padding:2px 8px;border-radius:6px">LQA: '  + grand.lqa  + '</span>' : '')
+    + (grand.lifp ? '<span style="color:#007b83;background:#e0f7fa;padding:2px 8px;border-radius:6px">LiFP: ' + grand.lifp + '</span>' : '')
+    + (grand.liqa ? '<span style="color:#7b1fa2;background:#f3e5f5;padding:2px 8px;border-radius:6px">LiQA: ' + grand.liqa + '</span>' : '')
+    + '<span style="color:var(--blue);background:var(--blue-bg);padding:2px 8px;border-radius:6px;font-weight:800">Total: ' + grand.total + '</span>'
+    + '</div>';
+ 
+  // ── Shifts ──
+  var shiftKeys = SH_ORD.filter(function (s) { return !!shifts[s]; });
+  Object.keys(shifts).forEach(function (s) { if (shiftKeys.indexOf(s) === -1) shiftKeys.push(s); });
+ 
+  shiftKeys.forEach(function (sh, si) {
+    var sd   = shifts[sh];
+    var icon = SH_ICON[sh] || '🔹';
+    var shId = 'dod_sh_' + sh.replace(/\s/g, '_');
+    var isFirst = si === 0;
+ 
+    // shift header
+    html += '<div style="margin-bottom:16px;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border)">';
+    html += '<div onclick="dodToggle(\'' + shId + '\')" style="background:var(--blue);padding:13px 20px;cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">'
+      + '<div style="display:flex;align-items:center;gap:10px">'
+      + '<span style="font-size:18px">' + icon + '</span>'
+      + '<span style="color:white;font-size:15px;font-weight:800">SHIFT — ' + sh.toUpperCase() + '</span>'
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+      + (sd.lfp  ? '<span style="background:rgba(30,142,62,.25);color:#a5d6a7;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">LFP: '  + sd.lfp  + '</span>' : '')
+      + (sd.lqa  ? '<span style="background:rgba(227,116,0,.25);color:#ffcc80;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">LQA: '  + sd.lqa  + '</span>' : '')
+      + (sd.lifp ? '<span style="background:rgba(0,123,131,.25);color:#80cbc4;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">LiFP: ' + sd.lifp + '</span>' : '')
+      + (sd.liqa ? '<span style="background:rgba(123,31,162,.25);color:#ce93d8;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">LiQA: ' + sd.liqa + '</span>' : '')
+      + '<span style="background:rgba(255,255,255,.2);color:white;font-size:11px;font-weight:800;padding:3px 10px;border-radius:6px">Total: ' + sd.total + '</span>'
+      + '<span id="arr_' + shId + '" style="color:rgba(255,255,255,.7);font-size:14px;transition:transform .3s;display:inline-block;' + (isFirst ? 'transform:rotate(180deg)' : '') + '">▼</span>'
+      + '</div></div>';
+ 
+    // shift body
+    html += '<div id="' + shId + '" style="background:white;overflow:hidden;transition:max-height .4s ease;max-height:' + (isFirst ? '99999px' : '0') + '">';
+ 
+    // units
+    var unitKeys = UNIT_ORD.filter(function (u) { return sd.units && sd.units[u]; });
+    if (sd.units) Object.keys(sd.units).forEach(function (u) { if (unitKeys.indexOf(u) === -1) unitKeys.push(u); });
+ 
+    unitKeys.forEach(function (un, ui) {
+      var ud   = sd.units[un];
+      var unId = shId + '_u' + ui;
+ 
+      // unit header
+      html += '<div style="border-bottom:1px solid var(--border)">';
+      html += '<div onclick="dodToggle(\'' + unId + '\')" style="background:#f8f9ff;padding:11px 20px;cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border)">'
+        + '<div style="display:flex;align-items:center;gap:8px">'
+        + '<span style="font-size:14px;font-weight:700;color:var(--blue)">📍 ' + un + '</span>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+        + (ud.lfp  ? '<span style="background:#e8f5e9;color:#1e8e3e;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px">LFP: '  + ud.lfp  + '</span>' : '')
+        + (ud.lqa  ? '<span style="background:#fff3cd;color:#e37400;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px">LQA: '  + ud.lqa  + '</span>' : '')
+        + (ud.lifp ? '<span style="background:#e0f7fa;color:#007b83;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px">LiFP: ' + ud.lifp + '</span>' : '')
+        + (ud.liqa ? '<span style="background:#f3e5f5;color:#7b1fa2;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px">LiQA: ' + ud.liqa + '</span>' : '')
+        + '<span style="background:var(--blue-bg);color:var(--blue);font-size:11px;font-weight:800;padding:2px 8px;border-radius:5px">Total: ' + ud.total + '</span>'
+        + '<span id="arr_' + unId + '" style="color:var(--blue);font-size:12px;transition:transform .3s;display:inline-block">▼</span>'
+        + '</div></div>';
+ 
+      // unit body — labeler table
+      html += '<div id="' + unId + '" style="overflow:hidden;transition:max-height .35s ease;max-height:0">';
+ 
+      // sort labelers by PC number ascending
+      var labNames = Object.keys(ud.labelers).sort(function (a, b) {
+        var pa = parseInt((ud.labelers[a].pc || '').replace(/\D/g, '')) || 9999;
+        var pb = parseInt((ud.labelers[b].pc || '').replace(/\D/g, '')) || 9999;
+        return pa - pb;
+      });
+ 
+      // totals row
+      var rowTotals = { lfp:0, lqa:0, lifp:0, liqa:0, total:0 };
+      labNames.forEach(function (n) { var d = ud.labelers[n]; rowTotals.lfp+=d.lfp; rowTotals.lqa+=d.lqa; rowTotals.lifp+=d.lifp; rowTotals.liqa+=d.liqa; rowTotals.total+=d.total; });
+ 
+      html += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
+        + '<thead><tr style="background:var(--blue)">'
+        + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center;width:32px">#</th>'
+        + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:left">Labeler</th>'
+        + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">PC</th>'
+        + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Yubikey</th>'
+        + '<th style="color:#a5d6a7;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Lane FP</th>'
+        + '<th style="color:#ffcc80;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Lane QA</th>'
+        + '<th style="color:#80cbc4;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Lidar FP</th>'
+        + '<th style="color:#ce93d8;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Lidar QA</th>'
+        + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Total</th>'
+        + '</tr></thead><tbody>';
+ 
+      labNames.forEach(function (n, idx) {
+        var d     = ud.labelers[n];
+        var isTop = idx === 0;
+        var rowBg = idx % 2 === 0 ? 'white' : '#f8f9ff';
+ 
+        html += '<tr style="background:' + (isTop ? '#fffef5' : rowBg) + ';border-bottom:1px solid #f0f0f0">'
+          + '<td style="padding:8px 12px;text-align:center;font-size:12px;color:var(--gray)">'
+          + (isTop
+              ? '<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:#f9ab00;color:white;font-size:11px;font-weight:800;align-items:center;justify-content:center">👑</span>'
+              : '<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--blue);color:white;font-size:11px;font-weight:800;align-items:center;justify-content:center">' + (idx+1) + '</span>')
+          + '</td>'
+          + '<td style="padding:8px 12px;font-size:13px;font-weight:700;color:var(--dark)">'
+          + (isTop ? '<span style="font-size:14px;margin-right:4px">👑</span>' : '')
+          + n + '</td>'
+          + '<td style="padding:8px 12px;text-align:center;font-size:13px;font-weight:800;color:var(--blue)">' + (d.pc || '-') + '</td>'
+          + '<td style="padding:8px 12px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--gray)">' + (d.ub && d.ub !== '-' ? d.ub : '-') + '</td>'
+          + '<td style="padding:8px 12px;text-align:center;font-size:13px;font-weight:700;color:#1e8e3e">' + (d.lfp  || '-') + '</td>'
+          + '<td style="padding:8px 12px;text-align:center;font-size:13px;font-weight:700;color:#e37400">' + (d.lqa  || '-') + '</td>'
+          + '<td style="padding:8px 12px;text-align:center;font-size:13px;font-weight:700;color:#007b83">' + (d.lifp || '-') + '</td>'
+          + '<td style="padding:8px 12px;text-align:center;font-size:13px;font-weight:700;color:#7b1fa2">' + (d.liqa || '-') + '</td>'
+          + '<td style="padding:8px 12px;text-align:center;font-size:14px;font-weight:800;color:var(--blue)">' + d.total + '</td>'
+          + '</tr>';
+      });
+ 
+      // TOTAL row
+      html += '<tr style="background:var(--blue)">'
+        + '<td colspan="4" style="padding:9px 12px;color:white;font-size:12px;font-weight:800;text-align:left;padding-left:20px">TOTAL</td>'
+        + '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.lfp  + '</td>'
+        + '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.lqa  + '</td>'
+        + '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.lifp + '</td>'
+        + '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.liqa + '</td>'
+        + '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.total + '</td>'
+        + '</tr>';
+ 
+      html += '</tbody></table></div>';
+      html += '</div></div>'; // end unit body + unit block
+    });
+ 
+    html += '</div></div>'; // end shift body + shift block
+  });
+ 
+  area.innerHTML = html;
+}
+ 
+function dodToggle(id) {
+  var body = document.getElementById(id);
+  var arr  = document.getElementById('arr_' + id);
+  if (!body) return;
+  var isOpen = body.style.maxHeight !== '0px' && body.style.maxHeight !== '';
+  body.style.maxHeight = isOpen ? '0' : '99999px';
+  if (arr) arr.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
 }
 </script>
 </body>
