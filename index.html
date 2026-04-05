@@ -953,7 +953,7 @@ function doLogin() {
             } else {
                if (res.pending) {
   gid('loginScreen').style.display = 'none';
-  gid('waitingScreen').style.cssText = 'display:block';
+  gid('waitingScreen').style.cssText = 'display:block;position:fixed;inset:0;z-index:9999;';
 } else {
   showLoginErr(res.msg || 'Invalid credentials');
 }
