@@ -2862,28 +2862,40 @@ function renderDetailsOfData() {
         + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Total</th>'
         + '</tr></thead><tbody>';
  
-      labNames.forEach(function (n, idx) {
-        var d     = ud.labelers[n];
-        var isTop = idx === 0;
-        var rowBg = idx % 2 === 0 ? 'white' : '#f8f9ff';
- 
-        html += '<tr style="background:' + (isTop ? '#fffef5' : rowBg) + ';border-bottom:1px solid #f0f0f0">'
-          + '<td style="padding:8px 12px;text-align:center;font-size:12px;color:var(--gray)">'
-          + (isTop
-              ? '<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:#f9ab00;color:white;font-size:11px;font-weight:800;align-items:center;justify-content:center">👑</span>'
-              : '<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:var(--blue);color:white;font-size:11px;font-weight:800;align-items:center;justify-content:center">' + (idx+1) + '</span>')
-          + '</td>'
-          + '<td style="padding:8px 12px;font-size:13px;font-weight:700;color:var(--dark)">'
-          + (isTop ? '<span style="font-size:14px;margin-right:4px">👑</span>' : '')
-          + n + '</td>'
-          + '<td style="padding:8px 12px;text-align:center;font-size:13px;font-weight:800;color:var(--blue)">' + (d.pc || '-') + '</td>'
-          + '<td style="padding:8px 12px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--gray)">' + (d.ub && d.ub !== '-' ? d.ub : '-') + '</td>'
-          + '<td style="padding:8px 12px;text-align:center;font-size:13px;font-weight:700;color:#1e8e3e">' + (d.lfp  || '-') + '</td>'
-          + '<td style="padding:8px 12px;text-align:center;font-size:13px;font-weight:700;color:#e37400">' + (d.lqa  || '-') + '</td>'
-          + '<td style="padding:8px 12px;text-align:center;font-size:13px;font-weight:700;color:#007b83">' + (d.lifp || '-') + '</td>'
-          + '<td style="padding:8px 12px;text-align:center;font-size:13px;font-weight:700;color:#7b1fa2">' + (d.liqa || '-') + '</td>'
-          + '<td style="padding:8px 12px;text-align:center;font-size:14px;font-weight:800;color:var(--blue)">' + d.total + '</td>'
-          + '</tr>';
+     var colKeys=['lfp','lqa','lifp','liqa'];
+      var topFor={};
+      colKeys.forEach(function(k){
+        var maxVal=0,maxName='';
+        labNames.forEach(function(n){if((ud.labelers[n][k]||0)>maxVal){maxVal=ud.labelers[n][k];maxName=n;}});
+        if(maxVal>0)topFor[k]={name:maxName,val:maxVal};
+      });
+
+      labNames.forEach(function(n,idx){
+        var d=ud.labelers[n];
+        var isTopAny=colKeys.some(function(k){return topFor[k]&&topFor[k].name===n&&(d[k]||0)>0;});
+        var rowBg=isTopAny?'#fffde7':idx%2===0?'white':'#f8f9ff';
+
+        function colCell(k,color){
+          var val=d[k]||0;
+          var isTopCol=topFor[k]&&topFor[k].name===n&&val>0;
+          return '<td style="padding:8px 12px;text-align:center;font-size:13px;font-weight:700;color:'+color+'">'
+            +(isTopCol?'<div style="font-size:10px;text-align:center;margin-bottom:1px">👑</div>':'')
+            +(val||'-')+'</td>';
+        }
+
+        html+='<tr style="background:'+rowBg+';border-bottom:1px solid #f0f0f0'+(isTopAny?';border-left:3px solid #f9ab00':'')+'">'
+          +'<td style="padding:8px 12px;text-align:center">'
+          +'<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:'+(isTopAny?'#f9ab00':'var(--blue)')+';color:white;font-size:11px;font-weight:800;align-items:center;justify-content:center">'+(idx+1)+'</span>'
+          +'</td>'
+          +'<td style="padding:8px 12px;font-size:13px;font-weight:700;color:var(--dark)">'+(isTopAny?'<span style="font-size:12px;margin-right:4px">👑</span>':'')+n+'</td>'
+          +'<td style="padding:8px 12px;text-align:center;font-size:13px;font-weight:800;color:var(--blue)">'+(d.pc||'-')+'</td>'
+          +'<td style="padding:8px 12px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--gray)">'+(d.ub&&d.ub!=='-'?d.ub:'-')+'</td>'
+          +colCell('lfp','#1e8e3e')
+          +colCell('lqa','#e37400')
+          +colCell('lifp','#007b83')
+          +colCell('liqa','#7b1fa2')
+          +'<td style="padding:8px 12px;text-align:center;font-size:14px;font-weight:800;color:var(--blue)">'+d.total+'</td>'
+          +'</tr>';
       });
  
       // TOTAL row
