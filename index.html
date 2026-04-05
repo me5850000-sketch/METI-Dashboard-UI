@@ -2603,6 +2603,8 @@ function doRegister() {
 
   if (!name || name.split(' ').filter(Boolean).length < 2)
     return showRegErr('Please enter your full name (two words)');
+if (!/^[a-zA-Z\s]+$/.test(name))
+    return showRegErr('Full name must be in English only');
   if (!pass || pass.length < 4)
     return showRegErr('Password must be at least 4 characters');
   if (!shift)
