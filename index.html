@@ -410,8 +410,7 @@ body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
   ⚠️ يجب تعيين <strong>APPS_SCRIPT_URL</strong> أولاً — اقرأ التعليمات في أعلى الكود
 </div>
 <!-- شاشة الانتظار -->
-<div id="waitingScreen" style="display:none;position:fixed;inset:0;z-index:9999;">
-  <div class="login-screen">
+<div id="waitingScreen" style="display:none;position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0d2b6b 0%,#1c4587 50%,#2d5fa8 100%);align-items:center;justify-content:center;">
     <div class="login-box" style="text-align:center">
       <div class="login-logo">
         <div class="logo-badge">
@@ -438,7 +437,6 @@ body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
       </button>
     </div>
   </div>
-</div>
 
 <!-- شاشة Request Access -->
 <div id="registerScreen" style="display:none">
@@ -2591,7 +2589,7 @@ function showRegister() {
 }
 function backToLogin() {
   gid('registerScreen').style.cssText = 'display:none';
-  gid('waitingScreen').style.cssText  = 'display:none';
+gid('waitingScreen').style.cssText  = 'display:none;position:fixed;inset:0;z-index:9999;';
   gid('loginScreen').style.cssText    = 'display:block';
 }
 function doRegister() {
