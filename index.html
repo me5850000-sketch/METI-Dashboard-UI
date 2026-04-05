@@ -2689,11 +2689,11 @@ function doRegister() {
     return showRegErr('Please enter your full name (two words)');
 if (!/^[a-zA-Z\s]+$/.test(name))
     return showRegErr('Full name must be in English only');
-  if (!pass || pass.length < 4)
+// ✅ أضف السطرين دول هنا
+if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))
+    return showRegErr('Please enter a valid email address');
+if (!pass || pass.length < 4)
     return showRegErr('Password must be at least 4 characters');
-  if (!shift)
-    return showRegErr('Please select your shift');
-
   btn.textContent = '...';
   btn.disabled    = true;
 
