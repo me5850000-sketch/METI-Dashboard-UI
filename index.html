@@ -254,8 +254,25 @@ body.dark .dp-popup{background:#1e2130;border-color:#2d3250}body.dark .dp-nav-bt
 body.dark .dp-ym-item{color:#e8eaf0}body.dark .dp-ym-item:hover{background:#252840;color:#7eaaff}body.dark .dp-ym-item.selected{background:#1c4587;color:white}
 body.dark .ib-edit{background:#1a2040;color:#7eaaff}body.dark .ib-del{background:#3d1a1a;color:#ef9a9a}body.dark .add-btn{background:#1c4587}
 body.dark .att-msg-pre{background:#1a2040;border-color:#2d3250;color:#e8eaf0}
-body.dark [style*="background:white"]{background:#1e2130!important}body.dark [style*="background:#f8f9ff"]{background:#252840!important}
+body.dark [style*="background:white"]{background:#1e2130!important}body.dark [style*="background:#fff8c5"]{background:#3d3200!important}
+body.dark [style*="background:#fffde7"]{background:#3d3200!important}
 body.dark [style*="background:var(--blue-bg)"]{background:#1a2040!important}
+  /* ══ QTC PAGE DARK MODE ══ */
+body.dark #qtcTop4 [style*="background:white"]{background:#1e2130!important}
+body.dark #qtcTop4 [style*="background:#e8f5e9"]{background:#1b2e1b!important}
+body.dark #qtcTop4 [style*="background:#fff3cd"]{background:#3d2800!important}
+body.dark #qtcTop4 [style*="background:#e0f7fa"]{background:#0a2e30!important}
+body.dark #qtcTop4 [style*="background:#f3e5f5"]{background:#2d1f3d!important}
+body.dark #qtcTop4 [style*="border-bottom:1px solid #f5f5f5"]{border-bottom-color:#2d3250!important}
+body.dark #qtcListWrap [style*="border-bottom:1px solid #f5f5f5"]{border-bottom-color:#2d3250!important}
+body.dark #qtcCard{background:#1e2130!important;border-color:#2d3250!important}
+body.dark #qtcCard [style*="background:#f8f9ff"]{background:#252840!important}
+body.dark #qtcCard [style*="border-bottom:1px solid var(--border)"]{border-color:#2d3250!important}
+body.dark #qtcTop4 [style*="border-bottom:1px solid #f5f5f5"]{border-color:#2d3250!important}
+body.dark #qtcTop4 > div > div{background:#1e2130!important}
+body.dark #qtcTop4 [style*="padding:18px;text-align:center"]{color:#9aa0b4!important}
+body.dark .lab-sort-pill{background:#252840!important}
+body.dark #qtcSortPills .lab-sort-pill{background:#252840!important;border-color:#2d3250!important}
   att-card-details.open {
   max-height: 200px !important;
   opacity: 1 !important;
@@ -2873,8 +2890,7 @@ function renderDetailsOfData() {
       labNames.forEach(function(n,idx){
         var d=ud.labelers[n];
         var isTopAny=colKeys.some(function(k){return topFor[k]&&topFor[k].name===n&&(d[k]||0)>0;});
-        var rowBg=isTopAny?'#fffde7':idx%2===0?'white':'#f8f9ff';
-
+        var rowBg=isTopAny?'#fff8c5':idx%2===0?'white':'#f8f9ff';
         function colCell(k,color){
           var val=d[k]||0;
           var isTopCol=topFor[k]&&topFor[k].name===n&&val>0;
@@ -2883,7 +2899,7 @@ function renderDetailsOfData() {
             +(val||'-')+'</td>';
         }
 
-        html+='<tr style="background:'+rowBg+';border-bottom:1px solid #f0f0f0'+(isTopAny?';border-left:3px solid #f9ab00':'')+'">'
+        html+='<tr style="background:'+rowBg+';border-bottom:1px solid '+(isTopAny?'#f9ab00':'#f0f0f0')+';'+(isTopAny?'border-left:4px solid #f9ab00;border-right:4px solid #f9ab00;outline:2px solid #f9ab00;':'')+'">'
           +'<td style="padding:8px 12px;text-align:center">'
           +'<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:'+(isTopAny?'#f9ab00':'var(--blue)')+';color:white;font-size:11px;font-weight:800;align-items:center;justify-content:center">'+(idx+1)+'</span>'
           +'</td>'
