@@ -2791,14 +2791,14 @@ function renderDetailsOfData() {
     var sd   = shifts[sh];
     var icon = SH_ICON[sh] || '🔹';
     var shId = 'dod_sh_' + sh.replace(/\s/g, '_');
-    var isFirst = si === 0;
+    var isFirst = false;
  
     // shift header
     html += '<div style="margin-bottom:16px;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border)">';
     html += '<div onclick="dodToggle(\'' + shId + '\')" style="background:var(--blue);padding:13px 20px;cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">'
       + '<div style="display:flex;align-items:center;gap:10px">'
       + '<span style="font-size:18px">' + icon + '</span>'
-      + '<span style="color:white;font-size:15px;font-weight:800">SHIFT — ' + sh.toUpperCase() + '</span>'
+     + '<span style="color:white;font-size:15px;font-weight:800">' + sh + '</span>'
       + '</div>'
       + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
       + (sd.lfp  ? '<span style="background:rgba(30,142,62,.25);color:#a5d6a7;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">LFP: '  + sd.lfp  + '</span>' : '')
