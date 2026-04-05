@@ -545,6 +545,7 @@ body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
         <div class="nav-section">Main</div>
         <div class="nav-item active" id="nav-home" data-page="home">🏠 Home</div>
         <div class="nav-item" id="nav-data" data-page="data">📊 Data</div>
+        <div class="nav-item" id="nav-detailsofdata" data-page="detailsofdata">📋 Details of Data</div>
         <div class="nav-item" id="nav-labelers" data-page="labelers">🏆 Top Labelers</div>
         <div class="nav-item" id="nav-qtc" data-page="qtc">⭐ Top QTC</div>
         <div class="nav-item" id="nav-qtcstats" data-page="qtcstats">📈 QTC Stats</div>
@@ -651,7 +652,9 @@ body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
 
           <div id="dataArea"><div class="loading"><div class="spin"></div> Loading data...</div></div>
         </div>
-
+<div id="pgDetailsOfData" style="display:none">
+  <div id="dodArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
+</div>
         <div id="pgLabelers" style="display:none">
           <div id="labelersArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
         </div>
@@ -1023,14 +1026,14 @@ if(hasRole(SESSION.role,['admin'])){
 
 <script>
 // ══ NAVIGATION ══
-var PAGES={home:{pg:'pgHome',title:'Home',sub:'Overview & Statistics'},data:{pg:'pgData',title:'Data',sub:'All Records'},labelers:{pg:'pgLabelers',title:'Top Labelers',sub:'Leaderboard by Shift'},qtc:{pg:'pgQtc',title:'Top QTC',sub:'QTC Performance'},qtcstats:{pg:'pgQtcStats',title:'QTC Stats',sub:'Individual QTC Performance'},attendance:{pg:'pgAttendance',title:'Attendance',sub:'Daily Attendance Summary'},attdetails:{pg:'pgAttDetails',title:'Details of Attendance',sub:'Full Names — Present & Absent'},users:{pg:'pgUsers',title:'Users',sub:'Manage Dashboard Users'}};
+var PAGES={home:{pg:'pgHome',title:'Home',sub:'Overview & Statistics'},data:{pg:'pgData',title:'Data',sub:'All Records'},detailsofdata:{pg:'pgDetailsOfData',title:'Details of Data',sub:'Raw Data — Every Task'},labelers:{pg:'pgLabelers',title:'Top Labelers',sub:'Leaderboard by Shift'},qtc:{pg:'pgQtc',title:'Top QTC',sub:'QTC Performance'},qtcstats:{pg:'pgQtcStats',title:'QTC Stats',sub:'Individual QTC Performance'},attendance:{pg:'pgAttendance',title:'Attendance',sub:'Daily Attendance Summary'},attdetails:{pg:'pgAttDetails',title:'Details of Attendance',sub:'Full Names — Present & Absent'},users:{pg:'pgUsers',title:'Users',sub:'Manage Dashboard Users'}};
 
 function navTo(page){
   if(page==='data'&&SESSION&&!hasRole(SESSION.role,ROLES_VIEW_DATA))return;
   if(page==='users'&&SESSION&&!hasRole(SESSION.role,ROLES_MANAGE_USERS))return;
   
   // Toggle Global Filter Bar visibility
-  var pagesWithGlobalFilter = ['home', 'data', 'labelers', 'qtc', 'qtcstats'];
+  var pagesWithGlobalFilter = ['home', 'data', 'detailsofdata', 'labelers', 'qtc', 'qtcstats'];
   var gf = gid('globalFilterBar');
   if(gf) gf.style.display = pagesWithGlobalFilter.includes(page) ? 'flex' : 'none';
 
@@ -1043,6 +1046,7 @@ function navTo(page){
   gid('topTitle').textContent=PAGES[page].title;
   gid('topSub').textContent=PAGES[page].sub;
   if(page==='data')loadData();
+  if(page==='detailsofdata'){dodPage=1;renderDetailsOfData();}
   if(page==='users')loadUsers();
   if(page==='labelers')loadLabelers();
   if(page==='qtc')loadQtc();
@@ -1366,7 +1370,7 @@ function loadData(){
     .withSuccessHandler(function(r){
       if(r.err){shtml('dataArea','<div class="empty">'+r.err+'</div>');return;}
       r.data.sort(function(a,b){return new Date(b[F.date]||0)-new Date(a[F.date]||0);});
-      dataAll=r.data;dataPage=1;renderDataFiltered();
+      dataAll=r.data;dataPage=1;renderDataFiltered();if(gid('pgDetailsOfData')&&gid('pgDetailsOfData').style.display!=='none')renderDetailsOfData();
     })
     .withFailureHandler(function(e){shtml('dataArea','<div class="empty">'+e.message+'</div>');})
     .getStats(TOKEN,from,to);
@@ -2708,6 +2712,34 @@ function declineUser(rowId, encodedName) {
     })
     .withFailureHandler(function(e) { toast(e.message, 'err'); })
     .approveUser(TOKEN, rowId, 'decline', {});
+}
+</script>
+  <script>
+var dodPage=1,DOD_PAGE_SZ=200;
+function renderDetailsOfData(){
+  var area=gid('dodArea');if(!area)return;
+  if(!dataAll||!dataAll.length){area.innerHTML='<div class="empty" style="padding:60px;text-align:center"><div style="font-size:40px;margin-bottom:16px">📋</div><div style="font-size:16px;font-weight:700;color:var(--blue);margin-bottom:8px">No Data Available</div><div style="font-size:13px;color:var(--gray)">Please select a date range using the filter bar above.</div></div>';return;}
+  var data=dataAll,total=data.length;
+  var s=(dodPage-1)*DOD_PAGE_SZ,e2=Math.min(s+DOD_PAGE_SZ,total),pg=data.slice(s,e2),tp=Math.ceil(total/DOD_PAGE_SZ)||1;
+  var lf=0,lq=0,lif=0,liq=0;
+  data.forEach(function(r){var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase(),isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;if(isL&&pass==='FP')lf++;if(isL&&pass==='QA')lq++;if(isLi&&pass==='FP')lif++;if(isLi&&pass==='QA')liq++;});
+  var stHtml='<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:14px;padding:10px 16px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);font-size:12px;font-weight:700"><span style="color:var(--gray)">📊 '+total+' tasks</span><span style="color:var(--border)">|</span>';
+  if(lf>0)stHtml+='<span style="color:#1e8e3e;background:#e8f5e9;padding:2px 8px;border-radius:6px">LFP: '+lf+'</span>';
+  if(lq>0)stHtml+='<span style="color:#e37400;background:#fff3cd;padding:2px 8px;border-radius:6px">LQA: '+lq+'</span>';
+  if(lif>0)stHtml+='<span style="color:#007b83;background:#e0f7fa;padding:2px 8px;border-radius:6px">LiFP: '+lif+'</span>';
+  if(liq>0)stHtml+='<span style="color:#7b1fa2;background:#f3e5f5;padding:2px 8px;border-radius:6px">LiQA: '+liq+'</span>';
+  if(lf+lq+lif+liq>0)stHtml+='<span style="color:var(--blue);background:var(--blue-bg);padding:2px 8px;border-radius:6px;font-weight:800">Total: '+(lf+lq+lif+liq)+'</span>';
+  stHtml+='</div>';
+  var html=stHtml+'<div class="tbl-card"><table><thead><tr><th>#</th><th class="left">Labeler</th><th>Shift</th><th>Unit</th><th>Modality</th><th>Pass</th><th>QTC</th><th>PC</th><th>Task ID</th><th>Date</th><th>Time</th></tr></thead><tbody>';
+  if(!pg.length){html+='<tr><td colspan="11" class="empty">No records</td></tr>';}
+  else{pg.forEach(function(r,i){var sh=nShift(r[F.shift]||''),ca=r[F.date]||'',timeStr=ca.length>10?toAMPM(ca.substring(11,16)):'-',qtcD=cleanQtcName(r[F.qc]||''),qtcCell=(qtcD&&qtcD!=='-')?'<span class="badge b-qtc" style="font-size:10px">'+qtcD+'</span>':'<span style="color:var(--gray)">-</span>',hasLink=(r[F.link]||'').toString().trim().indexOf('http')===0;
+  html+='<tr class="dod-row data-row'+(hasLink?' has-link':'')+'" data-dodidx="'+(s+i)+'">'+'<td style="color:var(--gray);font-size:12px">'+(s+i+1)+'</td>'+'<td class="left bold">'+titleCase(r[F.labeler]||'-')+'</td>'+'<td><span class="badge '+shiftBadge(sh)+'">'+sh+'</span></td>'+'<td style="font-size:12px">'+(r[F.unit]||'-')+'</td>'+'<td style="font-size:12px">'+(r[F.modality]||'-')+'</td>'+'<td><span class="badge '+(r[F.pass]==='FP'?'b-fp':'b-qa')+'">'+(r[F.pass]||'-')+'</span></td>'+'<td>'+qtcCell+'</td>'+'<td style="font-size:12px;font-weight:700">'+(r[F.pc]||'-')+'</td>'+'<td style="font-family:var(--mono);font-size:11px;color:var(--gray)">'+(r['task_id']||'-').toString()+'</td>'+'<td style="font-size:12px">'+(ca?ca.substring(0,10):'-')+'</td>'+'<td style="font-size:12px;color:var(--blue);font-weight:700">'+timeStr+(hasLink?' <span style="font-size:10px;opacity:.6;color:var(--green)">↗</span>':'')+'</td>'+'</tr>';});}
+  html+='</tbody></table><div class="pagination"><button class="pg-btn" id="dodPrev" '+(dodPage<=1?'disabled':'')+'>Prev</button><span class="pg-info">Page '+dodPage+' / '+tp+' · '+total+' records</span><button class="pg-btn" id="dodNext" '+(dodPage>=tp?'disabled':'')+'>Next</button></div></div>';
+  area.innerHTML=html;
+  var pv=gid('dodPrev'),nx=gid('dodNext');
+  if(pv){var pc=pv.cloneNode(true);pv.parentNode.replaceChild(pc,pv);pc.addEventListener('click',function(){dodPage--;renderDetailsOfData();gid('pgDetailsOfData').scrollIntoView({behavior:'smooth',block:'start'});});}
+  if(nx){var nc=nx.cloneNode(true);nx.parentNode.replaceChild(nc,nx);nc.addEventListener('click',function(){dodPage++;renderDetailsOfData();gid('pgDetailsOfData').scrollIntoView({behavior:'smooth',block:'start'});});}
+  if(!area._dodWired){area.addEventListener('click',function(e){var row=e.target.closest('tr.dod-row');if(!row)return;var rec=dataAll[parseInt(row.getAttribute('data-dodidx'))];if(rec)openDetail(rec);});area._dodWired=true;}
 }
 </script>
 </body>
