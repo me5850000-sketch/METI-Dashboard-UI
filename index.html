@@ -1044,7 +1044,14 @@ function navTo(page){
   gid('topTitle').textContent=PAGES[page].title;
   gid('topSub').textContent=PAGES[page].sub;
   if(page==='data')loadData();
-  if(page==='detailsofdata'){dodPage=1;renderDetailsOfData();}
+  if(page==='detailsofdata'){
+  dodPage=1;
+  if(!dataAll||!dataAll.length){
+    loadData();
+  } else {
+    renderDetailsOfData();
+  }
+}
   if(page==='users')loadUsers();
   if(page==='labelers')loadLabelers();
   if(page==='qtc')loadQtc();
@@ -1368,7 +1375,8 @@ function loadData(){
     .withSuccessHandler(function(r){
       if(r.err){shtml('dataArea','<div class="empty">'+r.err+'</div>');return;}
       r.data.sort(function(a,b){return new Date(b[F.date]||0)-new Date(a[F.date]||0);});
-      dataAll=r.data;dataPage=1;renderDataFiltered();if(gid('pgDetailsOfData')&&gid('pgDetailsOfData').style.display!=='none')renderDetailsOfData();
+     dataAll=r.data;dataPage=1;renderDataFiltered();
+if(gid('pgDetailsOfData')&&gid('pgDetailsOfData').style.display!=='none')renderDetailsOfData();if(gid('pgDetailsOfData')&&gid('pgDetailsOfData').style.display!=='none')renderDetailsOfData();
     })
     .withFailureHandler(function(e){shtml('dataArea','<div class="empty">'+e.message+'</div>');})
     .getStats(TOKEN,from,to);
