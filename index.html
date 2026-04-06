@@ -3130,5 +3130,99 @@ function dodToggle(id) {
   body.style.maxHeight = isOpen ? '0' : '99999px';
   if (arr) arr.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
 }
+    // ══ OT DETAILS PAGE LOGIC ══
+function loadOtDetails() {
+  var dateISO = DP.getVal('otDate') || todayISO();
+  if (!DP.getVal('otDate')) DP.setVal('otDate', dateISO, false);
+
+  shtml('otDetailsArea', '<div class="loading"><div class="spin"></div> Loading OT Details...</div>');
+  
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (r.err) { shtml('otDetailsArea','<div class="empty">'+r.err+'</div>'); return; }
+      renderOtDetails(r.data);
+    })
+    .withFailureHandler(function(e) { shtml('otDetailsArea','<div class="empty">'+e.message+'</div>'); })
+    .getOtDetails(TOKEN, dateISO);
+}
+
+function renderOtDetails(data) {
+  var area = gid('otDetailsArea');
+  if (!area) return;
+  
+  if (!data || !data.length) {
+    area.innerHTML = '<div class="filter-bar"><label style="margin-right:10px">Date</label><div class="dp-wrap" id="dpWrap-otDate"><input type="text" class="dp-input" id="otDate" readonly><span class="dp-icon">📅</span></div></div><div class="empty">No OT records found for this date.</div>';
+    gid('otDate').addEventListener('click', function(){ DP.open('otDate'); });
+    return;
+  }
+
+  var overCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('over') !== -1; }).length;
+  var compCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('comp') !== -1; }).length;
+
+  var html = '<div class="filter-bar"><label style="margin-right:10px">Date</label>'
+    + '<div class="dp-wrap" id="dpWrap-otDate"><input type="text" class="dp-input" id="otDate" readonly><span class="dp-icon">📅</span></div>'
+    + '<div id="otStateBtns" style="display:flex;gap:6px;margin-left:12px">'
+    + '<button class="mod-btn active" data-otstate="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>'
+    + '<button class="mod-btn" data-otstate="over">Overtime</button>'
+    + '<button class="mod-btn" data-otstate="comp">Compensation</button>'
+    + '</div></div>';
+
+  html += '<div class="cards" style="grid-template-columns: repeat(3, 1fr); margin-bottom:15px">'
+    + mkCard('Total Records', data.length, 'blue')
+    + mkCard('Overtime', overCount, 'green')
+    + mkCard('Compensation', compCount, 'red')
+    + '</div>';
+
+  html += '<div class="tbl-card"><table><thead><tr><th>#</th><th class="left">Name</th><th>PC</th><th>OT Shift</th><th>Hours</th><th>State</th></tr></thead><tbody>';
+
+  data.forEach(function(r, i) {
+    var isComp = (r.state||'').toLowerCase().indexOf('comp') !== -1;
+    var stBadge = isComp ? 'b-inactive' : 'b-active';
+    html += '<tr class="clickable data-row" data-ot="'+encodeURIComponent(JSON.stringify(r))+'">'
+      + '<td>'+(i+1)+'</td>'
+      + '<td class="left bold">'+titleCase(r.name)+'</td>'
+      + '<td class="bold" style="color:var(--blue)">'+(r.pc||'-')+'</td>'
+      + '<td><span class="badge '+shiftBadge(r.otShift)+'">'+(r.otShift||'-')+'</span></td>'
+      + '<td><span style="background:var(--orange-lt);padding:2px 8px;border-radius:5px;font-weight:700">'+(r.hours||'-')+'</span></td>'
+      + '<td><span class="badge '+stBadge+'">'+(r.state||'-')+'</span></td></tr>';
+  });
+  html += '</tbody></table></div>';
+  
+  area.innerHTML = html;
+  gid('otDate').addEventListener('click', function(){ DP.open('otDate'); });
+  
+  area.querySelectorAll('.mod-btn[data-otstate]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var st = btn.getAttribute('data-otstate');
+      area.querySelectorAll('.mod-btn').forEach(function(b){ b.classList.remove('active'); b.style.background=''; b.style.color=''; });
+      btn.classList.add('active'); btn.style.background='var(--blue)'; btn.style.color='white';
+      
+      area.querySelectorAll('tbody tr.data-row').forEach(function(tr){
+        var d = JSON.parse(decodeURIComponent(tr.getAttribute('data-ot')));
+        var show = (st==='all') || (st==='over' && d.state.toLowerCase().indexOf('over') !== -1) || (st==='comp' && d.state.toLowerCase().indexOf('comp') !== -1);
+        tr.style.display = show ? '' : 'none';
+      });
+    });
+  });
+
+  area.querySelectorAll('tr.data-row').forEach(function(tr){
+    tr.addEventListener('click', function(){ openOtModal(JSON.parse(decodeURIComponent(tr.getAttribute('data-ot')))); });
+  });
+}
+
+function openOtModal(r) {
+  gid('detailTitle').textContent = 'OT Details: ' + titleCase(r.name);
+  var html = '<div class="detail-grid">'
+    + '<div class="detail-item"><div class="detail-lbl">Name</div><div class="detail-val">'+titleCase(r.name)+'</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">PC</div><div class="detail-val">'+(r.pc||'-')+'</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">Project</div><div class="detail-val">'+(r.project||'-')+'</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">OT Shift</div><div class="detail-val">'+(r.otShift||'-')+'</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">Hours</div><div class="detail-val" style="color:var(--blue); font-size:18px"><strong>'+(r.hours||'-')+'</strong></div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">State</div><div class="detail-val">'+(r.state||'-')+'</div></div>'
+    + '<div class="detail-item full"><div class="detail-lbl">OT Yubikey</div><div class="detail-val"><span class="ubkey-chip">'+(r.otYubikey||'-')+'</span></div></div>'
+    + '</div>';
+  shtml('detailBody', html);
+  gid('detailBd').classList.add('show');
+}
 </script>
 </body>
