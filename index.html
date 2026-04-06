@@ -623,7 +623,6 @@ body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
         <div class="nav-section admin-only" style="display:none">Admin</div>
         <div class="nav-item" id="nav-attendance" data-page="attendance">📋 Attendance</div>
         <div class="nav-item" id="nav-attdetails" data-page="attdetails">👥 Details of Attendance</div>
-        <div class="nav-item" id="nav-otdetails" data-page="otdetails">⏱️ Details of OT</div>
         <div class="nav-item" id="nav-users" data-page="users" style="display:none">👤 Users</div>
       </nav>
       <div class="sb-footer">
@@ -676,9 +675,6 @@ body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
       </div>
 
       <div class="content">
-        <div id="pgOtDetails" style="display:none">
-  <div id="otDetailsArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
-</div>
         <div id="pgHome">
           <div id="shiftBannerHome" style="display:none" class="shift-banner">Showing data for your shift: <strong id="shiftBannerHomeText"></strong></div>
           <div id="statsArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
@@ -870,10 +866,10 @@ var google = {
       getStats: function(t, f, to) { this.execute('getStats', [t, f, to]); },
       getQtcStats: function(t, f, to) { this.execute('getQtcStats', [t, f, to]); },
       getQtcUsers: function(t) { this.execute('getQtcUsers', [t]); },
-      getOtDetails: function(t, d) { this.execute('getOtDetails', [t, d]); },
+      getUsers: function(t) { this.execute('getUsers', [t]); },
       upsertUser: function(t, p) { this.execute('upsertUser', [t, p]); },
       deleteUser: function(t, u) { this.execute('deleteUser', [t, u]); },
-      getUsers: function(t) { this.execute('getUsers', [t]); },
+      getAttendance: function(t, d, s) { this.execute('getAttendance', [t, d, s]); },
       getTargets: function(t) { this.execute('getTargets', [t]); },
       setTarget: function(t, k, v) { this.execute('setTarget', [t, k, v]); }
     }
@@ -928,13 +924,12 @@ var DP={
   fmtDisplay:function(iso){if(!iso)return '';var p=iso.split('-'),mn=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return mn[parseInt(p[1])-1]+' '+parseInt(p[2])+', '+p[0];},
   setVal:function(id,iso,trig){DP.vals[id]=iso;var el=gid(id);if(el)el.value=DP.fmtDisplay(iso);if(trig&&iso)DP.onChange(id);},
   getVal:function(id){return DP.vals[id]||'';},
-  onChange: function(id) {
-    var fi = ['gFrom'], ti = ['gTo'];
-    if (fi.indexOf(id) !== -1) { SHARED.from = DP.vals[id]; SHARED.syncAll(); if (SESSION) SHARED.reloadActive(); }
-    if (ti.indexOf(id) !== -1) { SHARED.to = DP.vals[id]; SHARED.syncAll(); if (SESSION) SHARED.reloadActive(); }
-    if (id === 'attDate' && SESSION && TOKEN) { loadAttendance(); return; }
-    if (id === 'attDate2' && SESSION && TOKEN) { loadAttDetails(); return; }
-    if (id === 'otDate' && SESSION && TOKEN) { loadOtDetails(); return; } // السطر الجديد
+  onChange:function(id){
+    var fi=['gFrom'],ti=['gTo'];
+    if(fi.indexOf(id)!==-1){SHARED.from=DP.vals[id];SHARED.syncAll();if(SESSION)SHARED.reloadActive();}
+    if(ti.indexOf(id)!==-1){SHARED.to=DP.vals[id];SHARED.syncAll();if(SESSION)SHARED.reloadActive();}
+    if(id==='attDate'&&SESSION&&TOKEN){loadAttendance();return;}
+    if(id==='attDate2'&&SESSION&&TOKEN){loadAttDetails();return;}
   },
   open:function(id){DP.close();var iso=DP.getVal(id)||todayISO(),p=iso.split('-');DP.active=id;DP.view='days';DP.viewYear=parseInt(p[0]);DP.viewMonth=parseInt(p[1])-1;DP.render();var inp=gid(id);if(inp)inp.classList.add('open');},
   close:function(){var ex=document.querySelector('.dp-popup');if(ex)ex.remove();if(DP.active){var inp=gid(DP.active);if(inp)inp.classList.remove('open');}DP.active=null;},
@@ -1102,48 +1097,44 @@ if(hasRole(SESSION.role,['admin'])){
 
 <script>
 // ══ NAVIGATION ══
-var PAGES = {
-  home: { pg: 'pgHome', title: 'Home', sub: 'Overview & Statistics' },
-  data: { pg: 'pgData', title: 'Data', sub: 'All Records' },
-  detailsofdata: { pg: 'pgDetailsOfData', title: 'Details of Data', sub: 'Raw Data — Every Task' },
-  labelers: { pg: 'pgLabelers', title: 'Top Labelers', sub: 'Leaderboard by Shift' },
-  qtc: { pg: 'pgQtc', title: 'Top QTC', sub: 'QTC Performance' },
-  qtcstats: { pg: 'pgQtcStats', title: 'QTC Stats', sub: 'Individual QTC Performance' },
-  attendance: { pg: 'pgAttendance', title: 'Attendance', sub: 'Daily Attendance Summary' },
-  attdetails: { pg: 'pgAttDetails', title: 'Details of Attendance', sub: 'Full Names — Present & Absent' },
-  otdetails: { pg: 'pgOtDetails', title: 'Details of OT', sub: 'Overtime Records' },
-  users: { pg: 'pgUsers', title: 'Users', sub: 'Manage Dashboard Users' }
-};
+var PAGES={home:{pg:'pgHome',title:'Home',sub:'Overview & Statistics'},data:{pg:'pgData',title:'Data',sub:'All Records'},detailsofdata:{pg:'pgDetailsOfData',title:'Details of Data',sub:'Raw Data — Every Task'},labelers:{pg:'pgLabelers',title:'Top Labelers',sub:'Leaderboard by Shift'},qtc:{pg:'pgQtc',title:'Top QTC',sub:'QTC Performance'},qtcstats:{pg:'pgQtcStats',title:'QTC Stats',sub:'Individual QTC Performance'},attendance:{pg:'pgAttendance',title:'Attendance',sub:'Daily Attendance Summary'},attdetails:{pg:'pgAttDetails',title:'Details of Attendance',sub:'Full Names — Present & Absent'},users:{pg:'pgUsers',title:'Users',sub:'Manage Dashboard Users'}};
 
-function navTo(page) {
-  if (page === 'data' && SESSION && !hasRole(SESSION.role, ROLES_VIEW_DATA)) return;
-  if (page === 'users' && SESSION && !hasRole(SESSION.role, ROLES_MANAGE_USERS)) return;
-
+function navTo(page){
+  if(page==='data'&&SESSION&&!hasRole(SESSION.role,ROLES_VIEW_DATA))return;
+  if(page==='users'&&SESSION&&!hasRole(SESSION.role,ROLES_MANAGE_USERS))return;
+  
+  // Toggle Global Filter Bar visibility
   var pagesWithGlobalFilter = ['home', 'data', 'detailsofdata', 'labelers', 'qtc', 'qtcstats'];
   var gf = gid('globalFilterBar');
-  if (gf) gf.style.display = pagesWithGlobalFilter.includes(page) ? 'flex' : 'none';
+  if(gf) gf.style.display = pagesWithGlobalFilter.includes(page) ? 'flex' : 'none';
 
-  Object.keys(PAGES).forEach(function(k) {
-    var s = k === page;
-    var pageEl = gid(PAGES[k].pg);
-    if (pageEl) pageEl.style.display = s ? 'block' : 'none';
-    var nav = gid('nav-' + k); if (nav) nav.classList.toggle('active', s);
-    var bn = gid('bn-' + k); if (bn) bn.classList.toggle('active', s);
+  Object.keys(PAGES).forEach(function(k){
+    var s=k===page;
+    gid(PAGES[k].pg).style.display=s?'block':'none';
+    var nav=gid('nav-'+k);if(nav)nav.classList.toggle('active',s);
+    var bn=gid('bn-'+k);if(bn)bn.classList.toggle('active',s);
   });
-
-  gid('topTitle').textContent = PAGES[page].title;
-  gid('topSub').textContent = PAGES[page].sub;
-
-  if (page === 'data') loadData();
-  if (page === 'detailsofdata') { dodPage = 1; renderDetailsOfData(); }
-  if (page === 'users') loadUsers();
-  if (page === 'labelers') loadLabelers();
-  if (page === 'qtc') loadQtc();
-  if (page === 'attendance') loadAttendance();
-  if (page === 'attdetails') loadAttDetails();
-  if (page === 'otdetails') loadOtDetails(); 
-  if (page === 'qtcstats') initQtcStats();
+  gid('topTitle').textContent=PAGES[page].title;
+  gid('topSub').textContent=PAGES[page].sub;
+  if(page==='data')loadData();
+  if(page==='detailsofdata'){
+  dodPage=1;
+  if(!dataAll||!dataAll.length){
+    loadData();
+  } else {
+    renderDetailsOfData();
+  }
 }
+  if(page==='users')loadUsers();
+  if(page==='labelers')loadLabelers();
+  if(page==='qtc')loadQtc();
+  if(page==='attendance')loadAttendance();
+  if(page==='attdetails')loadAttDetails();
+  if(page==='qtcstats')initQtcStats();
+}
+</script>
+
+<script>
 // ══ HOME STATS ══
 function loadStats(){
   if(TOKEN)google.script.run.withSuccessHandler(function(r){if(r&&!r.err&&r.targets)TARGETS=r.targets;}).withFailureHandler(function(){}).getTargets(TOKEN);
@@ -3039,105 +3030,6 @@ function dodToggle(id) {
   var isOpen = body.style.maxHeight !== '0px' && body.style.maxHeight !== '';
   body.style.maxHeight = isOpen ? '0' : '99999px';
   if (arr) arr.style.transform = isOpen ? 'rotate(0deg)' : 'rotate(180deg)';
-}
-    // ══ OT DETAILS PAGE ══
-function loadOtDetails() {
-  var dateISO = DP.getVal('otDate') || todayISO();
-  if (gid('otDate') && !gid('otDate').value) DP.setVal('otDate', dateISO, false);
-
-  shtml('otDetailsArea', '<div class="loading"><div class="spin"></div> Loading OT Details...</div>');
-  
-  google.script.run
-    .withSuccessHandler(function(r) {
-      if (r.err) { shtml('otDetailsArea','<div class="empty">'+r.err+'</div>'); return; }
-      renderOtDetails(r.data);
-    })
-    .withFailureHandler(function(e) { shtml('otDetailsArea','<div class="empty">'+e.message+'</div>'); })
-    .getOtDetails(TOKEN, dateISO);
-}
-
-function renderOtDetails(data) {
-  var area = gid('otDetailsArea');
-  if (!area) return;
-  if (!data || !data.length) {
-    area.innerHTML = '<div class="filter-bar"><div class="dp-wrap" id="dpWrap-otDate"><input type="text" class="dp-input" id="otDate" readonly><span class="dp-icon">📅</span></div></div><div class="empty">No OT records found for this date.</div>';
-    gid('otDate').addEventListener('click', function(){ DP.open('otDate'); });
-    return;
-  }
-
-  var overCount = data.filter(function(r){ return (r.state||'').toLowerCase().includes('over'); }).length;
-  var compCount = data.filter(function(r){ return (r.state||'').toLowerCase().includes('comp'); }).length;
-
-  var html = '<div class="filter-bar">'
-    + '<label>Date</label>'
-    + '<div class="dp-wrap" id="dpWrap-otDate"><input type="text" class="dp-input" id="otDate" readonly><span class="dp-icon">📅</span></div>'
-    + '<div id="otStateBtns" style="display:flex;gap:6px;margin-left:12px">'
-    + '<button class="mod-btn active" data-otstate="all" style="background:var(--blue);color:white;">All</button>'
-    + '<button class="mod-btn" data-otstate="over">Overtime</button>'
-    + '<button class="mod-btn" data-otstate="comp">Compensation</button>'
-    + '</div></div>';
-
-  html += '<div class="cards" style="grid-template-columns: repeat(3, 1fr); margin-bottom:15px">'
-    + mkCard('Total Records', data.length, 'blue')
-    + mkCard('Overtime', overCount, 'green')
-    + mkCard('Compensation', compCount, 'red')
-    + '</div>';
-
-  html += '<div class="tbl-card"><table><thead><tr><th>#</th><th class="left">Name</th><th>PC</th><th>OT Shift</th><th>Hours</th><th>State</th></tr></thead><tbody>';
-
-  data.forEach(function(r, i) {
-    var isComp = (r.state||'').toLowerCase().includes('comp');
-    var stBadge = isComp ? 'b-inactive' : 'b-active';
-    html += '<tr class="clickable data-row" data-ot="'+encodeURIComponent(JSON.stringify(r))+'">'
-      + '<td>'+(i+1)+'</td>'
-      + '<td class="left bold">'+titleCase(r.name)+'</td>'
-      + '<td>'+(r.pc||'-')+'</td>'
-      + '<td><span class="badge '+shiftBadge(r.otShift)+'">'+(r.otShift||'-')+'</span></td>'
-      + '<td><strong>'+(r.hours||'-')+'</strong></td>'
-      + '<td><span class="badge '+stBadge+'">'+(r.state||'-')+'</span></td></tr>';
-  });
-  html += '</tbody></table></div>';
-  
-  area.innerHTML = html;
-
-  // تفعيل العناصر
-  DP.setVal('otDate', DP.getVal('otDate') || todayISO(), false);
-  gid('otDate').addEventListener('click', function(){ DP.open('otDate'); });
-  
-  // فلترة الحالة
-  area.querySelectorAll('.mod-btn[data-otstate]').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      var st = btn.getAttribute('data-otstate');
-      area.querySelectorAll('.mod-btn').forEach(function(b){ b.style.background=''; b.style.color=''; });
-      btn.style.background='var(--blue)'; btn.style.color='white';
-      
-      area.querySelectorAll('tbody tr').forEach(function(tr){
-        var d = JSON.parse(decodeURIComponent(tr.getAttribute('data-ot')));
-        var show = (st==='all') || (st==='over' && d.state.toLowerCase().includes('over')) || (st==='comp' && d.state.toLowerCase().includes('comp'));
-        tr.style.display = show ? '' : 'none';
-      });
-    });
-  });
-
-  // المودال عند الضغط
-  area.querySelectorAll('tr.data-row').forEach(function(tr){
-    tr.addEventListener('click', function(){ openOtModal(JSON.parse(decodeURIComponent(tr.getAttribute('data-ot')))); });
-  });
-}
-
-function openOtModal(r) {
-  gid('detailTitle').textContent = 'OT Details: ' + titleCase(r.name);
-  var html = '<div class="detail-grid">'
-    + '<div class="detail-item"><div class="detail-lbl">Name</div><div class="detail-val">'+titleCase(r.name)+'</div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">PC</div><div class="detail-val">'+(r.pc||'-')+'</div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">Project</div><div class="detail-val">'+(r.project||'-')+'</div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">OT Shift</div><div class="detail-val">'+(r.otShift||'-')+'</div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">Hours</div><div class="detail-val" style="color:var(--blue); font-size:18px"><strong>'+(r.hours||'-')+'</strong></div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">State</div><div class="detail-val">'+(r.state||'-')+'</div></div>'
-    + '<div class="detail-item full"><div class="detail-lbl">Yubikey</div><div class="detail-val"><span class="ubkey-chip">'+(r.otYubikey||'-')+'</span></div></div>'
-    + '</div>';
-  shtml('detailBody', html);
-  gid('detailBd').classList.add('show');
 }
 </script>
 </body>
