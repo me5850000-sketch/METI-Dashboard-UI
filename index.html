@@ -2482,6 +2482,7 @@ function renderOtDetails(data) {
   var overCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('over') !== -1; }).length;
   var compCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('comp') !== -1; }).length;
 
+  var displayDate = DP.fmtDisplay(DP.getVal('otDate') || todayISO());
   var html = '<div class="filter-bar"><label style="margin-right:10px">Date</label>'
     + '<div class="dp-wrap" id="dpWrap-otDate"><input type="text" class="dp-input" id="otDate" readonly value="'+displayDate+'"><span class="dp-icon">📅</span></div>'
     + '<div id="otStateBtns" style="display:flex;gap:6px;margin-left:12px">'
@@ -3194,8 +3195,9 @@ function renderOtDetails(data) {
   var overCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('over') !== -1; }).length;
   var compCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('comp') !== -1; }).length;
 
+  var displayDate = DP.fmtDisplay(DP.getVal('otDate') || todayISO());
   var html = '<div class="filter-bar"><label style="margin-right:10px">Date</label>'
-    + '<div class="dp-wrap" id="dpWrap-otDate"><input type="text" class="dp-input" id="otDate" readonly><span class="dp-icon">📅</span></div>'
+    + '<div class="dp-wrap" id="dpWrap-otDate"><input type="text" class="dp-input" id="otDate" readonly value="'+displayDate+'"><span class="dp-icon">📅</span></div>'
     + '<div id="otStateBtns" style="display:flex;gap:6px;margin-left:12px">'
     + '<button class="mod-btn active" data-otstate="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>'
     + '<button class="mod-btn" data-otstate="over">Overtime</button>'
@@ -3247,15 +3249,29 @@ function renderOtDetails(data) {
 
 function openOtModal(r) {
   gid('detailTitle').textContent = 'OT Details: ' + titleCase(r.name);
+  
   var html = '<div class="detail-grid">'
+    // الصف الأول
     + '<div class="detail-item"><div class="detail-lbl">Name</div><div class="detail-val">'+titleCase(r.name)+'</div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">PC</div><div class="detail-val">'+(r.pc||'-')+'</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">PC</div><div class="detail-val" style="color:var(--blue); font-weight:800">'+(r.pc||'-')+'</div></div>'
+    
+    // الصف التاني (الشفت الأساسي والإضافي)
+    + '<div class="detail-item"><div class="detail-lbl">Original Shift</div><div class="detail-val">'+(r.shift||'-')+'</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">Over time Shift</div><div class="detail-val"><span class="badge '+shiftBadge(r.otShift)+'">'+(r.otShift||'-')+'</span></div></div>'
+    
+    // الصف التالت (الدور الأساسي والإضافي)
+    + '<div class="detail-item"><div class="detail-lbl">Original Floor</div><div class="detail-val">'+(r.floor||'-')+'</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">Over time Floor</div><div class="detail-val">'+(r.otFloor||'-')+'</div></div>'
+    
+    // الصف الرابع (المشروع والحالة)
     + '<div class="detail-item"><div class="detail-lbl">Project</div><div class="detail-val">'+(r.project||'-')+'</div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">OT Shift</div><div class="detail-val">'+(r.otShift||'-')+'</div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">Hours</div><div class="detail-val" style="color:var(--blue); font-size:18px"><strong>'+(r.hours||'-')+'</strong></div></div>'
     + '<div class="detail-item"><div class="detail-lbl">State</div><div class="detail-val">'+(r.state||'-')+'</div></div>'
-    + '<div class="detail-item full"><div class="detail-lbl">OT Yubikey</div><div class="detail-val"><span class="ubkey-chip">'+(r.otYubikey||'-')+'</span></div></div>'
+    
+    // الصف الخامس (الساعات واليوبيكي)
+    + '<div class="detail-item"><div class="detail-lbl">Hours</div><div class="detail-val" style="color:var(--blue); font-size:18px"><strong>'+(r.hours||'-')+'</strong></div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">OT Yubikey</div><div class="detail-val"><span class="ubkey-chip">'+(r.otYubikey||'-')+'</span></div></div>'
     + '</div>';
+    
   shtml('detailBody', html);
   gid('detailBd').classList.add('show');
 }
