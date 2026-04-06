@@ -3189,7 +3189,7 @@ function renderOtDetails(data) {
   var area = gid('otDetailsArea');
   if (!area) return;
   
-  // بنجيب التاريخ الحالي عشان نثبته في المربع وميفضاش
+  // حفظ التاريخ
   var dateISO = DP.getVal('otDate') || todayISO();
   var displayDate = DP.fmtDisplay(dateISO); 
 
@@ -3199,30 +3199,12 @@ function renderOtDetails(data) {
     return;
   }
 
-  // 1. ترتيب البيانات: المورنينج كله ورا بعضه، وبعدين النايت، وبعدين الأوفر نايت عشان يبقوا نفس الشكل ومترتبين
-  var shiftOrder = { "Morning": 1, "Night": 2, "Over Night": 3 };
-  data.sort(function(a, b) {
-    var sA = shiftOrder[a.otShift] || 99;
-    var sB = shiftOrder[b.otShift] || 99;
-    if (sA !== sB) return sA - sB;
-    return (a.name || '').localeCompare(b.name || '');
-  });
-
   var overCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('over') !== -1; }).length;
   var compCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('comp') !== -1; }).length;
 
-  // 2. إضافة زراير فلترة الشفتات جنب زراير الحالة
   var html = '<div class="filter-bar"><label style="margin-right:10px">Date</label>'
     + '<div class="dp-wrap" id="dpWrap-otDate"><input type="text" class="dp-input" id="otDate" readonly value="'+displayDate+'"><span class="dp-icon">📅</span></div>'
-    
-    + '<div id="otShiftBtns" style="display:flex;gap:6px;margin-left:12px;border-left:1px solid var(--border);padding-left:12px">'
-    + '<button class="mod-btn active" data-otshift="all" style="background:var(--blue);color:white;border-color:var(--blue)">All Shifts</button>'
-    + '<button class="mod-btn" data-otshift="Morning">Morning</button>'
-    + '<button class="mod-btn" data-otshift="Night">Night</button>'
-    + '<button class="mod-btn" data-otshift="Over Night">Over Night</button>'
-    + '</div>'
-
-    + '<div id="otStateBtns" style="display:flex;gap:6px;margin-left:12px;border-left:1px solid var(--border);padding-left:12px">'
+    + '<div id="otStateBtns" style="display:flex;gap:6px;margin-left:12px">'
     + '<button class="mod-btn active" data-otstate="all" style="background:var(--blue);color:white;border-color:var(--blue)">All States</button>'
     + '<button class="mod-btn" data-otstate="over">Overtime</button>'
     + '<button class="mod-btn" data-otstate="comp">Compensation</button>'
@@ -3234,64 +3216,90 @@ function renderOtDetails(data) {
     + mkCard('Compensation', compCount, 'red')
     + '</div>';
 
-  html += '<div class="tbl-card"><table><thead><tr><th>#</th><th class="left">Name</th><th>PC</th><th>OT Shift</th><th>Hours</th><th>State</th></tr></thead><tbody>';
-
-  data.forEach(function(r, i) {
-    var isComp = (r.state||'').toLowerCase().indexOf('comp') !== -1;
-    var stBadge = isComp ? 'b-inactive' : 'b-active';
-    var pcFormatted = (r.pc || '-').toString().toUpperCase(); // توحيد شكل الـ PC
-    
-    html += '<tr class="clickable data-row" data-ot="'+encodeURIComponent(JSON.stringify(r))+'">'
-      + '<td>'+(i+1)+'</td>'
-      + '<td class="left bold">'+titleCase(r.name)+'</td>'
-      + '<td class="bold" style="color:var(--blue)">'+pcFormatted+'</td>'
-      + '<td><span class="badge '+shiftBadge(r.otShift)+'">'+(r.otShift||'-')+'</span></td>'
-      + '<td><span style="background:var(--orange-lt);padding:2px 8px;border-radius:5px;font-weight:700">'+(r.hours||'-')+'</span></td>'
-      + '<td><span class="badge '+stBadge+'">'+(r.state||'-')+'</span></td></tr>';
+  // 1. تجميع البيانات وتصنيفها حسب الشفت
+  var shifts = {};
+  var SH_ORD = ['Morning', 'Night', 'Over Night', 'Over Shift'];
+  var SH_ICON = { 'Morning': '☀️', 'Night': '🌙', 'Over Night': '🦉', 'Over Shift': '🔄' };
+  
+  data.forEach(function(r) {
+    var sh = titleCase((r.otShift || 'Unknown').trim());
+    if (!shifts[sh]) shifts[sh] = [];
+    shifts[sh].push(r);
   });
-  html += '</tbody></table></div>';
-  
+
+  var shiftKeys = SH_ORD.filter(function(s) { return !!shifts[s]; });
+  Object.keys(shifts).forEach(function(s) { if (shiftKeys.indexOf(s) === -1) shiftKeys.push(s); });
+
+  shiftKeys.forEach(function(sh, si) {
+    var sData = shifts[sh];
+    var icon = SH_ICON[sh] || '🔹';
+    var shId = 'ot_sh_' + si;
+
+    var sOver = sData.filter(function(r){ return (r.state||'').toLowerCase().indexOf('over') !== -1; }).length;
+    var sComp = sData.filter(function(r){ return (r.state||'').toLowerCase().indexOf('comp') !== -1; }).length;
+
+    // 2. هيدر الشفت (شريط أزرق متجمع زي الـ Details of Data)
+    html += '<div style="margin-bottom:16px;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border)">';
+    html += '<div onclick="dodToggle(\'' + shId + '\')" style="background:var(--blue);padding:13px 20px;cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">'
+      + '<div style="display:flex;align-items:center;gap:10px">'
+      + '<span style="font-size:18px">' + icon + '</span>'
+      + '<span style="color:white;font-size:15px;font-weight:800">' + sh + ' Shift</span>'
+      + '</div>'
+      + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
+      + (sOver ? '<span style="background:rgba(30,142,62,.25);color:#a5d6a7;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">Overtime: ' + sOver + '</span>' : '')
+      + (sComp ? '<span style="background:rgba(227,116,0,.25);color:#ffcc80;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">Compensation: ' + sComp + '</span>' : '')
+      + '<span style="background:rgba(255,255,255,.2);color:white;font-size:11px;font-weight:800;padding:3px 10px;border-radius:6px">Total: ' + sData.length + '</span>'
+      + '<span id="arr_' + shId + '" style="color:rgba(255,255,255,.7);font-size:14px;transition:transform .3s;display:inline-block;transform:rotate(180deg)">▼</span>'
+      + '</div></div>';
+
+    // 3. جدول البيانات الخاص بالشفت ده
+    html += '<div id="' + shId + '" style="background:white;overflow:hidden;transition:max-height .4s ease;max-height:99999px">';
+    
+    html += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
+      + '<thead><tr style="background:var(--blue)">'
+      + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;padding:9px 12px;text-align:center;width:40px">#</th>'
+      + '<th class="left" style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;padding:9px 12px">Name</th>'
+      + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;padding:9px 12px;text-align:center">PC</th>'
+      + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;padding:9px 12px;text-align:center">Hours</th>'
+      + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;padding:9px 12px;text-align:center">State</th>'
+      + '</tr></thead><tbody>';
+
+    sData.forEach(function(r, i) {
+      var isComp = (r.state||'').toLowerCase().indexOf('comp') !== -1;
+      var stBadge = isComp ? 'b-inactive' : 'b-active';
+      var pcFormatted = (r.pc || '-').toString().toUpperCase();
+      
+      html += '<tr class="clickable data-row" data-ot="'+encodeURIComponent(JSON.stringify(r))+'">'
+        + '<td style="color:var(--gray)">'+(i+1)+'</td>'
+        + '<td class="left bold" style="color:var(--dark)">'+titleCase(r.name)+'</td>'
+        + '<td class="bold" style="color:var(--blue)">'+pcFormatted+'</td>'
+        // هنا شيلنا اللون البرتقالي الشاذ وخلينا الساعات شكلها شيك ومتناسق مع الدارك مود
+        + '<td style="font-size:14px;font-weight:800;color:var(--blue)">'+(r.hours||'-')+'</td>'
+        + '<td><span class="badge '+stBadge+'">'+(r.state||'-')+'</span></td></tr>';
+    });
+
+    html += '</tbody></table></div>';
+    html += '</div></div>';
+  });
+
   area.innerHTML = html;
-  
-  // إعادة تفعيل زرار التاريخ بعد ما اترسم
   gid('otDate').addEventListener('click', function(){ DP.open('otDate'); });
   
-  // دالة ذكية لتطبيق الفلاتر (Shift + State) مع بعض
-  function applyOtFilters() {
-    var activeShift = area.querySelector('#otShiftBtns .active').getAttribute('data-otshift');
-    var activeState = area.querySelector('#otStateBtns .active').getAttribute('data-otstate');
-    
-    area.querySelectorAll('tbody tr.data-row').forEach(function(tr){
-      var d = JSON.parse(decodeURIComponent(tr.getAttribute('data-ot')));
-      
-      var matchShift = (activeShift === 'all') || (d.otShift === activeShift);
-      var matchState = (activeState === 'all') || 
-                       (activeState === 'over' && d.state.toLowerCase().indexOf('over') !== -1) || 
-                       (activeState === 'comp' && d.state.toLowerCase().indexOf('comp') !== -1);
-                       
-      tr.style.display = (matchShift && matchState) ? '' : 'none';
-    });
-  }
-
-  // تشغيل فلاتر الشفتات
-  area.querySelectorAll('.mod-btn[data-otshift]').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      area.querySelectorAll('.mod-btn[data-otshift]').forEach(function(b){ b.classList.remove('active'); b.style.background=''; b.style.color=''; });
-      btn.classList.add('active'); btn.style.background='var(--blue)'; btn.style.color='white';
-      applyOtFilters();
-    });
-  });
-
-  // تشغيل فلاتر الحالة
+  // تشغيل الفلاتر (All, Overtime, Comp)
   area.querySelectorAll('.mod-btn[data-otstate]').forEach(function(btn){
     btn.addEventListener('click', function(){
+      var st = btn.getAttribute('data-otstate');
       area.querySelectorAll('.mod-btn[data-otstate]').forEach(function(b){ b.classList.remove('active'); b.style.background=''; b.style.color=''; });
       btn.classList.add('active'); btn.style.background='var(--blue)'; btn.style.color='white';
-      applyOtFilters();
+      
+      area.querySelectorAll('tbody tr.data-row').forEach(function(tr){
+        var d = JSON.parse(decodeURIComponent(tr.getAttribute('data-ot')));
+        var show = (st==='all') || (st==='over' && d.state.toLowerCase().indexOf('over') !== -1) || (st==='comp' && d.state.toLowerCase().indexOf('comp') !== -1);
+        tr.style.display = show ? '' : 'none';
+      });
     });
   });
 
-  // تشغيل المودال لما تدوس على الصف
   area.querySelectorAll('tr.data-row').forEach(function(tr){
     tr.addEventListener('click', function(){ openOtModal(JSON.parse(decodeURIComponent(tr.getAttribute('data-ot')))); });
   });
