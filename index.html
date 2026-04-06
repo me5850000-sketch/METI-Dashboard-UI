@@ -3186,20 +3186,41 @@ function renderOtDetails(data) {
   var area = gid('otDetailsArea');
   if (!area) return;
   
+  // بنجيب التاريخ الحالي عشان نثبته في المربع وميفضاش
+  var dateISO = DP.getVal('otDate') || todayISO();
+  var displayDate = DP.fmtDisplay(dateISO); 
+
   if (!data || !data.length) {
-    area.innerHTML = '<div class="filter-bar"><label style="margin-right:10px">Date</label><div class="dp-wrap" id="dpWrap-otDate"><input type="text" class="dp-input" id="otDate" readonly><span class="dp-icon">📅</span></div></div><div class="empty">No OT records found for this date.</div>';
+    area.innerHTML = '<div class="filter-bar"><label style="margin-right:10px">Date</label><div class="dp-wrap" id="dpWrap-otDate"><input type="text" class="dp-input" id="otDate" readonly value="'+displayDate+'"><span class="dp-icon">📅</span></div></div><div class="empty">No OT records found for this date.</div>';
     gid('otDate').addEventListener('click', function(){ DP.open('otDate'); });
     return;
   }
 
+  // 1. ترتيب البيانات: المورنينج كله ورا بعضه، وبعدين النايت، وبعدين الأوفر نايت عشان يبقوا نفس الشكل ومترتبين
+  var shiftOrder = { "Morning": 1, "Night": 2, "Over Night": 3 };
+  data.sort(function(a, b) {
+    var sA = shiftOrder[a.otShift] || 99;
+    var sB = shiftOrder[b.otShift] || 99;
+    if (sA !== sB) return sA - sB;
+    return (a.name || '').localeCompare(b.name || '');
+  });
+
   var overCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('over') !== -1; }).length;
   var compCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('comp') !== -1; }).length;
 
-  var displayDate = DP.fmtDisplay(DP.getVal('otDate') || todayISO());
+  // 2. إضافة زراير فلترة الشفتات جنب زراير الحالة
   var html = '<div class="filter-bar"><label style="margin-right:10px">Date</label>'
     + '<div class="dp-wrap" id="dpWrap-otDate"><input type="text" class="dp-input" id="otDate" readonly value="'+displayDate+'"><span class="dp-icon">📅</span></div>'
-    + '<div id="otStateBtns" style="display:flex;gap:6px;margin-left:12px">'
-    + '<button class="mod-btn active" data-otstate="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>'
+    
+    + '<div id="otShiftBtns" style="display:flex;gap:6px;margin-left:12px;border-left:1px solid var(--border);padding-left:12px">'
+    + '<button class="mod-btn active" data-otshift="all" style="background:var(--blue);color:white;border-color:var(--blue)">All Shifts</button>'
+    + '<button class="mod-btn" data-otshift="Morning">Morning</button>'
+    + '<button class="mod-btn" data-otshift="Night">Night</button>'
+    + '<button class="mod-btn" data-otshift="Over Night">Over Night</button>'
+    + '</div>'
+
+    + '<div id="otStateBtns" style="display:flex;gap:6px;margin-left:12px;border-left:1px solid var(--border);padding-left:12px">'
+    + '<button class="mod-btn active" data-otstate="all" style="background:var(--blue);color:white;border-color:var(--blue)">All States</button>'
     + '<button class="mod-btn" data-otstate="over">Overtime</button>'
     + '<button class="mod-btn" data-otstate="comp">Compensation</button>'
     + '</div></div>';
@@ -3215,10 +3236,12 @@ function renderOtDetails(data) {
   data.forEach(function(r, i) {
     var isComp = (r.state||'').toLowerCase().indexOf('comp') !== -1;
     var stBadge = isComp ? 'b-inactive' : 'b-active';
+    var pcFormatted = (r.pc || '-').toString().toUpperCase(); // توحيد شكل الـ PC
+    
     html += '<tr class="clickable data-row" data-ot="'+encodeURIComponent(JSON.stringify(r))+'">'
       + '<td>'+(i+1)+'</td>'
       + '<td class="left bold">'+titleCase(r.name)+'</td>'
-      + '<td class="bold" style="color:var(--blue)">'+(r.pc||'-')+'</td>'
+      + '<td class="bold" style="color:var(--blue)">'+pcFormatted+'</td>'
       + '<td><span class="badge '+shiftBadge(r.otShift)+'">'+(r.otShift||'-')+'</span></td>'
       + '<td><span style="background:var(--orange-lt);padding:2px 8px;border-radius:5px;font-weight:700">'+(r.hours||'-')+'</span></td>'
       + '<td><span class="badge '+stBadge+'">'+(r.state||'-')+'</span></td></tr>';
@@ -3226,27 +3249,50 @@ function renderOtDetails(data) {
   html += '</tbody></table></div>';
   
   area.innerHTML = html;
+  
+  // إعادة تفعيل زرار التاريخ بعد ما اترسم
   gid('otDate').addEventListener('click', function(){ DP.open('otDate'); });
   
-  area.querySelectorAll('.mod-btn[data-otstate]').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      var st = btn.getAttribute('data-otstate');
-      area.querySelectorAll('.mod-btn').forEach(function(b){ b.classList.remove('active'); b.style.background=''; b.style.color=''; });
-      btn.classList.add('active'); btn.style.background='var(--blue)'; btn.style.color='white';
+  // دالة ذكية لتطبيق الفلاتر (Shift + State) مع بعض
+  function applyOtFilters() {
+    var activeShift = area.querySelector('#otShiftBtns .active').getAttribute('data-otshift');
+    var activeState = area.querySelector('#otStateBtns .active').getAttribute('data-otstate');
+    
+    area.querySelectorAll('tbody tr.data-row').forEach(function(tr){
+      var d = JSON.parse(decodeURIComponent(tr.getAttribute('data-ot')));
       
-      area.querySelectorAll('tbody tr.data-row').forEach(function(tr){
-        var d = JSON.parse(decodeURIComponent(tr.getAttribute('data-ot')));
-        var show = (st==='all') || (st==='over' && d.state.toLowerCase().indexOf('over') !== -1) || (st==='comp' && d.state.toLowerCase().indexOf('comp') !== -1);
-        tr.style.display = show ? '' : 'none';
-      });
+      var matchShift = (activeShift === 'all') || (d.otShift === activeShift);
+      var matchState = (activeState === 'all') || 
+                       (activeState === 'over' && d.state.toLowerCase().indexOf('over') !== -1) || 
+                       (activeState === 'comp' && d.state.toLowerCase().indexOf('comp') !== -1);
+                       
+      tr.style.display = (matchShift && matchState) ? '' : 'none';
+    });
+  }
+
+  // تشغيل فلاتر الشفتات
+  area.querySelectorAll('.mod-btn[data-otshift]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      area.querySelectorAll('.mod-btn[data-otshift]').forEach(function(b){ b.classList.remove('active'); b.style.background=''; b.style.color=''; });
+      btn.classList.add('active'); btn.style.background='var(--blue)'; btn.style.color='white';
+      applyOtFilters();
     });
   });
 
+  // تشغيل فلاتر الحالة
+  area.querySelectorAll('.mod-btn[data-otstate]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      area.querySelectorAll('.mod-btn[data-otstate]').forEach(function(b){ b.classList.remove('active'); b.style.background=''; b.style.color=''; });
+      btn.classList.add('active'); btn.style.background='var(--blue)'; btn.style.color='white';
+      applyOtFilters();
+    });
+  });
+
+  // تشغيل المودال لما تدوس على الصف
   area.querySelectorAll('tr.data-row').forEach(function(tr){
     tr.addEventListener('click', function(){ openOtModal(JSON.parse(decodeURIComponent(tr.getAttribute('data-ot')))); });
   });
 }
-
 function openOtModal(r) {
   gid('detailTitle').textContent = 'OT Details: ' + titleCase(r.name);
   
