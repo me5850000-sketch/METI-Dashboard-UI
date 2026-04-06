@@ -3301,6 +3301,16 @@ function renderOtDetails(data) {
   area.querySelectorAll('#otCardsRow .card').forEach(function(card) {
     card.addEventListener('click', function() {
       var dtype = card.getAttribute('data-dtype'); // 'ot_all', 'ot_over', 'ot_comp'
+      var isActive = card.classList.contains('card-active');
+
+      // لو داس على نفس الكارت وهو مفتوح -> اقفله
+      if (isActive) {
+        card.classList.remove('card-active');
+        gid('otDrillSection').innerHTML = '';
+        return; // وقف التنفيذ هنا عشان ميفتحوش تاني
+      }
+    card.addEventListener('click', function() {
+      var dtype = card.getAttribute('data-dtype'); // 'ot_all', 'ot_over', 'ot_comp'
       
       // التمييز باللون الأزرق على الكارت
       area.querySelectorAll('#otCardsRow .card').forEach(function(c) { c.classList.remove('card-active'); });
