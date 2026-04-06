@@ -2111,8 +2111,20 @@ function _genMsg(sh, sdata, dateISO) {
       var key = item.state + ' ' + item.hours;
       grp[key] = (grp[key] || 0) + 1;
     });
-    Object.keys(grp).sort(function(a, b) {
-      return a.localeCompare(b);
+   Object.keys(grp).sort(function(a, b) {
+      // نحدد مين Over ومين Comp
+      var isOverA = a.toLowerCase().indexOf('over') !== -1;
+      var isOverB = b.toLowerCase().indexOf('over') !== -1;
+      
+      // نخلي الـ Over Shift يظهر الأول
+      if (isOverA && !isOverB) return -1;
+      if (!isOverA && isOverB) return 1;
+      
+      // لو الاتنين نفس النوع (مثلاً الاتنين Comp)، نرتبهم بعدد الساعات
+      var valA = parseFloat(a.match(/(\d+(\.\d+)?)/)) || 0;
+      var valB = parseFloat(b.match(/(\d+(\.\d+)?)/)) || 0;
+      return valA - valB;
+      
     }).forEach(function(k) {
       lines.push(k + ' = ' + grp[k]);
     });
