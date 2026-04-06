@@ -1086,7 +1086,23 @@ if (addBtn) addBtn.style.display = hasRole(SESSION.role, ['admin']) ? 'flex' : '
   gid('sbEmail').textContent=SESSION.email||'';
   var shiftEl=gid('sbShift');
   if(SESSION.shift){shiftEl.innerHTML='Shift: <strong>'+SESSION.shift+'</strong>';shiftEl.style.display='block';}
-  var rb=gid('sbRole');rb.textContent=SESSION.role.toUpperCase();rb.className='role-badge rb-'+SESSION.role;
+  // === تحديد الرتبة بناءً على اسم المستخدم المكتوب ===
+      var lowerName = (SESSION.name || SESSION.email || "").toLowerCase();
+      var dynamicRole = "sv"; // الرتبة الافتراضية لو مفيش كلمة مميزة في الاسم
+      
+      if (lowerName.indexOf("admin") !== -1) dynamicRole = "admin";
+      else if (lowerName.indexOf("sm") !== -1) dynamicRole = "sm";
+      else if (lowerName.indexOf("svv") !== -1) dynamicRole = "svv";
+      else if (lowerName.indexOf("qtc") !== -1) dynamicRole = "qtc";
+      else if (lowerName.indexOf("wla") !== -1) dynamicRole = "wla";
+
+      // تحديث بيانات الجلسة عشان باقي الصلاحيات في لوحة التحكم تفتح صح
+      SESSION.role = dynamicRole; 
+
+      // عرض الرتبة باللون والشكل المناسب
+      var rb=gid('sbRole');
+      rb.textContent = SESSION.role.toUpperCase();
+      rb.className = 'role-badge rb-' + SESSION.role;
  if(hasRole(SESSION.role,['admin','sm','svv','sv'])){
   var navUsers = gid('nav-users');
   if(navUsers) navUsers.style.display = '';
