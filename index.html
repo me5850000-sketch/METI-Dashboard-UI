@@ -3428,6 +3428,311 @@ function openOtModal(r) {
     + '</div>';
   shtml('detailBody', html);
   gid('detailBd').classList.add('show');
+}// ═══════════════════════════════════════════════════════════
+// METI DASHBOARD — ROLE PERMISSIONS PATCH
+// الصق الكود ده قبل </body> في آخر الـ HTML
+// ═══════════════════════════════════════════════════════════
+
+// ══ 1. ROLE ARRAYS ══
+ROLES_SEE_ALL    = ['admin','sm','svv','sv','wla'];
+ROLES_OWN        = ['qtc','sl'];           // شايف شيفته بس
+ROLES_VIEW_DATA  = ['admin','sm','svv','sv','qtc','wla','sl'];
+ROLES_MANAGE_USERS = ['admin','sm','svv','sv'];
+ROLES_SET_TARGET = ['admin','sm','svv'];
+var ROLES_ATT_ALL          = ['admin','sm','svv','sv','wla'];   // Attendance: شايف الكل
+var ROLES_ATT_DETAILS_ALL  = ['admin','sm','svv'];              // Details of Att: شايف الكل
+var ROLES_OT_ACCESS        = ['admin','sm','svv','sv'];         // OT page
+
+// ══ 2. CSS — SL badge ══
+(function(){
+  var st = document.createElement('style');
+  st.textContent = '.rb-sl{background:#ff7043;color:#fff} .b-sl{background:#fbe9e7;color:#bf360c}';
+  document.head.appendChild(st);
+})();
+
+// ══ 3. showDash PATCH ══
+var _origShowDash = showDash;
+showDash = function(){
+  _origShowDash();
+
+  var role = SESSION && SESSION.role;
+
+  // SL badge style
+  var rb = gid('sbRole');
+  if(rb && role === 'sl'){ rb.textContent = 'SL'; rb.className = 'role-badge rb-sl'; }
+
+  // إضافة SL في modal select لو مش موجود
+  var mRoleEl = gid('mRole');
+  if(mRoleEl && !mRoleEl.querySelector('option[value="sl"]')){
+    var opt = document.createElement('option');
+    opt.value = 'sl'; opt.textContent = 'SL';
+    mRoleEl.insertBefore(opt, mRoleEl.querySelector('option[value="qtc"]'));
+  }
+
+  // ── Attendance: ظاهر للكل ──
+  var navAtt = gid('nav-attendance');
+  if(navAtt) navAtt.style.display = '';
+
+  // ── Details of Attendance: ظاهر للكل ──
+  var navAttD = gid('nav-attdetails');
+  if(navAttD) navAttD.style.display = '';
+
+  // ── Details of OT: SV, SSV, SM فقط ──
+  var navOt = gid('nav-otdetails');
+  if(navOt) navOt.style.display = hasRole(role, ROLES_OT_ACCESS) ? '' : 'none';
+
+  // ── Users: SV, SSV, SM فقط ──
+  var navU = gid('nav-users');
+  if(navU) navU.style.display = hasRole(role, ROLES_MANAGE_USERS) ? '' : 'none';
+
+  // ── Data: إخفاء لو مش في ROLES_VIEW_DATA ──
+  var navD = gid('nav-data');
+  if(navD) navD.style.display = hasRole(role, ROLES_VIEW_DATA) ? '' : 'none';
+  var navDod = gid('nav-detailsofdata');
+  if(navDod) navDod.style.display = hasRole(role, ROLES_VIEW_DATA) ? '' : 'none';
+
+  // ── Admin section label ──
+  document.querySelectorAll('.admin-only').forEach(function(el){ el.style.display = ''; });
+
+  // ── Shift banners ──
+  if(hasRole(role, ROLES_OWN) && SESSION.shift){
+    var sb1 = gid('shiftBannerHome');
+    if(sb1){ gid('shiftBannerHomeText').textContent = SESSION.shift; sb1.style.display = 'flex'; }
+  }
+};
+
+// ══ 4. navTo PATCH — block OT for unauthorized ══
+var _origNavTo = navTo;
+navTo = function(page){
+  var role = SESSION && SESSION.role;
+  if(page === 'otdetails' && !hasRole(role, ROLES_OT_ACCESS)) return;
+  if(page === 'users'     && !hasRole(role, ROLES_MANAGE_USERS)) return;
+  if((page === 'data' || page === 'detailsofdata') && !hasRole(role, ROLES_VIEW_DATA)) return;
+  _origNavTo(page);
+};
+
+// ══ 5. Attendance — Shift filtering by role ══
+var _origLoadAtt = loadAttendance;
+loadAttendance = function(){
+  var role = SESSION && SESSION.role;
+
+  if(!hasRole(role, ROLES_ATT_ALL) && SESSION && SESSION.shift){
+    // QTC / SL / qt → شايف شيفته بس
+    _attShift = SESSION.shift;
+
+    // إخفاء زراير الشفت
+    var attBtns = gid('attShiftBtns');
+    if(attBtns) attBtns.style.display = 'none';
+  } else {
+    var attBtns2 = gid('attShiftBtns');
+    if(attBtns2) attBtns2.style.display = '';
+  }
+  _origLoadAtt();
+};
+
+// ══ 6. Details of Attendance — Shift filtering by role ══
+var _origLoadAttDetails = loadAttDetails;
+loadAttDetails = function(){
+  var role = SESSION && SESSION.role;
+
+  if(!hasRole(role, ROLES_ATT_DETAILS_ALL) && SESSION && SESSION.shift){
+    // SV / WLA / QTC / SL → شايفين شيفتهم بس
+    _attShift2 = SESSION.shift;
+
+    var attBtns2 = gid('attShiftBtns2');
+    if(attBtns2) attBtns2.style.display = 'none';
+  } else {
+    var attBtns2b = gid('attShiftBtns2');
+    if(attBtns2b) attBtns2b.style.display = '';
+  }
+  _origLoadAttDetails();
+};
+
+// ══ 7. Details of Data — QTC & SL شايفين شيفتهم + Over Shift ══
+var _origRenderDod = renderDetailsOfData;
+renderDetailsOfData = function(){
+  var role = SESSION && SESSION.role;
+  if(hasRole(role, ROLES_OWN) && SESSION && SESSION.shift){
+    var myShift = SESSION.shift;
+    var _origDataAll = dataAll;
+    dataAll = _origDataAll.filter(function(r){
+      var sh = nShift(r[F.shift] || '');
+      return sh === myShift || sh === 'Over Shift';
+    });
+    _origRenderDod();
+    dataAll = _origDataAll;
+  } else {
+    _origRenderDod();
+  }
+};
+
+// ══ 8. Data Page — SL شايف شيفته + Over Shift ══
+//  (QTC كان بيتفلتر بـ userSeeOwnOnly اللي بترجع true لـ ROLES_OWN)
+//  دلوقتي SL اتضاف لـ ROLES_OWN فهو هيتفلتر أوتوماتيك في getFilteredData
+
+// ══ 9. Users Page — SV / SSV شايفين شيفتهم بس ══
+var _origLoadUsers = loadUsers;
+loadUsers = function(){
+  var role = SESSION && SESSION.role;
+  if(!hasRole(role, ROLES_MANAGE_USERS)) return;
+  shtml('usersArea','<div class="loading"><div class="spin"></div> Loading...</div>');
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(r.err){ shtml('usersArea','<div class="empty">'+r.err+'</div>'); return; }
+      _renderUsersPatch(r.users||[], r.pending||[]);
+    })
+    .withFailureHandler(function(e){ shtml('usersArea','<div class="empty">'+e.message+'</div>'); })
+    .getUsers(TOKEN);
+};
+
+function _renderUsersPatch(users, pending){
+  var role   = SESSION && SESSION.role;
+  var myShift = SESSION && SESSION.shift;
+  var isFullAdmin = hasRole(role, ['admin','sm']);
+  var isSvSvv    = hasRole(role, ['sv','svv']);
+
+  // تصفية المستخدمين
+  var filteredUsers   = isFullAdmin ? users   : users.filter(function(u){ return u.shift === myShift; });
+  var filteredPending = isFullAdmin ? pending : pending.filter(function(p){ return p.shift === myShift; });
+
+  var ROLE_ORD = ['admin','sm','svv','sv','sl','qtc','wla'];
+  var sorted = filteredUsers.slice().sort(function(a,b){
+    var ai=ROLE_ORD.indexOf(a.role),bi=ROLE_ORD.indexOf(b.role);
+    return ai!==bi?ai-bi:(a.name||'').localeCompare(b.name||'');
+  });
+
+  var pendingBadge = filteredPending.length
+    ? ' <span style="background:#c5221f;color:white;font-size:10px;font-weight:800;padding:1px 7px;border-radius:10px;margin-left:4px">'+filteredPending.length+'</span>'
+    : '';
+
+  var canAdd = isFullAdmin;  // بس admin وSM ممكن يضيفوا يوزر جديد
+
+  var addBtnEl = gid('btnAddUser');
+  if(addBtnEl) addBtnEl.style.display = canAdd ? 'flex' : 'none';
+
+  var html =
+    '<div style="display:flex;gap:0;border-bottom:2px solid var(--blue-lt);margin-bottom:16px">' +
+    '<div class="qtc-tab active" id="uTabActive" onclick="switchUserTab(\'active\')" '+
+    'style="border-bottom:2px solid var(--blue);color:var(--blue);margin-bottom:-2px">Active Users</div>'+
+    '<div class="qtc-tab" id="uTabPending" onclick="switchUserTab(\'pending\')" '+
+    'style="border-bottom:2px solid transparent;color:var(--gray);margin-bottom:-2px">Pending'+pendingBadge+'</div>'+
+    '</div>'+
+
+    '<div id="uPanelActive">'+
+    '<div class="tbl-card"><table><thead><tr>'+
+    '<th class="left">Name</th><th class="left">Email</th>'+
+    '<th>Role</th><th>Shift</th><th>Status</th><th>Actions</th>'+
+    '</tr></thead><tbody>'+
+    sorted.map(function(u){
+      // SV/SSV ممكن يعدل بس في شيفتهم وبس Role + Active
+      var canEdit = isFullAdmin || (isSvSvv && u.shift === myShift);
+      var canDel  = isFullAdmin;
+      return '<tr>'+
+        '<td class="left bold">'+titleCase(u.name||'-')+'</td>'+
+        '<td class="left" style="font-size:12px;color:var(--gray)">'+(u.email||'-')+'</td>'+
+        '<td><span class="badge b-'+(u.role||'qtc')+'">'+(u.role||'-').toUpperCase()+'</span></td>'+
+        '<td>'+(u.shift?'<span class="badge '+shiftBadge(u.shift)+'">'+u.shift+'</span>':'<span style="color:var(--gray);font-size:12px">All</span>')+'</td>'+
+        '<td><span class="badge '+(u.active!==false?'b-active':'b-inactive')+'">'+(u.active!==false?'Active':'Inactive')+'</span></td>'+
+        '<td>'+
+        (canEdit?'<button class="icon-btn ib-edit" data-uid="'+encodeURIComponent(JSON.stringify(u))+'">✏️</button>':'')+
+        (canDel ?'<button class="icon-btn ib-del" data-uid="'+(u.id||'')+'" data-uname="'+encodeURIComponent(u.name||'')+'">🗑</button>':'')+
+        '</td></tr>';
+    }).join('')+
+    '</tbody></table></div></div>'+
+
+    '<div id="uPanelPending" style="display:none">'+
+    (filteredPending.length===0
+      ? '<div class="empty">No pending requests 🎉</div>'
+      : '<div class="tbl-card"><table><thead><tr>'+
+        '<th class="left">Name</th><th class="left">Email</th><th>Shift</th><th>Actions</th>'+
+        '</tr></thead><tbody>'+
+        filteredPending.map(function(p){
+          return '<tr>'+
+            '<td class="left bold">'+titleCase(p.name||'-')+'</td>'+
+            '<td class="left" style="font-size:12px;color:var(--gray)">'+(p.email||'-')+'</td>'+
+            '<td>'+(p.shift?'<span class="badge '+shiftBadge(p.shift)+'">'+p.shift+'</span>':'—')+'</td>'+
+            '<td style="display:flex;gap:6px;align-items:center">'+
+            '<button class="fbtn fbtn-primary" style="padding:6px 14px;font-size:12px" '+
+            'onclick="openApproveModal('+p.id+',\''+encodeURIComponent(p.name)+'\')">✓ Approve</button>'+
+            '<button class="icon-btn ib-del" '+
+            'onclick="declineUser('+p.id+',\''+encodeURIComponent(p.name)+'\')">✕ Decline</button>'+
+            '</td></tr>';
+        }).join('')+
+        '</tbody></table></div>'
+    )+
+    '</div>';
+
+  shtml('usersArea', html);
 }
+
+// ══ 10. openApproveModal — SV/SSV بيقدر يعدل Role + Active بس ══
+var _origOpenApproveModal = openApproveModal;
+openApproveModal = function(rowId, encodedName){
+  var role = SESSION && SESSION.role;
+  _approveRowId = rowId;
+  var name = decodeURIComponent(encodedName);
+
+  // الـ roles اللي SV/SSV ممكن يديها
+  var allowedRoles = hasRole(role, ['admin','sm'])
+    ? ['admin','sm','svv','sv','sl','qtc','wla']
+    : ['sl','qtc','wla'];
+
+  var bd = document.createElement('div');
+  bd.id = 'approveBd';
+  bd.className = 'modal-backdrop show';
+  bd.innerHTML =
+    '<div class="modal" style="width:420px">'+
+    '<div class="modal-hdr"><h3>Approve: '+titleCase(name)+'</h3>'+
+    '<button class="modal-close" onclick="closeApproveModal()">✕</button></div>'+
+    '<div class="inp-wrap"><label>Role</label>'+
+    '<select id="apRole" class="sel-inp">'+
+    allowedRoles.map(function(r){ return '<option value="'+r+'">'+r.toUpperCase()+'</option>'; }).join('')+
+    '</select></div>'+
+    '<div class="inp-wrap"><label>Name In Teams <span style="color:var(--gray);font-size:11px">(for QTC Stats)</span></label>'+
+    '<input type="text" id="apTeams" placeholder="e.g. Hazem Nader (N)" value="'+name+'"></div>'+
+    '<div class="modal-footer">'+
+    '<button class="btn-cancel" onclick="closeApproveModal()">Cancel</button>'+
+    '<button class="btn-save" onclick="confirmApprove()">✓ Approve</button>'+
+    '</div><div class="modal-err" id="approveErr"></div></div>';
+  bd.addEventListener('click', function(e){ if(e.target===bd) closeApproveModal(); });
+  document.body.appendChild(bd);
+};
+
+// ══ 11. Edit User Modal — SV/SSV بيشوف Role + Active بس ══
+var _origOpenModal = openModal;
+openModal = function(user){
+  _origOpenModal(user);
+  var role = SESSION && SESSION.role;
+  if(!hasRole(role, ['admin','sm']) && user){
+    // إخفاء الـ email field عن SV/SSV
+    var emailRow = gid('emailRow');
+    if(emailRow) emailRow.style.display = 'none';
+    // إخفاء الـ password field
+    var pwdInp = gid('mPwd');
+    if(pwdInp && pwdInp.closest('.inp-wrap')) pwdInp.closest('.inp-wrap').style.display = 'none';
+    // إظهار Active row دايمًا
+    var activeRow = gid('activeRow');
+    if(activeRow) activeRow.style.display = 'block';
+    // تقليص خيارات الـ role
+    var mRoleEl = gid('mRole');
+    if(mRoleEl){
+      Array.from(mRoleEl.options).forEach(function(opt){
+        opt.style.display = ['sl','qtc','wla','sv'].indexOf(opt.value) !== -1 ? '' : 'none';
+      });
+    }
+  }
+};
+
+// ══ 12. Bottom Nav — إخفاء OT من الموبايل لو مش في الـ list ══
+(function(){
+  var bnOt = document.querySelector('#bottomNav [data-page="otdetails"]');
+  if(bnOt){
+    // سيتعمل check بعد login في showDash
+    bnOt.style.display = 'none';
+  }
+})();
+
+// ══ END OF PATCH ══
+console.log('✅ METI Roles Patch Loaded');
 </script>
 </body>
