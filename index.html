@@ -3189,7 +3189,7 @@ function renderOtDetails(data) {
   var area = gid('otDetailsArea');
   if (!area) return;
   
-  // حفظ التاريخ
+  // بنجيب التاريخ الحالي عشان نثبته في المربع وميفضاش
   var dateISO = DP.getVal('otDate') || todayISO();
   var displayDate = DP.fmtDisplay(dateISO); 
 
@@ -3198,6 +3198,15 @@ function renderOtDetails(data) {
     gid('otDate').addEventListener('click', function(){ DP.open('otDate'); });
     return;
   }
+
+  // 1. ترتيب البيانات: المورنينج كله ورا بعضه، وبعدين النايت، وبعدين الأوفر نايت
+  var shiftOrder = { "Morning": 1, "Night": 2, "Over Night": 3 };
+  data.sort(function(a, b) {
+    var sA = shiftOrder[a.otShift] || 99;
+    var sB = shiftOrder[b.otShift] || 99;
+    if (sA !== sB) return sA - sB;
+    return (a.name || '').localeCompare(b.name || '');
+  });
 
   var overCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('over') !== -1; }).length;
   var compCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('comp') !== -1; }).length;
@@ -3210,13 +3219,17 @@ function renderOtDetails(data) {
     + '<button class="mod-btn" data-otstate="comp">Compensation</button>'
     + '</div></div>';
 
-  html += '<div class="cards" style="grid-template-columns: repeat(3, 1fr); margin-bottom:15px">'
-    + mkCard('Total Records', data.length, 'blue')
-    + mkCard('Overtime', overCount, 'green')
-    + mkCard('Compensation', compCount, 'red')
+  // الكروت الـ 3 (ضفنا ليهم data-dtype عشان نعرف مين اللي انداس عليه)
+  html += '<div class="cards" id="otCardsRow" style="grid-template-columns: repeat(3, 1fr); margin-bottom:15px">'
+    + mkCard('Total Records', data.length, 'blue', 'ot_all')
+    + mkCard('Overtime', overCount, 'green', 'ot_over')
+    + mkCard('Compensation', compCount, 'red', 'ot_comp')
     + '</div>';
 
-  // 1. تجميع البيانات وتصنيفها حسب الشفت
+  // المكان اللي هيظهر فيه تفصيل الساعات لما ندوس على الكارت
+  html += '<div id="otDrillSection"></div>';
+
+  // تجميع البيانات وتصنيفها حسب الشفت
   var shifts = {};
   var SH_ORD = ['Morning', 'Night', 'Over Night', 'Over Shift'];
   var SH_ICON = { 'Morning': '☀️', 'Night': '🌙', 'Over Night': '🦉', 'Over Shift': '🔄' };
@@ -3238,8 +3251,9 @@ function renderOtDetails(data) {
     var sOver = sData.filter(function(r){ return (r.state||'').toLowerCase().indexOf('over') !== -1; }).length;
     var sComp = sData.filter(function(r){ return (r.state||'').toLowerCase().indexOf('comp') !== -1; }).length;
 
-    // 2. هيدر الشفت (شريط أزرق متجمع زي الـ Details of Data)
     html += '<div style="margin-bottom:16px;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border)">';
+    
+    // سهم الشفت مقفول (rotate(0deg))
     html += '<div onclick="dodToggle(\'' + shId + '\')" style="background:var(--blue);padding:13px 20px;cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">'
       + '<div style="display:flex;align-items:center;gap:10px">'
       + '<span style="font-size:18px">' + icon + '</span>'
@@ -3249,11 +3263,11 @@ function renderOtDetails(data) {
       + (sOver ? '<span style="background:rgba(30,142,62,.25);color:#a5d6a7;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">Overtime: ' + sOver + '</span>' : '')
       + (sComp ? '<span style="background:rgba(227,116,0,.25);color:#ffcc80;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">Compensation: ' + sComp + '</span>' : '')
       + '<span style="background:rgba(255,255,255,.2);color:white;font-size:11px;font-weight:800;padding:3px 10px;border-radius:6px">Total: ' + sData.length + '</span>'
-      + '<span id="arr_' + shId + '" style="color:rgba(255,255,255,.7);font-size:14px;transition:transform .3s;display:inline-block;transform:rotate(180deg)">▼</span>'
+      + '<span id="arr_' + shId + '" style="color:rgba(255,255,255,.7);font-size:14px;transition:transform .3s;display:inline-block;transform:rotate(0deg)">▼</span>'
       + '</div></div>';
 
-    // 3. جدول البيانات الخاص بالشفت ده
-    html += '<div id="' + shId + '" style="background:white;overflow:hidden;transition:max-height .4s ease;max-height:99999px">';
+    // الشفت مخفي كإفتراضي (max-height:0)
+    html += '<div id="' + shId + '" style="background:white;overflow:hidden;transition:max-height .4s ease;max-height:0">';
     
     html += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
       + '<thead><tr style="background:var(--blue)">'
@@ -3273,30 +3287,97 @@ function renderOtDetails(data) {
         + '<td style="color:var(--gray)">'+(i+1)+'</td>'
         + '<td class="left bold" style="color:var(--dark)">'+titleCase(r.name)+'</td>'
         + '<td class="bold" style="color:var(--blue)">'+pcFormatted+'</td>'
-        // هنا شيلنا اللون البرتقالي الشاذ وخلينا الساعات شكلها شيك ومتناسق مع الدارك مود
         + '<td style="font-size:14px;font-weight:800;color:var(--blue)">'+(r.hours||'-')+'</td>'
         + '<td><span class="badge '+stBadge+'">'+(r.state||'-')+'</span></td></tr>';
     });
 
-    html += '</tbody></table></div>';
-    html += '</div></div>';
+    html += '</tbody></table></div></div></div>';
   });
 
   area.innerHTML = html;
   gid('otDate').addEventListener('click', function(){ DP.open('otDate'); });
+
+  // 4. تشغيل الكروت عشان تفتح تفاصيل الساعات
+  area.querySelectorAll('#otCardsRow .card').forEach(function(card) {
+    card.addEventListener('click', function() {
+      var dtype = card.getAttribute('data-dtype'); // 'ot_all', 'ot_over', 'ot_comp'
+      
+      // التمييز باللون الأزرق على الكارت
+      area.querySelectorAll('#otCardsRow .card').forEach(function(c) { c.classList.remove('card-active'); });
+      card.classList.add('card-active');
+
+      // حساب الساعات
+      var breakdown = {};
+      data.forEach(function(r) {
+        var state = (r.state || '').toLowerCase();
+        var isOver = state.indexOf('over') !== -1;
+        var isComp = state.indexOf('comp') !== -1;
+        var hrsStr = r.hours || '';
+        
+        // استخراج الرقم عشان نعرف نرتبهم صح
+        var numMatch = hrsStr.match(/(\d+(\.\d+)?)/);
+        var num = numMatch ? parseFloat(numMatch[1]) : 0;
+        var keyLabel = num > 0 ? num + (hrsStr.toLowerCase().indexOf('h') !== -1 ? ' Hours' : ' H') : 'Unknown';
+        if (num === 0) return;
+
+        // تجاهل اللي مش تبع الكارت المضروب
+        if (dtype === 'ot_over' && !isOver) return;
+        if (dtype === 'ot_comp' && !isComp) return;
+
+        if (!breakdown[num]) breakdown[num] = { label: keyLabel, over: 0, comp: 0, total: 0 };
+        
+        breakdown[num].total++;
+        if (isOver) breakdown[num].over++;
+        if (isComp) breakdown[num].comp++;
+      });
+
+      // رسم بانل التفاصيل
+      var drillHtml = '<div class="card-drill" style="margin-bottom:15px"><div class="card-drill-hdr"><span>Hours Breakdown</span><button class="drill-close" onclick="gid(\'otDrillSection\').innerHTML=\'\'; document.querySelectorAll(\'#otCardsRow .card\').forEach(function(c){c.classList.remove(\'card-active\')})">✕</button></div>';
+      drillHtml += '<div class="drill-units" style="display:flex; flex-wrap:wrap; gap:12px; padding:18px; background:var(--bg);">';
+      
+      var sortedNums = Object.keys(breakdown).sort(function(a, b){ return parseFloat(a) - parseFloat(b); });
+      
+      if(sortedNums.length === 0) {
+        drillHtml += '<div class="empty" style="width:100%; padding:10px">No data</div>';
+      } else {
+        sortedNums.forEach(function(num) {
+          var d = breakdown[num];
+          drillHtml += '<div style="background:white; border:1px solid var(--border); border-radius:10px; padding:12px 16px; min-width:150px; box-shadow:var(--shadow)">';
+          drillHtml += '<div style="font-size:15px; font-weight:800; color:var(--blue); margin-bottom:10px; border-bottom:1.5px solid var(--blue-lt); padding-bottom:6px">🕒 ' + d.label + '</div>';
+          
+          if(dtype === 'ot_all' || dtype === 'ot_over') {
+            if(d.over > 0) drillHtml += '<div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px"><span style="color:var(--gray)">Overtime:</span> <span style="font-weight:800; color:var(--green)">' + d.over + '</span></div>';
+          }
+          if(dtype === 'ot_all' || dtype === 'ot_comp') {
+            if(d.comp > 0) drillHtml += '<div style="display:flex; justify-content:space-between; font-size:12px; margin-bottom:5px"><span style="color:var(--gray)">Compensation:</span> <span style="font-weight:800; color:var(--red)">' + d.comp + '</span></div>';
+          }
+          if(dtype === 'ot_all') {
+            drillHtml += '<div style="display:flex; justify-content:space-between; font-size:13px; margin-top:8px; border-top:1px dashed var(--border); padding-top:6px"><span style="font-weight:800; color:var(--dark)">Total:</span> <span style="font-weight:800; color:var(--blue)">' + d.total + '</span></div>';
+          }
+          drillHtml += '</div>';
+        });
+      }
+      drillHtml += '</div></div>';
+      gid('otDrillSection').innerHTML = drillHtml;
+    });
+  });
   
-  // تشغيل الفلاتر (All, Overtime, Comp)
+  function applyOtFilters() {
+    var activeState = area.querySelector('#otStateBtns .active').getAttribute('data-otstate');
+    area.querySelectorAll('tbody tr.data-row').forEach(function(tr){
+      var d = JSON.parse(decodeURIComponent(tr.getAttribute('data-ot')));
+      var matchState = (activeState === 'all') || 
+                       (activeState === 'over' && d.state.toLowerCase().indexOf('over') !== -1) || 
+                       (activeState === 'comp' && d.state.toLowerCase().indexOf('comp') !== -1);
+      tr.style.display = matchState ? '' : 'none';
+    });
+  }
+
   area.querySelectorAll('.mod-btn[data-otstate]').forEach(function(btn){
     btn.addEventListener('click', function(){
-      var st = btn.getAttribute('data-otstate');
       area.querySelectorAll('.mod-btn[data-otstate]').forEach(function(b){ b.classList.remove('active'); b.style.background=''; b.style.color=''; });
       btn.classList.add('active'); btn.style.background='var(--blue)'; btn.style.color='white';
-      
-      area.querySelectorAll('tbody tr.data-row').forEach(function(tr){
-        var d = JSON.parse(decodeURIComponent(tr.getAttribute('data-ot')));
-        var show = (st==='all') || (st==='over' && d.state.toLowerCase().indexOf('over') !== -1) || (st==='comp' && d.state.toLowerCase().indexOf('comp') !== -1);
-        tr.style.display = show ? '' : 'none';
-      });
+      applyOtFilters();
     });
   });
 
@@ -3304,31 +3385,21 @@ function renderOtDetails(data) {
     tr.addEventListener('click', function(){ openOtModal(JSON.parse(decodeURIComponent(tr.getAttribute('data-ot')))); });
   });
 }
+
 function openOtModal(r) {
   gid('detailTitle').textContent = 'OT Details: ' + titleCase(r.name);
-  
   var html = '<div class="detail-grid">'
-    // الصف الأول
     + '<div class="detail-item"><div class="detail-lbl">Name</div><div class="detail-val">'+titleCase(r.name)+'</div></div>'
     + '<div class="detail-item"><div class="detail-lbl">PC</div><div class="detail-val" style="color:var(--blue); font-weight:800">'+(r.pc||'-')+'</div></div>'
-    
-    // الصف التاني (الشفت الأساسي والإضافي)
     + '<div class="detail-item"><div class="detail-lbl">Original Shift</div><div class="detail-val">'+(r.shift||'-')+'</div></div>'
     + '<div class="detail-item"><div class="detail-lbl">Over time Shift</div><div class="detail-val"><span class="badge '+shiftBadge(r.otShift)+'">'+(r.otShift||'-')+'</span></div></div>'
-    
-    // الصف التالت (الدور الأساسي والإضافي)
     + '<div class="detail-item"><div class="detail-lbl">Original Floor</div><div class="detail-val">'+(r.floor||'-')+'</div></div>'
     + '<div class="detail-item"><div class="detail-lbl">Over time Floor</div><div class="detail-val">'+(r.otFloor||'-')+'</div></div>'
-    
-    // الصف الرابع (المشروع والحالة)
     + '<div class="detail-item"><div class="detail-lbl">Project</div><div class="detail-val">'+(r.project||'-')+'</div></div>'
     + '<div class="detail-item"><div class="detail-lbl">State</div><div class="detail-val">'+(r.state||'-')+'</div></div>'
-    
-    // الصف الخامس (الساعات واليوبيكي)
     + '<div class="detail-item"><div class="detail-lbl">Hours</div><div class="detail-val" style="color:var(--blue); font-size:18px"><strong>'+(r.hours||'-')+'</strong></div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">OT Yubikey</div><div class="detail-val"><span class="ubkey-chip">'+(r.otYubikey||'-')+'</span></div></div>'
+    + '<div class="detail-item full"><div class="detail-lbl">OT Yubikey</div><div class="detail-val"><span class="ubkey-chip">'+(r.otYubikey||'-')+'</span></div></div>'
     + '</div>';
-    
   shtml('detailBody', html);
   gid('detailBd').classList.add('show');
 }
