@@ -1144,7 +1144,6 @@ function navTo(page) {
   if (page === 'otdetails') loadOtDetails(); 
   if (page === 'qtcstats') initQtcStats();
 }
-<script>
 // ══ HOME STATS ══
 function loadStats(){
   if(TOKEN)google.script.run.withSuccessHandler(function(r){if(r&&!r.err&&r.targets)TARGETS=r.targets;}).withFailureHandler(function(){}).getTargets(TOKEN);
