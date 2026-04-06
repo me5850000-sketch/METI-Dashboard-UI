@@ -2079,14 +2079,44 @@ var rankMedal=myRank===1?'🥇':myRank===2?'🥈':myRank===3?'🥉':'';
 
 <script>
 // ══ ATTENDANCE ══
-function _genMsg(sh,sdata,dateISO){
-  var present=sdata.present||[],absent=sdata.absent||[],total=sdata.total||0;
-  var prod=0,train=0;present.forEach(function(p){if(p.type==='T')train++;else prod++;});
-  var pts=(dateISO||'').split('-');
-  var dateStr=parseInt(pts[2]||1)+' - '+('0'+(pts[1]||1)).slice(-2)+' - '+(pts[0]||'');
-  return ['*'+sh+'  Shift  Report*','Date: '+dateStr,'Total Numbers: '+total,'* Production = '+prod,'* Training = '+train,'* Absent = '+absent.length,'* Empty = '+(sdata.empty?sdata.empty.length:0),'Compensation = 0','Overshift = 0'].join('\n');
-}
+function _genMsg(sh, sdata, dateISO) {
+  var present = sdata.present || [], absent = sdata.absent || [], total = sdata.total || 0;
+  var prod = 0, train = 0;
+  present.forEach(function(p) { if (p.type === 'T') train++; else prod++; });
 
+  var pts = (dateISO || '').split('-');
+  var dateStr = parseInt(pts[2] || 1) + ' - '
+    + ('0' + (pts[1] || 1)).slice(-2) + ' - ' + (pts[0] || '');
+
+  var lines = [
+    '*' + sh + '  Shift  Report*',
+    'Date: ' + dateStr,
+    'Total Numbers: ' + total,
+    '* Production = ' + prod,
+    '* Training = '   + train,
+    '* Absent = '     + absent.length,
+    '* Empty = '      + (sdata.empty ? sdata.empty.length : 0)
+  ];
+
+  var ot = sdata.overTime || [];
+  if (ot.length > 0) {
+    var grp = {};
+    ot.forEach(function(item) {
+      var key = item.state + ' ' + item.hours;
+      grp[key] = (grp[key] || 0) + 1;
+    });
+    Object.keys(grp).sort(function(a, b) {
+      return a.localeCompare(b);
+    }).forEach(function(k) {
+      lines.push(k + ' = ' + grp[k]);
+    });
+  } else {
+    lines.push('Compensation = 0');
+    lines.push('Overshift = 0');
+  }
+
+  return lines.join('\n');
+}
 function _buildAttCard(sh,sd,dateISO,isDetails){
   var present=sd.present||[],absent=sd.absent||[],total=sd.total||0;
   var prod=0,train=0;present.forEach(function(p){if(p.type==='T')train++;else prod++;});
