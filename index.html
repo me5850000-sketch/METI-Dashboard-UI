@@ -3731,7 +3731,16 @@ openModal = function(user){
     bnOt.style.display = 'none';
   }
 })();
-
+// ══ FIX: Tab active underline ══
+switchUserTab = function(tab){
+  var isA = tab === 'active';
+  var pA = gid('uPanelActive'), pP = gid('uPanelPending');
+  if(pA) pA.style.display = isA ? 'block' : 'none';
+  if(pP) pP.style.display = isA ? 'none' : 'block';
+  var tA = gid('uTabActive'), tP = gid('uTabPending');
+  if(tA){ tA.style.borderBottom = isA ? '2px solid var(--blue)' : '2px solid transparent'; tA.style.color = isA ? 'var(--blue)' : 'var(--gray)'; }
+  if(tP){ tP.style.borderBottom = !isA ? '2px solid var(--blue)' : '2px solid transparent'; tP.style.color = !isA ? 'var(--blue)' : 'var(--gray)'; }
+};
 // ══ END OF PATCH ══
 console.log('✅ METI Roles Patch Loaded');
 </script>
