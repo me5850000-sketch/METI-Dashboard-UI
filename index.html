@@ -1449,7 +1449,7 @@ function loadData(){
       if(r.err){shtml('dataArea','<div class="empty">'+r.err+'</div>');return;}
       r.data.sort(function(a,b){return new Date(b[F.date]||0)-new Date(a[F.date]||0);});
      dataAll=r.data;dataPage=1;renderDataFiltered();
-if(gid('pgDetailsOfData')&&gid('pgDetailsOfData').style.display!=='none')renderDetailsOfData();if(gid('pgDetailsOfData')&&gid('pgDetailsOfData').style.display!=='none')renderDetailsOfData();
+if(gid('pgDetailsOfData')&&gid('pgDetailsOfData').style.display!=='none')renderDetailsOfData();
     })
     .withFailureHandler(function(e){shtml('dataArea','<div class="empty">'+e.message+'</div>');})
     .getStats(TOKEN,from,to);
