@@ -306,6 +306,34 @@ body.dark #attDetailsArea [style*="color:var(--gray)"]{color:#9aa0b4!important}
 body.dark #attDetailsArea [style*="border-bottom:1px solid"]{border-color:#2d3250!important}
 body.dark #attDetailsArea .att-person-row [style*="background:white"]{background:#252840!important;border-color:#4d7fff!important}
 body.dark #attDetailsArea .att-person-row [style*="color:var(--blue)"]{color:#7eaaff!important}
+  /* ══ DARK MODE — Details of Attendance — COMPLETE FIX ══ */
+
+/* صفوف الموظفين (Present / Absent / Training) */
+body.dark #attDetailsArea .att-person-row[style*="background:#f8fdf9"] { background: #1b2e1b !important; border-color: rgba(30,142,62,.25) !important; }
+body.dark #attDetailsArea .att-person-row[style*="background:#fff0f0"] { background: #3d1a1a !important; border-color: rgba(197,34,31,.25) !important; }
+body.dark #attDetailsArea .att-person-row[style*="background:#fff8e1"] { background: #3d2800 !important; border-color: rgba(245,127,23,.2) !important; }
+body.dark #attDetailsArea .att-person-row[style*="background:#f5f0ff"] { background: #2d1f3d !important; border-color: rgba(94,53,177,.2) !important; }
+
+/* الـ unit header داخل كل شفت */
+body.dark #attDetailsArea [style*="background:var(--blue-bg)"] { background: #1a2040 !important; }
+
+/* الـ shift body (الجزء اللي بيتفتح لما تدوس على الشفت) */
+body.dark #attDetailsArea [style*="background:#f8f9ff"] { background: #252840 !important; }
+
+/* الكارت الأبيض الكبير لكل شفت */
+body.dark #attDetailsArea [style*="background:white"] { background: #1e2130 !important; }
+
+/* الـ unit card اللي جوه */
+body.dark #attDetailsArea [style*="background:white;border-radius:10px"] { background: #252840 !important; border-color: #2d3250 !important; }
+
+/* لون النص الأبيض داخل الصفوف */
+body.dark #attDetailsArea .att-person-row span[style*="color:var(--dark)"] { color: #e8eaf0 !important; }
+
+/* PC badge */
+body.dark #attDetailsArea .att-person-row span[style*="background:white;color:var(--blue)"] { background: #1a2040 !important; color: #7eaaff !important; border-color: #2d3250 !important; }
+
+/* الـ hover effect */
+body.dark #attDetailsArea .att-person-row:hover { background: #1a2040 !important; }
   body.dark #pgAttDetails .filter-bar{background:#1e2130!important;border-color:#2d3250!important}
 body.dark #pgAttDetails .mod-btn{background:#252840!important;color:#9aa0b4!important;border-color:#2d3250!important}
 body.dark #pgAttDetails .mod-btn[style*="background:var(--blue)"]{background:#1c4587!important;color:white!important}
