@@ -3411,12 +3411,34 @@ function renderOtDetails(data) {
   
  function applyOtFilters() {
     var activeState = area.querySelector('#otStateBtns .active').getAttribute('data-otstate');
-    area.querySelectorAll('tbody tr.data-row').forEach(function(tr){
-      var d = JSON.parse(decodeURIComponent(tr.getAttribute('data-ot')));
-      var matchState = (activeState === 'all') || 
-                       (activeState === 'over' && d.state.toLowerCase().indexOf('over') !== -1) || 
-                       (activeState === 'comp' && d.state.toLowerCase().indexOf('comp') !== -1);
-      tr.style.display = matchState ? '' : 'none';
+    
+    // هنلف على كل جدول (لأن كل شيفت ليه جدول منفصل)
+    area.querySelectorAll('table').forEach(function(table) {
+      // هنجيب قيم الفلاتر اللي جوه الجدول ده
+      var nameSel = table.querySelector('.ot-col-filter[data-col="name"]');
+      var pcSel = table.querySelector('.ot-col-filter[data-col="pc"]');
+      var hoursSel = table.querySelector('.ot-col-filter[data-col="hours"]');
+      
+      var nameFilter = nameSel ? nameSel.value : '';
+      var pcFilter = pcSel ? pcSel.value : '';
+      var hoursFilter = hoursSel ? hoursSel.value : '';
+
+      table.querySelectorAll('tbody tr.data-row').forEach(function(tr) {
+        var d = JSON.parse(decodeURIComponent(tr.getAttribute('data-ot')));
+        
+        // 1. فلتر الـ State الأساسي
+        var matchState = (activeState === 'all') || 
+                         (activeState === 'over' && (d.state||'').toLowerCase().indexOf('over') !== -1) || 
+                         (activeState === 'comp' && (d.state||'').toLowerCase().indexOf('comp') !== -1);
+                         
+        // 2. فلتر العواميد
+        var matchName = (nameFilter === "") || ((d.name||'').trim() === nameFilter);
+        var matchPc = (pcFilter === "") || ((d.pc||'').toString().trim().toUpperCase() === pcFilter.toUpperCase());
+        var matchHours = (hoursFilter === "") || ((d.hours||'').toString().trim() === hoursFilter);
+
+        // إظهار أو إخفاء الصف لو بيطابق كل الشروط
+        tr.style.display = (matchState && matchName && matchPc && matchHours) ? '' : 'none';
+      });
     });
   }
 
