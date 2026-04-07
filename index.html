@@ -305,34 +305,7 @@ body.dark #attDetailsArea [style*="color:var(--dark)"]{color:#e8eaf0!important}
 body.dark #attDetailsArea [style*="color:var(--gray)"]{color:#9aa0b4!important}
 body.dark #attDetailsArea [style*="border-bottom:1px solid"]{border-color:#2d3250!important}
 body.dark #attDetailsArea .att-person-row [style*="background:white"]{background:#252840!important;border-color:#4d7fff!important}
-body.dark #attDetailsArea .att-person-row [style*="color:var(--blue)"]{color:#7eaaff!important}/* ══ DARK MODE — Details of Attendance — COMPLETE FIX ══ */
-
-/* صفوف الموظفين (Present / Absent / Training) */
-body.dark #attDetailsArea .att-person-row[style*="background:#f8fdf9"] { background: #1b2e1b !important; border-color: rgba(30,142,62,.25) !important; }
-body.dark #attDetailsArea .att-person-row[style*="background:#fff0f0"] { background: #3d1a1a !important; border-color: rgba(197,34,31,.25) !important; }
-body.dark #attDetailsArea .att-person-row[style*="background:#fff8e1"] { background: #3d2800 !important; border-color: rgba(245,127,23,.2) !important; }
-body.dark #attDetailsArea .att-person-row[style*="background:#f5f0ff"] { background: #2d1f3d !important; border-color: rgba(94,53,177,.2) !important; }
-
-/* الـ unit header داخل كل شفت */
-body.dark #attDetailsArea [style*="background:var(--blue-bg)"] { background: #1a2040 !important; }
-
-/* الـ shift body (الجزء اللي بيتفتح لما تدوس على الشفت) */
-body.dark #attDetailsArea [style*="background:#f8f9ff"] { background: #252840 !important; }
-
-/* الكارت الأبيض الكبير لكل شفت */
-body.dark #attDetailsArea [style*="background:white"] { background: #1e2130 !important; }
-
-/* الـ unit card اللي جوه */
-body.dark #attDetailsArea [style*="background:white;border-radius:10px"] { background: #252840 !important; border-color: #2d3250 !important; }
-
-/* لون النص الأبيض داخل الصفوف */
-body.dark #attDetailsArea .att-person-row span[style*="color:var(--dark)"] { color: #e8eaf0 !important; }
-
-/* PC badge */
-body.dark #attDetailsArea .att-person-row span[style*="background:white;color:var(--blue)"] { background: #1a2040 !important; color: #7eaaff !important; border-color: #2d3250 !important; }
-
-/* الـ hover effect */
-body.dark #attDetailsArea .att-person-row:hover { background: #1a2040 !important; }
+body.dark #attDetailsArea .att-person-row [style*="color:var(--blue)"]{color:#7eaaff!important}
   body.dark #pgAttDetails .filter-bar{background:#1e2130!important;border-color:#2d3250!important}
 body.dark #pgAttDetails .mod-btn{background:#252840!important;color:#9aa0b4!important;border-color:#2d3250!important}
 body.dark #pgAttDetails .mod-btn[style*="background:var(--blue)"]{background:#1c4587!important;color:white!important}
@@ -381,16 +354,7 @@ body.dark #pgAttendance .mod-btn[style*="background:var(--blue)"]{background:#1c
   padding: 5px 8px !important;
   white-space: nowrap !important;
 }
-@media(max-width:768px){
-  #pgOtDetails table { min-width: 400px !important; }
-  #pgOtDetails th, #pgOtDetails td { font-size: 11px !important; padding: 7px 8px !important; }
-  #pgOtDetails .badge { font-size: 9px !important; padding: 2px 5px !important; }
-  #pgOtDetails .cards { grid-template-columns: repeat(3,1fr) !important; gap: 8px !important; }
-  #pgOtDetails .card-val { font-size: 24px !important; }
-  #pgOtDetails .card { padding: 12px 8px !important; }
-  .modal .detail-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
-  .detail-item .detail-val { font-size: 15px !important; }
-}
+
 /* إصلاح شريط التابز والفلتر */
 #labPageCard > div:first-child {
   flex-wrap: wrap !important;
@@ -886,7 +850,7 @@ body.dark #detailBd [style*="color:var(--blue)"] { color: #7eaaff !important; }
 
 <div class="toast" id="toast"></div>
 
-
+<script>
 // ═══════════════════════════════════════════════
 // BRIDGE: replaces google.script.run
 // Calls your deployed Apps Script via fetch()
@@ -926,7 +890,7 @@ var google = {
 };
 </script>
 
-
+<script>
 // ══ GLOBALS ══
 var ROLES_SEE_ALL=['admin','sm','svv','sv','wla'],ROLES_OWN=['qtc'],ROLES_MANAGE_USERS=['admin','sm','svv','sv'],ROLES_VIEW_DATA=['admin','sm','svv','sv','qtc','wla'],ROLES_SET_TARGET=['admin','sm','svv'];
 var F={labeler:'labeler_name',shift:'shift',unit:'unit',modality:'modality',pass:'pass',queue:'queue_name',objects:'object_count',date:'created_at',qc:'qtc_name',ubkey:'yubikey_email',link:'task_link',stage:'stage',pc:'pc_no'};
@@ -944,7 +908,7 @@ var _lastAttR=null,_lastAttDate='';
 var _attShift2Cache=null,_lastAttDate2='';
 </script>
 
-
+<script>
 // ══ UTILS ══
 function gid(id){return document.getElementById(id);}
 function shtml(id,h){var el=gid(id);if(el)el.innerHTML=h;}
@@ -2552,7 +2516,7 @@ function renderOtDetails(data) {
     html += '<tr class="clickable data-row" data-ot="'+encodeURIComponent(JSON.stringify(r))+'">'
       + '<td>'+(i+1)+'</td>'
       + '<td class="left bold">'+titleCase(r.name)+'</td>'
-     + '<td style="font-weight:800;color:var(--blue);font-size:14px;white-space:nowrap">'+(r.pc||'-').toString().toUpperCase()+'</td>'
+      + '<td class="bold" style="color:var(--blue)">'+(r.pc||'-')+'</td>'
       + '<td><span class="badge '+shiftBadge(r.otShift)+'">'+(r.otShift||'-')+'</span></td>'
       + '<td><span style="background:var(--orange-lt);padding:2px 8px;border-radius:5px;font-weight:700">'+(r.hours||'-')+'</span></td>'
       + '<td><span class="badge '+stBadge+'">'+(r.state||'-')+'</span></td></tr>';
@@ -3449,12 +3413,18 @@ function renderOtDetails(data) {
 }
 
 function openOtModal(r) {
-  gid('detailTitle').textContent = titleCase(r.name);
+  gid('detailTitle').textContent = 'OT Details: ' + titleCase(r.name);
   var html = '<div class="detail-grid">'
+    + '<div class="detail-item"><div class="detail-lbl">Name</div><div class="detail-val">'+titleCase(r.name)+'</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">PC</div><div class="detail-val" style="color:var(--blue); font-weight:800">'+(r.pc||'-')+'</div></div>'
     + '<div class="detail-item"><div class="detail-lbl">Original Shift</div><div class="detail-val">'+(r.shift||'-')+'</div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">Over Time Shift</div><div class="detail-val"><span class="badge '+shiftBadge(r.otShift)+'" style="font-size:13px;padding:4px 14px">'+(r.otShift||'-').toUpperCase()+'</span></div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">Original Floor</div><div class="detail-val" style="font-size:18px;font-weight:800;color:var(--blue)">'+(r.floor||'-')+'</div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">Over Time Floor</div><div class="detail-val" style="font-size:18px;font-weight:800;color:var(--blue)">'+(r.otFloor||'-')+'</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">Over time Shift</div><div class="detail-val"><span class="badge '+shiftBadge(r.otShift)+'">'+(r.otShift||'-')+'</span></div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">Original Floor</div><div class="detail-val">'+(r.floor||'-')+'</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">Over time Floor</div><div class="detail-val">'+(r.otFloor||'-')+'</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">Project</div><div class="detail-val">'+(r.project||'-')+'</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">State</div><div class="detail-val">'+(r.state||'-')+'</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">Hours</div><div class="detail-val" style="color:var(--blue); font-size:18px"><strong>'+(r.hours||'-')+'</strong></div></div>'
+    + '<div class="detail-item full"><div class="detail-lbl">OT Yubikey</div><div class="detail-val"><span class="ubkey-chip">'+(r.otYubikey||'-')+'</span></div></div>'
     + '</div>';
   shtml('detailBody', html);
   gid('detailBd').classList.add('show');
