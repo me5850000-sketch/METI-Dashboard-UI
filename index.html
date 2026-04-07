@@ -354,7 +354,16 @@ body.dark #pgAttendance .mod-btn[style*="background:var(--blue)"]{background:#1c
   padding: 5px 8px !important;
   white-space: nowrap !important;
 }
-
+@media(max-width:768px){
+  #pgOtDetails table { min-width: 400px !important; }
+  #pgOtDetails th, #pgOtDetails td { font-size: 11px !important; padding: 7px 8px !important; }
+  #pgOtDetails .badge { font-size: 9px !important; padding: 2px 5px !important; }
+  #pgOtDetails .cards { grid-template-columns: repeat(3,1fr) !important; gap: 8px !important; }
+  #pgOtDetails .card-val { font-size: 24px !important; }
+  #pgOtDetails .card { padding: 12px 8px !important; }
+  .modal .detail-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
+  .detail-item .detail-val { font-size: 15px !important; }
+}
 /* إصلاح شريط التابز والفلتر */
 #labPageCard > div:first-child {
   flex-wrap: wrap !important;
@@ -850,7 +859,7 @@ body.dark #detailBd [style*="color:var(--blue)"] { color: #7eaaff !important; }
 
 <div class="toast" id="toast"></div>
 
-<script>
+
 // ═══════════════════════════════════════════════
 // BRIDGE: replaces google.script.run
 // Calls your deployed Apps Script via fetch()
@@ -890,7 +899,7 @@ var google = {
 };
 </script>
 
-<script>
+
 // ══ GLOBALS ══
 var ROLES_SEE_ALL=['admin','sm','svv','sv','wla'],ROLES_OWN=['qtc'],ROLES_MANAGE_USERS=['admin','sm','svv','sv'],ROLES_VIEW_DATA=['admin','sm','svv','sv','qtc','wla'],ROLES_SET_TARGET=['admin','sm','svv'];
 var F={labeler:'labeler_name',shift:'shift',unit:'unit',modality:'modality',pass:'pass',queue:'queue_name',objects:'object_count',date:'created_at',qc:'qtc_name',ubkey:'yubikey_email',link:'task_link',stage:'stage',pc:'pc_no'};
@@ -908,7 +917,7 @@ var _lastAttR=null,_lastAttDate='';
 var _attShift2Cache=null,_lastAttDate2='';
 </script>
 
-<script>
+
 // ══ UTILS ══
 function gid(id){return document.getElementById(id);}
 function shtml(id,h){var el=gid(id);if(el)el.innerHTML=h;}
@@ -2516,7 +2525,7 @@ function renderOtDetails(data) {
     html += '<tr class="clickable data-row" data-ot="'+encodeURIComponent(JSON.stringify(r))+'">'
       + '<td>'+(i+1)+'</td>'
       + '<td class="left bold">'+titleCase(r.name)+'</td>'
-      + '<td class="bold" style="color:var(--blue)">'+(r.pc||'-')+'</td>'
+     + '<td style="font-weight:800;color:var(--blue);font-size:14px;white-space:nowrap">'+(r.pc||'-').toString().toUpperCase()+'</td>'
       + '<td><span class="badge '+shiftBadge(r.otShift)+'">'+(r.otShift||'-')+'</span></td>'
       + '<td><span style="background:var(--orange-lt);padding:2px 8px;border-radius:5px;font-weight:700">'+(r.hours||'-')+'</span></td>'
       + '<td><span class="badge '+stBadge+'">'+(r.state||'-')+'</span></td></tr>';
@@ -3413,18 +3422,12 @@ function renderOtDetails(data) {
 }
 
 function openOtModal(r) {
-  gid('detailTitle').textContent = 'OT Details: ' + titleCase(r.name);
+  gid('detailTitle').textContent = titleCase(r.name);
   var html = '<div class="detail-grid">'
-    + '<div class="detail-item"><div class="detail-lbl">Name</div><div class="detail-val">'+titleCase(r.name)+'</div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">PC</div><div class="detail-val" style="color:var(--blue); font-weight:800">'+(r.pc||'-')+'</div></div>'
     + '<div class="detail-item"><div class="detail-lbl">Original Shift</div><div class="detail-val">'+(r.shift||'-')+'</div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">Over time Shift</div><div class="detail-val"><span class="badge '+shiftBadge(r.otShift)+'">'+(r.otShift||'-')+'</span></div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">Original Floor</div><div class="detail-val">'+(r.floor||'-')+'</div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">Over time Floor</div><div class="detail-val">'+(r.otFloor||'-')+'</div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">Project</div><div class="detail-val">'+(r.project||'-')+'</div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">State</div><div class="detail-val">'+(r.state||'-')+'</div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">Hours</div><div class="detail-val" style="color:var(--blue); font-size:18px"><strong>'+(r.hours||'-')+'</strong></div></div>'
-    + '<div class="detail-item full"><div class="detail-lbl">OT Yubikey</div><div class="detail-val"><span class="ubkey-chip">'+(r.otYubikey||'-')+'</span></div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">Over Time Shift</div><div class="detail-val"><span class="badge '+shiftBadge(r.otShift)+'" style="font-size:13px;padding:4px 14px">'+(r.otShift||'-').toUpperCase()+'</span></div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">Original Floor</div><div class="detail-val" style="font-size:18px;font-weight:800;color:var(--blue)">'+(r.floor||'-')+'</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">Over Time Floor</div><div class="detail-val" style="font-size:18px;font-weight:800;color:var(--blue)">'+(r.otFloor||'-')+'</div></div>'
     + '</div>';
   shtml('detailBody', html);
   gid('detailBd').classList.add('show');
