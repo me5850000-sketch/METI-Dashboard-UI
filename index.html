@@ -3442,10 +3442,15 @@ function renderOtDetails(data) {
     });
   }
 
-  area.querySelectorAll('.mod-btn[data-otstate]').forEach(function(btn){
-    btn.addEventListener('click', function(){
-      area.querySelectorAll('.mod-btn[data-otstate]').forEach(function(b){ b.classList.remove('active'); b.style.background=''; b.style.color=''; });
-      btn.classList.add('active'); btn.style.background='var(--blue)'; btn.style.color='white';
+  area.querySelectorAll('.ot-col-filter').forEach(function(sel) {
+    sel.addEventListener('change', function() {
+      // تلوين السهم كدليل بصري إن الفلتر شغال
+      var arrow = this.nextElementSibling;
+      if (this.value !== "") {
+        arrow.style.color = "#ffb74d"; // لون برتقالي يوضح إن الفلتر شغال
+      } else {
+        arrow.style.color = "rgba(255,255,255,0.6)"; // رجوعه للون الطبيعي
+      }
       applyOtFilters();
     });
   });
