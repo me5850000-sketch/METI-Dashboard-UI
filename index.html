@@ -3476,20 +3476,22 @@ function openOtModal(r) {
     + '</div>';
   shtml('detailBody', html);
   gid('detailBd').classList.add('show');
-}// ═══════════════════════════════════════════════════════════
+}<script>
+// ═══════════════════════════════════════════════════════════
 // METI DASHBOARD — ROLE PERMISSIONS PATCH
 // الصق الكود ده قبل </body> في آخر الـ HTML
 // ═══════════════════════════════════════════════════════════
 
 // ══ 1. ROLE ARRAYS ══
-ROLES_SEE_ALL    = ['admin','sm','svv','sv','wla'];
-ROLES_OWN        = ['qtc','sl'];           // شايف شيفته بس
-ROLES_VIEW_DATA  = ['admin','sm','svv','sv','qtc','wla','sl'];
+ROLES_SEE_ALL      = ['admin','sm','svv','sv','wla'];
+ROLES_OWN          = ['qtc','sl'];           // شايف شيفته بس
+ROLES_VIEW_DATA    = ['admin','sm','svv','sv','qtc','wla','sl'];
 ROLES_MANAGE_USERS = ['admin','sm','svv','sv'];
-ROLES_SET_TARGET = ['admin','sm','svv'];
+ROLES_SET_TARGET   = ['admin','sm','svv'];
 var ROLES_ATT_ALL          = ['admin','sm','svv','sv','wla'];   // Attendance: شايف الكل
 var ROLES_ATT_DETAILS_ALL  = ['admin','sm','svv'];              // Details of Att: شايف الكل
 var ROLES_OT_ACCESS        = ['admin','sm','svv','sv'];         // OT page
+var ROLES_APPROVE_USERS    = ['admin','sm','svv','sv'];         // 👈 تم إضافة هذه المصفوفة لتشغيل الموافقة بدون أخطاء
 
 // ══ 2. CSS — SL badge ══
 (function(){
@@ -3614,10 +3616,6 @@ renderDetailsOfData = function(){
   }
 };
 
-// ══ 8. Data Page — SL شايف شيفته + Over Shift ══
-//  (QTC كان بيتفلتر بـ userSeeOwnOnly اللي بترجع true لـ ROLES_OWN)
-//  دلوقتي SL اتضاف لـ ROLES_OWN فهو هيتفلتر أوتوماتيك في getFilteredData
-
 // ══ 9. Users Page — SV / SSV شايفين شيفتهم بس ══
 var _origLoadUsers = loadUsers;
 loadUsers = function(){
@@ -3695,15 +3693,22 @@ function _renderUsersPatch(users, pending){
         '<th class="left">Name</th><th class="left">Email</th><th>Shift</th><th>Actions</th>'+
         '</tr></thead><tbody>'+
         filteredPending.map(function(p){
+          var canApprove = hasRole(role, ROLES_APPROVE_USERS); // 👈 تم التعديل هنا للتحقق من الصلاحية بدقة
+          
           return '<tr>'+
             '<td class="left bold">'+titleCase(p.name||'-')+'</td>'+
             '<td class="left" style="font-size:12px;color:var(--gray)">'+(p.email||'-')+'</td>'+
             '<td>'+(p.shift?'<span class="badge '+shiftBadge(p.shift)+'">'+p.shift+'</span>':'—')+'</td>'+
             '<td style="display:flex;gap:6px;align-items:center">'+
-            '<button class="fbtn fbtn-primary" style="padding:6px 14px;font-size:12px" '+
-            'onclick="openApproveModal('+p.id+',\''+encodeURIComponent(p.name)+'\')">✓ Approve</button>'+
-            '<button class="icon-btn ib-del" '+
-            'onclick="declineUser('+p.id+',\''+encodeURIComponent(p.name)+'\')">✕ Decline</button>'+
+            
+            // إظهار الزراير لو عنده الصلاحية، أو إظهار رسالة لو معندوش
+            (canApprove ? 
+              '<button class="fbtn fbtn-primary" style="padding:6px 14px;font-size:12px" '+
+              'onclick="openApproveModal('+p.id+',\''+encodeURIComponent(p.name)+'\')">✓ Approve</button>'+
+              '<button class="icon-btn ib-del" '+
+              'onclick="declineUser('+p.id+',\''+encodeURIComponent(p.name)+'\')">✕ Decline</button>'
+            : '<span style="font-size:11px;color:var(--gray);background:var(--gray-lt);padding:4px 8px;border-radius:6px">No Permission</span>' ) +
+            
             '</td></tr>';
         }).join('')+
         '</tbody></table></div>'
@@ -3713,14 +3718,17 @@ function _renderUsersPatch(users, pending){
   shtml('usersArea', html);
 }
 
-// ══ 10. openApproveModal — SV/SSV بيقدر يعدل Role + Active بس ══
+// ══ 10. حماية دوال الـ Approve والـ Decline ══
 var _origOpenApproveModal = openApproveModal;
 openApproveModal = function(rowId, encodedName){
   var role = SESSION && SESSION.role;
+  if (!hasRole(role, ROLES_APPROVE_USERS)) {
+    toast("You don't have permission to approve requests", "err");
+    return; 
+  }
+  
   _approveRowId = rowId;
   var name = decodeURIComponent(encodedName);
-
-  // الـ roles اللي SV/SSV ممكن يديها
   var allowedRoles = hasRole(role, ['admin','sm'])
     ? ['admin','sm','svv','sv','sl','qtc','wla']
     : ['sl','qtc','wla'];
@@ -3746,22 +3754,28 @@ openApproveModal = function(rowId, encodedName){
   document.body.appendChild(bd);
 };
 
+var _origDeclineUser = declineUser;
+declineUser = function(rowId, encodedName) {
+  var role = SESSION && SESSION.role;
+  if (!hasRole(role, ROLES_APPROVE_USERS)) {
+    toast("You don't have permission to decline requests", "err");
+    return;
+  }
+  _origDeclineUser(rowId, encodedName);
+};
+
 // ══ 11. Edit User Modal — SV/SSV بيشوف Role + Active بس ══
 var _origOpenModal = openModal;
 openModal = function(user){
   _origOpenModal(user);
   var role = SESSION && SESSION.role;
   if(!hasRole(role, ['admin','sm']) && user){
-    // إخفاء الـ email field عن SV/SSV
     var emailRow = gid('emailRow');
     if(emailRow) emailRow.style.display = 'none';
-    // إخفاء الـ password field
     var pwdInp = gid('mPwd');
     if(pwdInp && pwdInp.closest('.inp-wrap')) pwdInp.closest('.inp-wrap').style.display = 'none';
-    // إظهار Active row دايمًا
     var activeRow = gid('activeRow');
     if(activeRow) activeRow.style.display = 'block';
-    // تقليص خيارات الـ role
     var mRoleEl = gid('mRole');
     if(mRoleEl){
       Array.from(mRoleEl.options).forEach(function(opt){
@@ -3774,11 +3788,9 @@ openModal = function(user){
 // ══ 12. Bottom Nav — إخفاء OT من الموبايل لو مش في الـ list ══
 (function(){
   var bnOt = document.querySelector('#bottomNav [data-page="otdetails"]');
-  if(bnOt){
-    // سيتعمل check بعد login في showDash
-    bnOt.style.display = 'none';
-  }
+  if(bnOt){ bnOt.style.display = 'none'; }
 })();
+
 // ══ FIX: Tab active underline ══
 switchUserTab = function(tab){
   var isA = tab === 'active';
@@ -3790,6 +3802,6 @@ switchUserTab = function(tab){
   if(tP){ tP.style.borderBottom = !isA ? '2px solid var(--blue)' : '2px solid transparent'; tP.style.color = !isA ? 'var(--blue)' : 'var(--gray)'; }
 };
 // ══ END OF PATCH ══
-console.log('✅ METI Roles Patch Loaded');
+console.log('✅ METI Roles Patch Loaded (With Approve Permissions)');
 </script>
 </body>
