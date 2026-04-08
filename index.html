@@ -2999,20 +2999,34 @@ function declineUser(rowId, encodedName) {
 // ══ DETAILS OF DATA — Card View ══
 var dodPage = 1;
  
-function renderDetailsOfData() {
+// ══════════════════════════════════════════════════════════════
+// PATCH: Details of Data — إظهار الموظفين الحاضرين اللي مسبمتوش
+// ضيف الـ script ده قبل </body> في الـ HTML مباشرةً
+// ══════════════════════════════════════════════════════════════
+// كيفية العمل:
+// 1. بيجيب كل الـ yubikeys الموجودة في الـ data submissions
+// 2. بيجيب الأتيند المحفوظ (_attShift2Cache أو _lastAttR)
+// 3. أي موظف P وفلاشته مش في الـ data → يظهر بـ PC أحمر
+
+renderDetailsOfData = function () {
   var area = gid('dodArea');
   if (!area) return;
- 
+
   if (!dataAll || !dataAll.length) {
-    area.innerHTML = '<div style="text-align:center;padding:60px 20px;color:var(--gray)"><div style="font-size:40px;margin-bottom:12px">📋</div><div style="font-size:16px;font-weight:700;color:var(--blue);margin-bottom:8px">No Data Available</div><div style="font-size:13px">Please select a date range using the filter bar above.</div></div>';
+    area.innerHTML =
+      '<div style="text-align:center;padding:60px 20px;color:var(--gray)">' +
+      '<div style="font-size:40px;margin-bottom:12px">📋</div>' +
+      '<div style="font-size:16px;font-weight:700;color:var(--blue);margin-bottom:8px">No Data Available</div>' +
+      '<div style="font-size:13px">Please select a date range using the filter bar above.</div>' +
+      '</div>';
     return;
   }
- 
+
   var UNIT_ORD = ['NC Room 102', 'NC Room 106', 'NC Room 108', '4th Floor', '2nd Floor'];
   var SH_ORD   = ['Morning', 'Night', 'Over Night', 'Over Shift'];
   var SH_ICON  = { Morning: '☀️', Night: '🌙', 'Over Night': '🦉', 'Over Shift': '🔄' };
- 
-  // ── Build structure: shift → unit → labeler → stats ──
+
+  // ── بناء الهيكل الأساسي (نفس الأصلي) ──
   var shifts = {};
   dataAll.forEach(function (r) {
     var sh  = nShift(r[F.shift]  || 'Unknown');
@@ -3024,171 +3038,265 @@ function renderDetailsOfData() {
     var pas = (r[F.pass]         || '').toUpperCase();
     var isL = mod.indexOf('lane')  !== -1;
     var isLi= mod.indexOf('lidar') !== -1;
- 
+
     function ensure(o, k, extra) { if (!o[k]) o[k] = Object.assign({ lfp:0,lqa:0,lifp:0,liqa:0,total:0 }, extra||{}); }
-    function bump(o) { o.total++; if(isL&&pas==='FP')o.lfp++; if(isL&&pas==='QA')o.lqa++; if(isLi&&pas==='FP')o.lifp++; if(isLi&&pas==='QA')o.liqa++; }
- 
-    ensure(shifts, sh);  bump(shifts[sh]);
+    function bump(o) {
+      o.total++;
+      if(isL  && pas==='FP') o.lfp++;
+      if(isL  && pas==='QA') o.lqa++;
+      if(isLi && pas==='FP') o.lifp++;
+      if(isLi && pas==='QA') o.liqa++;
+    }
+
+    ensure(shifts, sh); bump(shifts[sh]);
     if (!shifts[sh].units) shifts[sh].units = {};
     ensure(shifts[sh].units, un); bump(shifts[sh].units[un]);
     if (!shifts[sh].units[un].labelers) shifts[sh].units[un].labelers = {};
     ensure(shifts[sh].units[un].labelers, lb, { pc: pc, ub: ub });
     bump(shifts[sh].units[un].labelers[lb]);
-    // keep first non-empty PC / yubikey found
-    if (!shifts[sh].units[un].labelers[lb].pc && pc)  shifts[sh].units[un].labelers[lb].pc = pc;
-    if (!shifts[sh].units[un].labelers[lb].ub && ub && ub !== '-') shifts[sh].units[un].labelers[lb].ub = ub;
+    if (!shifts[sh].units[un].labelers[lb].pc && pc)              shifts[sh].units[un].labelers[lb].pc = pc;
+    if (!shifts[sh].units[un].labelers[lb].ub && ub && ub!=='-') shifts[sh].units[un].labelers[lb].ub = ub;
   });
- 
+
+  // ── جمع كل الـ yubikeys اللي سبمتت فعلاً ──
+  var submittedYubikeys = {};
+  dataAll.forEach(function (r) {
+    var ub = fmtUbkey(r[F.ubkey] || '');
+    if (ub && ub !== '-') submittedYubikeys[ub.toLowerCase()] = true;
+  });
+
+  // ── بناء خريطة "مسبمتش": shift → unit → [employees] ──
+  var notSubmittedMap = {};
+  var totalNotSub = 0;
+  var attSrc = _attShift2Cache || _lastAttR;
+
+  if (attSrc && attSrc.shifts) {
+    Object.keys(attSrc.shifts).forEach(function (sh) {
+      var sd = attSrc.shifts[sh];
+      var present = sd.present || [];
+      present.forEach(function (p) {
+        var ub = fmtUbkey(p.yubikey || '');
+        if (!ub || ub === '-') return;                           // مفيش فلاشة مسجلة → skip
+        if (submittedYubikeys[ub.toLowerCase()]) return;         // سبمت → skip
+        var un = (p.location || 'Unknown').trim();
+        if (!notSubmittedMap[sh])     notSubmittedMap[sh]     = {};
+        if (!notSubmittedMap[sh][un]) notSubmittedMap[sh][un] = [];
+        notSubmittedMap[sh][un].push(p);
+        totalNotSub++;
+      });
+    });
+  }
+
   // ── Grand totals bar ──
   var grand = { lfp:0, lqa:0, lifp:0, liqa:0, total:0 };
   Object.keys(shifts).forEach(function (sh) {
     var d = shifts[sh];
-    grand.lfp += d.lfp; grand.lqa += d.lqa; grand.lifp += d.lifp; grand.liqa += d.liqa; grand.total += d.total;
+    grand.lfp += d.lfp; grand.lqa += d.lqa;
+    grand.lifp += d.lifp; grand.liqa += d.liqa; grand.total += d.total;
   });
- 
-  var html = '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;padding:10px 16px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);font-size:12px;font-weight:700">'
-    + '<span style="color:var(--gray)">📊 ' + grand.total + ' tasks</span>'
-    + '<span style="color:var(--border)">|</span>'
-    + (grand.lfp  ? '<span style="color:#1e8e3e;background:#e8f5e9;padding:2px 8px;border-radius:6px">LFP: '  + grand.lfp  + '</span>' : '')
-    + (grand.lqa  ? '<span style="color:#e37400;background:#fff3cd;padding:2px 8px;border-radius:6px">LQA: '  + grand.lqa  + '</span>' : '')
-    + (grand.lifp ? '<span style="color:#007b83;background:#e0f7fa;padding:2px 8px;border-radius:6px">LiFP: ' + grand.lifp + '</span>' : '')
-    + (grand.liqa ? '<span style="color:#7b1fa2;background:#f3e5f5;padding:2px 8px;border-radius:6px">LiQA: ' + grand.liqa + '</span>' : '')
-    + '<span style="color:var(--blue);background:var(--blue-bg);padding:2px 8px;border-radius:6px;font-weight:800">Total: ' + grand.total + '</span>'
-    + '</div>';
- 
+
+  var html =
+    '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;' +
+    'padding:10px 16px;background:white;border:1px solid var(--border);border-radius:10px;' +
+    'box-shadow:var(--shadow);font-size:12px;font-weight:700">' +
+    '<span style="color:var(--gray)">📊 ' + grand.total + ' tasks</span>' +
+    '<span style="color:var(--border)">|</span>' +
+    (grand.lfp  ? '<span style="color:#1e8e3e;background:#e8f5e9;padding:2px 8px;border-radius:6px">LFP: '  + grand.lfp  + '</span>' : '') +
+    (grand.lqa  ? '<span style="color:#e37400;background:#fff3cd;padding:2px 8px;border-radius:6px">LQA: '  + grand.lqa  + '</span>' : '') +
+    (grand.lifp ? '<span style="color:#007b83;background:#e0f7fa;padding:2px 8px;border-radius:6px">LiFP: ' + grand.lifp + '</span>' : '') +
+    (grand.liqa ? '<span style="color:#7b1fa2;background:#f3e5f5;padding:2px 8px;border-radius:6px">LiQA: ' + grand.liqa + '</span>' : '') +
+    '<span style="color:var(--blue);background:var(--blue-bg);padding:2px 8px;border-radius:6px;font-weight:800">Total: ' + grand.total + '</span>' +
+    (totalNotSub > 0
+      ? '<span style="color:#c5221f;background:#fce8e6;padding:2px 8px;border-radius:6px;border:1px solid #f5c6cb">⚠️ لم يسبمت: ' + totalNotSub + '</span>'
+      : '') +
+    (!attSrc
+      ? '<span style="color:var(--orange);font-size:11px;margin-left:4px">⚠️ افتح صفحة الأتيند أولاً عشان يظهر مين مسبمتش</span>'
+      : '') +
+    '</div>';
+
   // ── Shifts ──
   var shiftKeys = SH_ORD.filter(function (s) { return !!shifts[s]; });
   Object.keys(shifts).forEach(function (s) { if (shiftKeys.indexOf(s) === -1) shiftKeys.push(s); });
- 
+  // لو في شيفتات في الأتيند بس مفيش ليها داتا
+  Object.keys(notSubmittedMap).forEach(function (s) {
+    if (shiftKeys.indexOf(s) === -1) shiftKeys.push(s);
+  });
+
   shiftKeys.forEach(function (sh, si) {
-    var sd   = shifts[sh];
-    var icon = SH_ICON[sh] || '🔹';
-    var shId = 'dod_sh_' + sh.replace(/\s/g, '_');
-    var isFirst = false;
- 
-    // shift header
-    html += '<div style="margin-bottom:16px;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border)">';
-    html += '<div onclick="dodToggle(\'' + shId + '\')" style="background:var(--blue);padding:13px 20px;cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">'
-      + '<div style="display:flex;align-items:center;gap:10px">'
-      + '<span style="font-size:18px">' + icon + '</span>'
-     + '<span style="color:white;font-size:15px;font-weight:800">' + sh + '</span>'
-      + '</div>'
-      + '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">'
-      + (sd.lfp  ? '<span style="background:rgba(30,142,62,.25);color:#a5d6a7;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">LFP: '  + sd.lfp  + '</span>' : '')
-      + (sd.lqa  ? '<span style="background:rgba(227,116,0,.25);color:#ffcc80;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">LQA: '  + sd.lqa  + '</span>' : '')
-      + (sd.lifp ? '<span style="background:rgba(0,123,131,.25);color:#80cbc4;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">LiFP: ' + sd.lifp + '</span>' : '')
-      + (sd.liqa ? '<span style="background:rgba(123,31,162,.25);color:#ce93d8;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">LiQA: ' + sd.liqa + '</span>' : '')
-      + '<span style="background:rgba(255,255,255,.2);color:white;font-size:11px;font-weight:800;padding:3px 10px;border-radius:6px">Total: ' + sd.total + '</span>'
-      + '<span id="arr_' + shId + '" style="color:rgba(255,255,255,.7);font-size:14px;transition:transform .3s;display:inline-block;' + (isFirst ? 'transform:rotate(180deg)' : '') + '">▼</span>'
-      + '</div></div>';
- 
-    // shift body
-    html += '<div id="' + shId + '" style="background:white;overflow:hidden;transition:max-height .4s ease;max-height:' + (isFirst ? '99999px' : '0') + '">';
- 
-    // units
-    var unitKeys = UNIT_ORD.filter(function (u) { return sd.units && sd.units[u]; });
+    var sd        = shifts[sh] || { lfp:0,lqa:0,lifp:0,liqa:0,total:0, units:{} };
+    var icon      = SH_ICON[sh] || '🔹';
+    var shId      = 'dod_sh_' + sh.replace(/\s/g, '_');
+    var shNotSub  = notSubmittedMap[sh] || {};
+    var shNotSubCount = Object.keys(shNotSub).reduce(function (acc, u) { return acc + shNotSub[u].length; }, 0);
+
+    html +=
+      '<div style="margin-bottom:16px;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border)">' +
+      '<div onclick="dodToggle(\'' + shId + '\')" style="background:var(--blue);padding:13px 20px;cursor:pointer;' +
+      'user-select:none;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">' +
+      '<div style="display:flex;align-items:center;gap:10px">' +
+      '<span style="font-size:18px">' + icon + '</span>' +
+      '<span style="color:white;font-size:15px;font-weight:800">' + sh + '</span>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">' +
+      (sd.lfp  ? '<span style="background:rgba(30,142,62,.25);color:#a5d6a7;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">LFP: '  + sd.lfp  + '</span>' : '') +
+      (sd.lqa  ? '<span style="background:rgba(227,116,0,.25);color:#ffcc80;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">LQA: '  + sd.lqa  + '</span>' : '') +
+      (sd.lifp ? '<span style="background:rgba(0,123,131,.25);color:#80cbc4;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">LiFP: ' + sd.lifp + '</span>' : '') +
+      (sd.liqa ? '<span style="background:rgba(123,31,162,.25);color:#ce93d8;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">LiQA: ' + sd.liqa + '</span>' : '') +
+      '<span style="background:rgba(255,255,255,.2);color:white;font-size:11px;font-weight:800;padding:3px 10px;border-radius:6px">Total: ' + sd.total + '</span>' +
+      (shNotSubCount > 0
+        ? '<span style="background:rgba(197,34,31,.45);color:#ffcdd2;font-size:11px;font-weight:700;padding:3px 10px;border-radius:6px">⚠️ مسبمتش: ' + shNotSubCount + '</span>'
+        : '') +
+      '<span id="arr_' + shId + '" style="color:rgba(255,255,255,.7);font-size:14px;transition:transform .3s;display:inline-block">▼</span>' +
+      '</div></div>';
+
+    html += '<div id="' + shId + '" style="background:white;overflow:hidden;transition:max-height .4s ease;max-height:0">';
+
+    // جمع الـ units من الداتا + من الأتيند
+    var unitKeys = UNIT_ORD.filter(function (u) { return (sd.units && sd.units[u]) || shNotSub[u]; });
     if (sd.units) Object.keys(sd.units).forEach(function (u) { if (unitKeys.indexOf(u) === -1) unitKeys.push(u); });
- 
+    Object.keys(shNotSub).forEach(function (u) { if (unitKeys.indexOf(u) === -1) unitKeys.push(u); });
+
     unitKeys.forEach(function (un, ui) {
-      var ud   = sd.units[un];
-      var unId = shId + '_u' + ui;
- 
-      // unit header
-      html += '<div style="border-bottom:1px solid var(--border)">';
-      html += '<div onclick="dodToggle(\'' + unId + '\')" style="background:#f8f9ff;padding:11px 20px;cursor:pointer;user-select:none;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border-bottom:1px solid var(--border)">'
-        + '<div style="display:flex;align-items:center;gap:8px">'
-        + '<span style="font-size:14px;font-weight:700;color:var(--blue)">📍 ' + un + '</span>'
-        + '</div>'
-        + '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
-        + (ud.lfp  ? '<span style="background:#e8f5e9;color:#1e8e3e;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px">LFP: '  + ud.lfp  + '</span>' : '')
-        + (ud.lqa  ? '<span style="background:#fff3cd;color:#e37400;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px">LQA: '  + ud.lqa  + '</span>' : '')
-        + (ud.lifp ? '<span style="background:#e0f7fa;color:#007b83;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px">LiFP: ' + ud.lifp + '</span>' : '')
-        + (ud.liqa ? '<span style="background:#f3e5f5;color:#7b1fa2;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px">LiQA: ' + ud.liqa + '</span>' : '')
-        + '<span style="background:var(--blue-bg);color:var(--blue);font-size:11px;font-weight:800;padding:2px 8px;border-radius:5px">Total: ' + ud.total + '</span>'
-        + '<span id="arr_' + unId + '" style="color:var(--blue);font-size:12px;transition:transform .3s;display:inline-block">▼</span>'
-        + '</div></div>';
- 
-      // unit body — labeler table
+      var ud         = (sd.units && sd.units[un]) || { lfp:0,lqa:0,lifp:0,liqa:0,total:0, labelers:{} };
+      var unId       = shId + '_u' + ui;
+      var unitNotSub = shNotSub[un] || [];
+
+      html +=
+        '<div style="border-bottom:1px solid var(--border)">' +
+        '<div onclick="dodToggle(\'' + unId + '\')" style="background:#f8f9ff;padding:11px 20px;cursor:pointer;' +
+        'user-select:none;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;' +
+        'border-bottom:1px solid var(--border)">' +
+        '<div style="display:flex;align-items:center;gap:8px">' +
+        '<span style="font-size:14px;font-weight:700;color:var(--blue)">📍 ' + un + '</span>' +
+        (unitNotSub.length > 0
+          ? '<span style="background:#fce8e6;color:#c5221f;font-size:11px;font-weight:700;padding:2px 10px;' +
+            'border-radius:5px;border:1px solid #f5c6cb">⚠️ ' + unitNotSub.length + ' مسبمتوش</span>'
+          : '') +
+        '</div>' +
+        '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
+        (ud.lfp  ? '<span style="background:#e8f5e9;color:#1e8e3e;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px">LFP: '  + ud.lfp  + '</span>' : '') +
+        (ud.lqa  ? '<span style="background:#fff3cd;color:#e37400;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px">LQA: '  + ud.lqa  + '</span>' : '') +
+        (ud.lifp ? '<span style="background:#e0f7fa;color:#007b83;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px">LiFP: ' + ud.lifp + '</span>' : '') +
+        (ud.liqa ? '<span style="background:#f3e5f5;color:#7b1fa2;font-size:11px;font-weight:700;padding:2px 8px;border-radius:5px">LiQA: ' + ud.liqa + '</span>' : '') +
+        '<span style="background:var(--blue-bg);color:var(--blue);font-size:11px;font-weight:800;padding:2px 8px;border-radius:5px">Total: ' + ud.total + '</span>' +
+        '<span id="arr_' + unId + '" style="color:var(--blue);font-size:12px;transition:transform .3s;display:inline-block">▼</span>' +
+        '</div></div>';
+
       html += '<div id="' + unId + '" style="overflow:hidden;transition:max-height .35s ease;max-height:0">';
- 
-      // sort labelers by PC number ascending
-      var labNames = Object.keys(ud.labelers).sort(function (a, b) {
+
+      // ترتيب الـ labelers حسب رقم الـ PC
+      var labNames = Object.keys(ud.labelers || {}).sort(function (a, b) {
         var pa = parseInt((ud.labelers[a].pc || '').replace(/\D/g, '')) || 9999;
         var pb = parseInt((ud.labelers[b].pc || '').replace(/\D/g, '')) || 9999;
         return pa - pb;
       });
- 
-      // totals row
+
       var rowTotals = { lfp:0, lqa:0, lifp:0, liqa:0, total:0 };
-      labNames.forEach(function (n) { var d = ud.labelers[n]; rowTotals.lfp+=d.lfp; rowTotals.lqa+=d.lqa; rowTotals.lifp+=d.lifp; rowTotals.liqa+=d.liqa; rowTotals.total+=d.total; });
- 
-      html += '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">'
-        + '<thead><tr style="background:var(--blue)">'
-        + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center;width:32px">#</th>'
-        + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:left">Labeler</th>'
-        + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">PC</th>'
-        + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Yubikey</th>'
-        + '<th style="color:#a5d6a7;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Lane FP</th>'
-        + '<th style="color:#ffcc80;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Lane QA</th>'
-        + '<th style="color:#80cbc4;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Lidar FP</th>'
-        + '<th style="color:#ce93d8;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Lidar QA</th>'
-        + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Total</th>'
-        + '</tr></thead><tbody>';
- 
-     var colKeys=['lfp','lqa','lifp','liqa'];
-      var topFor={};
-      colKeys.forEach(function(k){
-        var maxVal=0,maxName='';
-        labNames.forEach(function(n){if((ud.labelers[n][k]||0)>maxVal){maxVal=ud.labelers[n][k];maxName=n;}});
-        if(maxVal>0)topFor[k]={name:maxName,val:maxVal};
+      labNames.forEach(function (n) {
+        var d = ud.labelers[n];
+        rowTotals.lfp += d.lfp; rowTotals.lqa += d.lqa;
+        rowTotals.lifp += d.lifp; rowTotals.liqa += d.liqa; rowTotals.total += d.total;
       });
 
-      labNames.forEach(function(n,idx){
-        var d=ud.labelers[n];
-        var isTopAny=colKeys.some(function(k){return topFor[k]&&topFor[k].name===n&&(d[k]||0)>0;});
-        var rowBg=isTopAny?'#fff8c5':idx%2===0?'white':'#f8f9ff';
-        function colCell(k,color){
-          var val=d[k]||0;
-          var isTopCol=topFor[k]&&topFor[k].name===n&&val>0;
-          return '<td style="padding:8px 12px;text-align:center;font-size:13px;font-weight:700;color:'+color+'">'
-            +(isTopCol?'<div style="font-size:10px;text-align:center;margin-bottom:1px">👑</div>':'')
-            +(val||'-')+'</td>';
+      html +=
+        '<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse">' +
+        '<thead><tr style="background:var(--blue)">' +
+        '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center;width:32px">#</th>' +
+        '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:left">Labeler</th>' +
+        '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">PC</th>' +
+        '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Yubikey</th>' +
+        '<th style="color:#a5d6a7;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Lane FP</th>' +
+        '<th style="color:#ffcc80;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Lane QA</th>' +
+        '<th style="color:#80cbc4;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Lidar FP</th>' +
+        '<th style="color:#ce93d8;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Lidar QA</th>' +
+        '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;padding:9px 12px;text-align:center">Total</th>' +
+        '</tr></thead><tbody>';
+
+      // تحديد صاحب أعلى قيمة في كل column
+      var colKeys = ['lfp','lqa','lifp','liqa'];
+      var topFor  = {};
+      colKeys.forEach(function (k) {
+        var maxVal = 0, maxName = '';
+        labNames.forEach(function (n) { if ((ud.labelers[n][k]||0) > maxVal) { maxVal = ud.labelers[n][k]; maxName = n; } });
+        if (maxVal > 0) topFor[k] = { name: maxName, val: maxVal };
+      });
+
+      // ── صفوف الـ labelers العاديين ──
+      labNames.forEach(function (n, idx) {
+        var d = ud.labelers[n];
+        var isTopAny = colKeys.some(function (k) { return topFor[k] && topFor[k].name === n && (d[k]||0) > 0; });
+        var rowBg    = isTopAny ? '#fff8c5' : (idx % 2 === 0 ? 'white' : '#f8f9ff');
+
+        function colCell(k, color) {
+          var val      = d[k] || 0;
+          var isTopCol = topFor[k] && topFor[k].name === n && val > 0;
+          return '<td style="padding:8px 12px;text-align:center;font-size:13px;font-weight:700;color:' + color + '">' +
+            (isTopCol ? '<div style="font-size:10px;text-align:center;margin-bottom:1px">👑</div>' : '') +
+            (val || '-') + '</td>';
         }
 
-        html+='<tr style="background:'+rowBg+';border-bottom:1px solid '+(isTopAny?'#f9ab00':'#f0f0f0')+';'+(isTopAny?'border-left:4px solid #f9ab00;border-right:4px solid #f9ab00;outline:2px solid #f9ab00;':'')+'">'
-          +'<td style="padding:8px 12px;text-align:center">'
-          +'<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:'+(isTopAny?'#f9ab00':'var(--blue)')+';color:white;font-size:11px;font-weight:800;align-items:center;justify-content:center">'+(idx+1)+'</span>'
-          +'</td>'
-          +'<td style="padding:8px 12px;font-size:13px;font-weight:700;color:var(--dark)">'+(isTopAny?'<span style="font-size:12px;margin-right:4px">👑</span>':'')+n+'</td>'
-          +'<td style="padding:8px 12px;text-align:center;font-size:13px;font-weight:800;color:var(--blue)">'+(d.pc||'-')+'</td>'
-          +'<td style="padding:8px 12px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--gray)">'+(d.ub&&d.ub!=='-'?d.ub:'-')+'</td>'
-          +colCell('lfp','#1e8e3e')
-          +colCell('lqa','#e37400')
-          +colCell('lifp','#007b83')
-          +colCell('liqa','#7b1fa2')
-          +'<td style="padding:8px 12px;text-align:center;font-size:14px;font-weight:800;color:var(--blue)">'+d.total+'</td>'
-          +'</tr>';
+        html +=
+          '<tr style="background:' + rowBg + ';border-bottom:1px solid ' + (isTopAny ? '#f9ab00' : '#f0f0f0') + '">' +
+          '<td style="padding:8px 12px;text-align:center">' +
+          '<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:' +
+          (isTopAny ? '#f9ab00' : 'var(--blue)') + ';color:white;font-size:11px;font-weight:800;align-items:center;justify-content:center">' + (idx+1) + '</span>' +
+          '</td>' +
+          '<td style="padding:8px 12px;font-size:13px;font-weight:700;color:var(--dark)">' + (isTopAny ? '<span style="font-size:12px;margin-right:4px">👑</span>' : '') + n + '</td>' +
+          '<td style="padding:8px 12px;text-align:center;font-size:13px;font-weight:800;color:var(--blue)">'  + (d.pc || '-') + '</td>' +
+          '<td style="padding:8px 12px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--gray)">' + (d.ub && d.ub !== '-' ? d.ub : '-') + '</td>' +
+          colCell('lfp', '#1e8e3e') + colCell('lqa', '#e37400') +
+          colCell('lifp', '#007b83') + colCell('liqa', '#7b1fa2') +
+          '<td style="padding:8px 12px;text-align:center;font-size:14px;font-weight:800;color:var(--blue)">' + d.total + '</td>' +
+          '</tr>';
       });
- 
-      // TOTAL row
-      html += '<tr style="background:var(--blue)">'
-        + '<td colspan="4" style="padding:9px 12px;color:white;font-size:12px;font-weight:800;text-align:left;padding-left:20px">TOTAL</td>'
-        + '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.lfp  + '</td>'
-        + '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.lqa  + '</td>'
-        + '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.lifp + '</td>'
-        + '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.liqa + '</td>'
-        + '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.total + '</td>'
-        + '</tr>';
- 
+
+      // ── صفوف "مسبمتش" باللون الأحمر ──
+      unitNotSub.forEach(function (p) {
+        var ub = fmtUbkey(p.yubikey || '');
+        html +=
+          '<tr style="background:#fff0f0;border-bottom:1px solid #f5c6cb;border-left:4px solid #c5221f">' +
+          // رقم بـ ! أحمر
+          '<td style="padding:8px 12px;text-align:center">' +
+          '<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:#c5221f;' +
+          'color:white;font-size:13px;font-weight:900;align-items:center;justify-content:center;line-height:1">!</span>' +
+          '</td>' +
+          // الاسم بالأحمر + أيقونة تحذير
+          '<td style="padding:8px 12px;font-size:13px;font-weight:700;color:#c5221f">' +
+          '<span style="font-size:14px;margin-right:5px">⚠️</span>' + titleCase(p.name || '-') +
+          '</td>' +
+          // الـ PC بخلفية حمرا
+          '<td style="padding:8px 12px;text-align:center;font-size:15px;font-weight:900;color:#c5221f;background:#fce8e6">' +
+          (p.pc || '-') + '</td>' +
+          // الفلاشة
+          '<td style="padding:8px 12px;text-align:center;font-family:var(--mono);font-size:11px;color:#c5221f">' +
+          (ub && ub !== '-' ? ub : '-') + '</td>' +
+          // colspan للباقي
+          '<td colspan="5" style="padding:8px 12px;text-align:center;font-size:12px;font-weight:700;' +
+          'color:#c5221f;background:#fff5f5;letter-spacing:.3px">لم يسبمت — No Submissions Found</td>' +
+          '</tr>';
+      });
+
+      // ── صف الـ TOTAL ──
+      html +=
+        '<tr style="background:var(--blue)">' +
+        '<td colspan="4" style="padding:9px 12px;color:white;font-size:12px;font-weight:800;text-align:left;padding-left:20px">TOTAL</td>' +
+        '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.lfp  + '</td>' +
+        '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.lqa  + '</td>' +
+        '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.lifp + '</td>' +
+        '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.liqa + '</td>' +
+        '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.total + '</td>' +
+        '</tr>';
+
       html += '</tbody></table></div>';
       html += '</div></div>'; // end unit body + unit block
     });
- 
+
     html += '</div></div>'; // end shift body + shift block
   });
- 
+
   area.innerHTML = html;
-}
+};
+// ══════════════════════════════════════════════════════════════
  
 function dodToggle(id) {
   var body = document.getElementById(id);
