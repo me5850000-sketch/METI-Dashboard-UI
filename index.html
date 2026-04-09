@@ -1649,12 +1649,19 @@ function closeDetail(){gid('detailBd').classList.remove('show');}
 <script>
 // ══ LABELERS PAGE ══
 function loadLabelers(){
-  var from=getFilterISO(true),to=getFilterISO(false);
-  shtml('labelersArea','<div class="loading"><div class="spin"></div> Loading...</div>');
+  var from = getFilterISO(true), to = getFilterISO(false);
+  shtml('labelersArea', '<div class="loading"><div class="spin"></div> Loading Labeler Leaderboard...</div>');
+  
   google.script.run
-    .withSuccessHandler(function(r){if(r.err){shtml('labelersArea','<div class="empty">'+r.err+'</div>');return;}renderLabelersPage(r.data);})
-    .withFailureHandler(function(e){shtml('labelersArea','<div class="empty">'+e.message+'</div>');})
-    .getStats(TOKEN,from,to);
+    .withSuccessHandler(function(r){
+      if(r.err){shtml('labelersArea','<div class="empty">'+r.err+'</div>');return;}
+      // تم إلغاء أي فلترة هنا عشان الجدول يظهر كامل لكل الرتب
+      renderLabelersPage(r.data);
+    })
+    .withFailureHandler(function(e){
+      shtml('labelersArea','<div class="empty">'+e.message+'</div>');
+    })
+    .getStats(TOKEN, from, to); // التأكد من استخدام getStats للجميع
 }
 
 function renderLabelersPage(data){
