@@ -1882,7 +1882,7 @@ function renderLabelersPage(data){
 <script>
 // ══ QTC PAGE ══
 function loadQtc(){
- var from=getFilterISO(true),to=getFilterISO(false);
+  var from=getFilterISO(true),to=getFilterISO(false);
   shtml('qtcArea','<div class="loading"><div class="spin"></div> Loading...</div>');
   var fn=(SESSION&&SESSION.role==='qtc')?'getQtcStats':'getStats';
   google.script.run.withSuccessHandler(function(r){if(r.err){shtml('qtcArea','<div class="empty">'+r.err+'</div>');return;}renderQtcPage(r.data);}).withFailureHandler(function(e){shtml('qtcArea','<div class="empty">'+e.message+'</div>');})[fn](TOKEN,from,to);
@@ -3703,8 +3703,21 @@ loadAttDetails = function(){
 };
 
 // ══ 7. Details of Data — QTC & SL شايفين شيفتهم + Over Shift ══
+var _origRenderDod = renderDetailsOfData;
 renderDetailsOfData = function(){
-    _origRenderDod(); 
+  var role = SESSION && SESSION.role;
+  if(hasRole(role, ROLES_OWN) && SESSION && SESSION.shift){
+    var myShift = SESSION.shift;
+    var _origDataAll = dataAll;
+    dataAll = _origDataAll.filter(function(r){
+      var sh = nShift(r[F.shift] || '');
+      return sh === myShift || sh === 'Over Shift';
+    });
+    _origRenderDod();
+    dataAll = _origDataAll;
+  } else {
+    _origRenderDod();
+  }
 };
 
 // ══ 9. Users Page — SV / SSV شايفين شيفتهم بس ══
@@ -3908,4 +3921,4 @@ switchUserTab = function(tab){
 console.log('✅ METI Roles Patch Loaded (With Approve Permissions & Hierarchy)');
 </script>
 </body>
-</html>
+</body>
