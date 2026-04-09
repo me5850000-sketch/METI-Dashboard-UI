@@ -1882,7 +1882,11 @@ function renderLabelersPage(data){
 <script>
 // ══ QTC PAGE ══
 function loadQtc(){
-  var from=getFilterISO(true),to=getFilterISO(false);
+  var from = null, to = null;
+if (gid('gFrom') && DP.getVal('gFrom')) {
+  from = getFilterISO(true);
+  to = getFilterISO(false);
+}
   shtml('qtcArea','<div class="loading"><div class="spin"></div> Loading...</div>');
   var fn=(SESSION&&SESSION.role==='qtc')?'getQtcStats':'getStats';
   google.script.run.withSuccessHandler(function(r){if(r.err){shtml('qtcArea','<div class="empty">'+r.err+'</div>');return;}renderQtcPage(r.data);}).withFailureHandler(function(e){shtml('qtcArea','<div class="empty">'+e.message+'</div>');})[fn](TOKEN,from,to);
