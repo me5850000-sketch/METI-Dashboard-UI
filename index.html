@@ -3703,21 +3703,8 @@ loadAttDetails = function(){
 };
 
 // ══ 7. Details of Data — QTC & SL شايفين شيفتهم + Over Shift ══
-var _origRenderDod = renderDetailsOfData;
 renderDetailsOfData = function(){
-  var role = SESSION && SESSION.role;
-  if(hasRole(role, ROLES_OWN) && SESSION && SESSION.shift){
-    var myShift = SESSION.shift;
-    var _origDataAll = dataAll;
-    dataAll = _origDataAll.filter(function(r){
-      var sh = nShift(r[F.shift] || '');
-      return sh === myShift || sh === 'Over Shift';
-    });
-    _origRenderDod();
-    dataAll = _origDataAll;
-  } else {
-    _origRenderDod();
-  }
+    _origRenderDod(); 
 };
 
 // ══ 9. Users Page — SV / SSV شايفين شيفتهم بس ══
