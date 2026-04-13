@@ -3271,6 +3271,7 @@ var safeUbNS = fmtUbkey(p.yubikey||'');
 var safePcNS = (p.pc||'-').toString().split('-').pop();
 html +=
     '<tr style="background:#fff0f0;border-bottom:1px solid #f5c6cb;border-left:4px solid #c5221f;cursor:pointer" ' +
+    'onclick="window._openAttPopupWithData({name:\'' + safeNS + '\',pc:\'' + safePcNS + '\',location:\'' + un + '\',shift:\'' + sh + '\',yubikey:\'' + safeUbNS + '\',email:\'\',phone:\'\'},\'Not Submitted\',\'#c5221f\')">' +border-bottom:1px solid #f5c6cb;border-left:4px solid #c5221f;cursor:pointer" ' +
     'onclick="window._openAttPopupWithData({name:\'' + safeNS + '\',pc:\'' + safePcNS + '\',location:\'' + un + '\',shift:\'' + sh + '\',yubikey:\'' + safeUbNS + '\',email:\'\',phone:\'\'},\'Absent\',\'#c5221f\')">' +
     '<td style="padding:8px 12px;text-align:center">' +
     '<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:#c5221f;' +
