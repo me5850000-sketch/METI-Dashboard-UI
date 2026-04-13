@@ -3175,9 +3175,11 @@ renderDetailsOfData = function () {
         'border-bottom:1px solid var(--border)">' +
         '<div style="display:flex;align-items:center;gap:8px">' +
         '<span style="font-size:14px;font-weight:700;color:var(--blue)">📍 ' + un + '</span>' +
-        (unitNotSub.length > 0
-          ? '<span style="background:#fce8e6;color:#c5221f;font-size:11px;font-weight:700;padding:2px 10px;' +
-    'border-radius:5px;border:1px solid #f5c6cb">⚠️ ' + unitNotSub.length + ' Not Submitted</span>'
+        + (unitNotSub.length > 0
+  ? '<span style="background:#fce8e6;color:#c5221f;font-size:11px;font-weight:700;padding:2px 10px;' +
+    'border-radius:5px;border:1px solid #f5c6cb">⚠️ ' + unitNotSub.length + ' Not Submitted</span>' +
+    '<button onclick="exportNotSubmitted(' + JSON.stringify(unitNotSub).replace(/"/g, '&quot;') + ',\'' + un + '\',\'' + sh + '\')" ' +
+    'style="background:#1e8e3e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-left:6px">📥 Export</button>'
   : '') +
         '</div>' +
         '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
@@ -3926,6 +3928,31 @@ switchUserTab = function(tab){
 };
 // ══ END OF PATCH ══
 console.log('✅ METI Roles Patch Loaded (With Approve Permissions & Hierarchy)');
+  function exportNotSubmitted(people, unit, shift) {
+  var rows = [['Name', 'PC', 'Yubikey', 'Unit', 'Shift']];
+  people.forEach(function(p) {
+    var pc = (p.pc || '-').toString().split('-').pop();
+    rows.push([
+      titleCase(p.name || '-'),
+      pc,
+      fmtUbkey(p.yubikey || ''),
+      unit,
+      shift
+    ]);
+  });
+  var csv = rows.map(function(r) {
+    return r.map(function(cell) {
+      return '"' + (cell || '').toString().replace(/"/g, '""') + '"';
+    }).join(',');
+  }).join('\n');
+  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a');
+  a.href = url;
+  a.download = 'Not_Submitted_' + unit.replace(/\s/g,'_') + '_' + shift.replace(/\s/g,'_') + '.csv';
+  a.click();
+  URL.revokeObjectURL(url);
+}
 </script>
 </body>
 </html>
