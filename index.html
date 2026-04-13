@@ -3975,24 +3975,16 @@ console.log('✅ METI Roles Patch Loaded (With Approve Permissions & Hierarchy)'
  function exportNotSubmitted(people, unit, shift) {
   var btn = event.currentTarget || event.target;
   var origText = btn.innerHTML;
+  
+  // تغيير شكل الزرار لبدء التحميل
   btn.innerHTML = '⏳ Creating...';
   btn.disabled = true;
 
-  // افتح نافذة فاضية دلوقتي عشان مش يتبلوك
-  var newWin = window.open('', '_blank');
-  if (newWin) {
-    newWin.document.write(
-      '<html><body style="font-family:sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;background:#f0f4ff">' +
-      '<div style="text-align:center"><div style="font-size:40px;margin-bottom:16px">⏳</div>' +
-      '<div style="font-size:18px;font-weight:700;color:#1c4587">Creating Google Sheet...</div>' +
-      '<div style="font-size:13px;color:#5f6368;margin-top:8px">Please wait</div></div></body></html>'
-    );
-  }
-
-  var rows = people.map(function(p) {
+  // تجميع البيانات
+  var rowsToExport = people.map(function(p) {
     return [
       titleCase(p.name || '-'),
-      (p.pc || '-').toString().split('-').pop(),
+      (p.pc || '-').toString().split('-').pop(), // استخراج الرقم الأخير من الـ PC
       fmtUbkey(p.yubikey || ''),
       unit,
       shift
@@ -4001,24 +3993,31 @@ console.log('✅ METI Roles Patch Loaded (With Approve Permissions & Hierarchy)'
 
   google.script.run
     .withSuccessHandler(function(r) {
-      btn.innerHTML = origText;
+      btn.innerHTML = origText; // إعادة الزرار لحالته الأصلية
       btn.disabled = false;
+      
       if (r.err) {
-        if (newWin) newWin.close();
-        toast(r.err, 'err');
+        toast('Export Error: ' + r.err, 'err');
         return;
       }
-      if (newWin) newWin.location.href = r.url;
-      else window.open(r.url, '_blank');
-      toast('Sheet created ✅', 'ok');
+      
+      if (r.url) {
+        toast('Success! ✅', 'ok');
+        // محاولة فتح الشيت في نافذة جديدة
+        var win = window.open(r.url, '_blank');
+        
+        // إذا قام المتصفح بحظر النافذة المنبثقة (Pop-up Blocked)
+        if (!win || win.closed || typeof win.closed == 'undefined') {
+           alert("✅ تم إنشاء الشيت بنجاح!\n\nالمتصفح منع فتح النافذة تلقائياً، يرجى نسخ هذا الرابط وفتحه يدويًا:\n\n" + r.url);
+        }
+      }
     })
-      .withFailureHandler(function(e) {
+    .withFailureHandler(function(e) {
       btn.innerHTML = origText;
       btn.disabled = false;
-      if (newWin) newWin.close();
-      toast('Error: ' + e.message, 'err');
+      toast('Network Error: ' + e.message, 'err');
     })
-    .createNotSubmittedSheet(TOKEN, rows, unit, shift);
+    .createNotSubmittedSheet(TOKEN, rowsToExport, unit, shift);
 }
 </script>
 </body>
