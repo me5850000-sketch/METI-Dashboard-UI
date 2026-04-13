@@ -3265,14 +3265,12 @@ renderDetailsOfData = function () {
   var pcRaw = (p.pc || '-').toString();
   var pcShort = pcRaw.split('-').pop(); // يأخذ الجزء الأخير بعد آخر شرطة
 
-  html +=
-    var safeNS = (p.name||'').replace(/'/g,"&#39;").replace(/"/g,'&quot;');
+ var safeNS = (p.name||'').replace(/'/g,"&#39;").replace(/"/g,'&quot;');
 var safeUbNS = fmtUbkey(p.yubikey||'');
 var safePcNS = (p.pc||'-').toString().split('-').pop();
 html +=
     '<tr style="background:#fff0f0;border-bottom:1px solid #f5c6cb;border-left:4px solid #c5221f;cursor:pointer" ' +
-    'onclick="window._openAttPopupWithData({name:\'' + safeNS + '\',pc:\'' + safePcNS + '\',location:\'' + un + '\',shift:\'' + sh + '\',yubikey:\'' + safeUbNS + '\',email:\'\',phone:\'\'},\'Not Submitted\',\'#c5221f\')">' +border-bottom:1px solid #f5c6cb;border-left:4px solid #c5221f;cursor:pointer" ' +
-    'onclick="window._openAttPopupWithData({name:\'' + safeNS + '\',pc:\'' + safePcNS + '\',location:\'' + un + '\',shift:\'' + sh + '\',yubikey:\'' + safeUbNS + '\',email:\'\',phone:\'\'},\'Absent\',\'#c5221f\')">' +
+    'onclick="window._openAttPopupWithData({name:\'' + safeNS + '\',pc:\'' + safePcNS + '\',location:\'' + un + '\',shift:\'' + sh + '\',yubikey:\'' + safeUbNS + '\',email:\'\',phone:\'\'},\'Not Submitted\',\'#c5221f\')">' +
     '<td style="padding:8px 12px;text-align:center">' +
     '<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:#c5221f;' +
     'color:white;font-size:13px;font-weight:900;align-items:center;justify-content:center;line-height:1">!</span>' +
