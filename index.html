@@ -3364,10 +3364,15 @@ function loadOtDetails() {
   
   google.script.run
     .withSuccessHandler(function(r) {
-      if (r.err) { shtml('otDetailsArea','<div class="empty">'+r.err+'</div>'); return; }
+      if (r.err) { 
+        shtml('otDetailsArea', '<div class="empty">' + r.err + '</div>'); 
+        return; 
+      }
       renderOtDetails(r.data);
     })
-    .withFailureHandler(function(e) { shtml('otDetailsArea','<div class="empty">'+e.message+'</div>'); })
+    .withFailureHandler(function(e) { 
+      shtml('otDetailsArea', '<div class="empty">' + e.message + '</div>'); 
+    })
     .getOtDetails(TOKEN, dateISO);
 }
 
