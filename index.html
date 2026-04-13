@@ -512,6 +512,29 @@ body.dark #pgOtDetails table tbody tr { background: #1e2130 !important; }
 body.dark #pgOtDetails table tbody tr:nth-child(even) td { background: #252840 !important; }
 body.dark #pgOtDetails table tbody tr:hover td { background: #1a2040 !important; }
 body.dark #detailBd [style*="color:var(--blue)"] { color: #7eaaff !important; }
+  /* ══ DARK MODE — Details of Data ══ */
+body.dark #dodArea { background: transparent; }
+body.dark #dodArea [style*="background:white"] { background: #1e2130 !important; }
+body.dark #dodArea [style*="background:#f8f9ff"] { background: #252840 !important; }
+body.dark #dodArea [style*="background:#fff8c5"] { background: #3d3200 !important; }
+body.dark #dodArea [style*="background:#fff0f0"] { background: #3d1a1a !important; }
+body.dark #dodArea [style*="background:#fff5f5"] { background: #3d1a1a !important; }
+body.dark #dodArea [style*="background:#fce8e6"] { background: #3d1a1a !important; }
+body.dark #dodArea [style*="background:#e8f5e9"] { background: #1b2e1b !important; }
+body.dark #dodArea [style*="background:#e0f7fa"] { background: #0a2e30 !important; }
+body.dark #dodArea [style*="background:#fff3cd"] { background: #3d2800 !important; }
+body.dark #dodArea [style*="background:#f3e5f5"] { background: #2d1f3d !important; }
+body.dark #dodArea table tbody tr { background: #1e2130 !important; }
+body.dark #dodArea table tbody tr:nth-child(even) { background: #252840 !important; }
+body.dark #dodArea table thead tr { background: var(--blue) !important; }
+body.dark #dodArea table tr[style*="background:var(--blue)"] { background: #1c4587 !important; }
+body.dark #dodArea [style*="color:var(--dark)"] { color: #e8eaf0 !important; }
+body.dark #dodArea [style*="color:var(--gray)"] { color: #9aa0b4 !important; }
+body.dark #dodArea [style*="color:var(--blue)"] { color: #7eaaff !important; }
+body.dark #dodArea [style*="border-bottom:1px solid #f0f0f0"] { border-color: #2d3250 !important; }
+body.dark #dodArea [style*="border-bottom:1px solid var(--border)"] { border-color: #2d3250 !important; }
+body.dark #dodArea [style*="border:1px solid var(--border)"] { border-color: #2d3250 !important; }
+body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #2d3250 !important; }
   @media(max-width:768px){
   #pgOtDetails table { min-width: 400px !important; }
   #pgOtDetails th, #pgOtDetails td { font-size: 11px !important; padding: 7px 8px !important; }
@@ -1520,7 +1543,7 @@ function getFilteredData(){
   if(!activeDataUnits.has('all'))base=base.filter(function(r){return activeDataUnits.has((r[F.unit]||'').trim());});
   if(!activeDataShifts.has('all'))base=base.filter(function(r){return activeDataShifts.has(nShift(r[F.shift]||''));});
   if(activeDataSearch.query){var q=activeDataSearch.query.toLowerCase().trim(),fld=activeDataSearch.field;base=base.filter(function(r){var val='';if(fld==='labeler')val=titleCase(r[F.labeler]||'');else if(fld==='queue')val=(r[F.queue]||'');else if(fld==='unit')val=(r[F.unit]||'');else if(fld==='qtc')val=titleCase(r[F.qc]||'');else if(fld==='ubkey')val=fmtUbkey(r[F.ubkey]||'');else if(fld==='taskid')val=(r['task_id']||'').toString();return val.toLowerCase().indexOf(q)!==-1;});}
-  Object.keys(activeColFilters).forEach(function(col){var vals=activeColFilters[col];if(!vals||!vals.length)return;base=base.filter(function(r){var v='';if(col==='labeler')v=titleCase(r[F.labeler]||'');else if(col==='shift')v=nShift(r[F.shift]||'');else if(col==='unit')v=(r[F.unit]||'');else if(col==='modality')v=(r[F.modality]||'');else if(col==='pass')v=(r[F.pass]||'');else if(col==='qtc')v=cleanQtcName(r[F.qc]||'');else if(col==='pc')v=(r[F.pc]||'');return vals.indexOf(v)!==-1;});});
+  Object.keys(activeColFilters).forEach(function(col){var vals=activeColFilters[col];if(!vals||!vals.length)return;base=base.filter(function(r){var v='';if(col==='labeler')v=titleCase(r[F.labeler]||'');else if(col==='shift')v=nShift(r[F.shift]||'');else if(col==='unit')v=(r[F.unit]||'');else if(col==='modality')v=(r[F.modality]||'');else if(col==='pass')v=(r[F.pass]||'');else if(col==='qtc')v=cleanQtcName(r[F.qc]||'');else if(col==='pc')v=(r[F.pc]||'');else if(col==='queue')v=(r[F.queue]||'').toString().trim();return vals.indexOf(v)!==-1;});});
   return base;
 }
 
@@ -1558,7 +1581,7 @@ function renderDataFiltered(){
   }
 
   function _cfpTh(col,lbl,left){var ha=activeColFilters[col]&&activeColFilters[col].length>0;return'<th'+(left?' class="left"':'')+' style="white-space:nowrap">'+lbl+' <button class="cfp-btn" data-cfp-col="'+col+'" style="background:'+(ha?'rgba(255,255,255,.35)':'rgba(255,255,255,.1)')+';border:none;border-radius:4px;padding:0 5px;cursor:pointer;color:white;font-size:10px;vertical-align:middle;line-height:18px;display:inline-block'+(ha?';outline:1px solid rgba(255,255,255,.5)':'')+'">'+(ha?'🔍':'▼')+'</button></th>';}
-var html='<div class="tbl-card"><table><thead><tr><th>#</th>'+_cfpTh('labeler','Labeler',true)+_cfpTh('shift','Shift',false)+_cfpTh('unit','Unit',false)+_cfpTh('modality','Modality',false)+_cfpTh('pass','Pass',false)+_cfpTh('qtc','QTC',false)+_cfpTh('pc','PC',false)+'<th>Yubikey</th><th>Task ID</th><th>Queue</th><th>Obj</th><th>Date</th><th>Time</th></tr></thead><tbody>';
+var html='<div class="tbl-card"><table><thead><tr><th>#</th>'+_cfpTh('labeler','Labeler',true)+_cfpTh('shift','Shift',false)+_cfpTh('unit','Unit',false)+_cfpTh('modality','Modality',false)+_cfpTh('pass','Pass',false)+_cfpTh('qtc','QTC',false)+_cfpTh('pc','PC',false)+'<th>Yubikey</th><th>Task ID</th>'+_cfpTh('queue','Queue',false)+'<th>Obj</th><th>Date</th><th>Time</th></tr></thead><tbody>';
   
   if(!pg.length){html+='<tr><td colspan="14" class="empty">No records</td></tr>';}
   else{
@@ -2765,7 +2788,8 @@ var CFP={
     if(col==='pass')return(r[F.pass]||'');
     if(col==='qtc'){var v2=cleanQtcName(r[F.qc]||'');return v2==='-'?'':v2;}
     if(col==='pc')return(r[F.pc]||'').toString().trim();
-    return'';
+if(col==='queue')return(r[F.queue]||'').toString().trim();
+return'';
   },
   close:function(){var ex=gid('cfpPop');if(ex)ex.remove();CFP.col=null;}
 };
