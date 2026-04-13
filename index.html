@@ -986,7 +986,7 @@ function shiftBadge(s){if(s==='Morning')return 'b-morning';if(s==='Night')return
 function mkCard(lbl,val,color,dtype){return '<div class="card" data-dtype="'+(dtype||'')+'"><div class="card-stripe cs-'+color+'"></div><div class="card-lbl">'+lbl+'</div><div class="card-val">'+val+'</div></div>';}
 function userSeeOwnOnly(){return SESSION&&hasRole(SESSION.role,ROLES_OWN)&&SESSION.shift;}
 function cleanQtcName(name){return titleCase(name.replace(/\s*\([^)]*\)\s*$/,'').trim());}
-function toast(msg,type){var el=gid('toast');el.textContent=msg;el.className='toast show '+(type||'ok');clearTimeout(el._t);el._t=setTimeout(function(){el.classList.remove('show');},4000);}
+function toast(msg,type){var el=gid('toast');el.textContent=msg;el.className='toast show '+(type||'ok');clearTimeout(el._t);el._t=setTimeout(function(){el.classList.remove('show');},5000);}
 function toggleDark(){var isDark=document.body.classList.toggle('dark');var btn=gid('darkToggle');if(btn)btn.innerHTML=isDark?'☀️':'🌙';localStorage.setItem('meti_dark',isDark?'1':'0');}
 function toggleEye(inputId,btn){var inp=gid(inputId),show=inp.type==='password';inp.type=show?'text':'password';btn.textContent=show?'🙈':'👁';}
 </script>
