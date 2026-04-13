@@ -2537,11 +2537,24 @@ function loadOtDetails() {
   
   google.script.run
     .withSuccessHandler(function(r) {
-      if (r.err) { shtml('otDetailsArea','<div class="empty">'+r.err+'</div>'); return; }
-      renderOtDetails(r.data);
+      btn.innerHTML = origText;
+      btn.disabled = false;
+      if (r.err) {
+        if (newWin) newWin.close();
+        toast(r.err, 'err');
+        return;
+      }
+      if (newWin) newWin.location.href = r.url;
+      else window.open(r.url, '_blank');
+      toast('Sheet created ✅', 'ok');
     })
-    .withFailureHandler(function(e) { shtml('otDetailsArea','<div class="empty">'+e.message+'</div>'); })
-    .getOtDetails(TOKEN, dateISO);
+    .withFailureHandler(function(e) {
+      btn.innerHTML = origText;
+      btn.disabled = false;
+      if (newWin) newWin.close();
+      toast('Error: ' + e.message, 'err');
+    })
+    .createNotSubmittedSheet(TOKEN, rows, unit, shift);
 }
 
 function renderOtDetails(data) {
