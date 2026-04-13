@@ -4007,13 +4007,14 @@ console.log('✅ METI Roles Patch Loaded (With Approve Permissions & Hierarchy)'
       else window.open(r.url, '_blank');
       toast('Sheet created ✅', 'ok');
     })
-    .withFailureHandler(function(e) {
+      .withFailureHandler(function(e) {
       btn.innerHTML = origText;
       btn.disabled = false;
       if (newWin) newWin.close();
       toast('Error: ' + e.message, 'err');
     })
-    
+    .createNotSubmittedSheet(TOKEN, rows, unit, shift);
+}
 </script>
 </body>
 </html>
