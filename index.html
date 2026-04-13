@@ -3117,7 +3117,7 @@ renderDetailsOfData = function () {
      ? '<span style="color:#c5221f;background:#fce8e6;padding:2px 8px;border-radius:6px;border:1px solid #f5c6cb">⚠️ Not Submitted: ' + totalNotSub + '</span>'
   : '') +
     (!attSrc
-      ? '<span style="color:var(--orange);font-size:11px;margin-left:4px">⚠️ افتح صفحة الأتيند أولاً عشان يظهر مين مسبمتش</span>'
+      ? '<a onclick="navTo(\'attdetails\'); setTimeout(function(){ navTo(\'detailsofdata\'); }, 1500);" style="color:white;background:#e37400;font-size:12px;font-weight:800;padding:4px 14px;border-radius:7px;cursor:pointer;margin-left:8px;text-decoration:none;border:none;display:inline-block">⚠️ اضغط هنا أولاً لتحميل الـ Attendance</a>'
       : '') +
     '</div>';
 
