@@ -3975,49 +3975,49 @@ console.log('✅ METI Roles Patch Loaded (With Approve Permissions & Hierarchy)'
  function exportNotSubmitted(people, unit, shift) {
   var btn = event.currentTarget || event.target;
   var origText = btn.innerHTML;
-  
-  // تغيير شكل الزرار لبدء التحميل
-  btn.innerHTML = '⏳ Creating...';
+  btn.innerHTML = '⏳ Generating...';
   btn.disabled = true;
 
-  // تجميع البيانات
-  var rowsToExport = people.map(function(p) {
-    return [
-      titleCase(p.name || '-'),
-      (p.pc || '-').toString().split('-').pop(), // استخراج الرقم الأخير من الـ PC
-      fmtUbkey(p.yubikey || ''),
-      unit,
-      shift
-    ];
-  });
+  try {
+    // 1. تجهيز العناوين
+    var csvContent = "\uFEFF"; // إضافة BOM لدعم اللغة العربية في Excel
+    csvContent += "Employee Name,PC Number,Yubikey Email,Unit,Shift\n";
 
-  google.script.run
-    .withSuccessHandler(function(r) {
-      btn.innerHTML = origText; // إعادة الزرار لحالته الأصلية
-      btn.disabled = false;
+    // 2. تحويل مصفوفة الموظفين لسطور CSV
+    people.forEach(function(p) {
+      var name = titleCase(p.name || '-').replace(/,/g, ""); // إزالة الفواصل من الاسم عشان ملف الـ CSV
+      var pc = (p.pc || '-').toString().split('-').pop();
+      var ub = fmtUbkey(p.yubikey || '');
       
-      if (r.err) {
-        toast('Export Error: ' + r.err, 'err');
-        return;
-      }
-      
-      if (r.url) {
-        toast('Success! ✅', 'ok');
-        // محاولة فتح الشيت في نافذة جديدة
-        var win = window.open(r.url, '_blank');
-        
-        // إذا قام المتصفح بحظر النافذة المنبثقة (Pop-up Blocked)
-        if (!win || win.closed || typeof win.closed == 'undefined') {
-           alert("✅ تم إنشاء الشيت بنجاح!\n\nالمتصفح منع فتح النافذة تلقائياً، يرجى نسخ هذا الرابط وفتحه يدويًا:\n\n" + r.url);
-        }
-      }
-    })
-    .withFailureHandler(function(e) {
-      btn.innerHTML = origText;
-      btn.disabled = false;
-      toast('Network Error: ' + e.message, 'err');
-    })
-    .createNotSubmittedSheet(TOKEN, rowsToExport, unit, shift);
+      csvContent += name + "," + pc + "," + ub + "," + unit + "," + shift + "\n";
+    });
+
+    // 3. إنشاء رابط تحميل وهمي
+    var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    var url = URL.createObjectURL(blob);
+    var link = document.createElement("a");
+    
+    // 4. تسمية الملف بتاريخ اليوم
+    var dateStr = new Date().toLocaleDateString().replace(/\//g, '-');
+    link.setAttribute("href", url);
+    link.setAttribute("download", "Not_Submitted_" + unit + "_" + dateStr + ".csv");
+    
+    // 5. تنفيذ عملية التحميل
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // 6. إرجاع الزرار لحالته
+    toast('Downloaded Successfully! ✅', 'ok');
+    btn.innerHTML = origText;
+    btn.disabled = false;
+
+  } catch (e) {
+    toast('Export Failed', 'err');
+    btn.innerHTML = origText;
+    btn.disabled = false;
+    console.error(e);
+  }
 }
 </script>
 </body>
