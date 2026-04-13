@@ -3132,32 +3132,59 @@ renderDetailsOfData = function () {
   }
 
   // ── Grand totals bar ──
-  var grand = { lfp:0, lqa:0, lifp:0, liqa:0, total:0 };
-  Object.keys(shifts).forEach(function (sh) {
-    var d = shifts[sh];
-    grand.lfp += d.lfp; grand.lqa += d.lqa;
-    grand.lifp += d.lifp; grand.liqa += d.liqa; grand.total += d.total;
-  });
+var grand = { lfp:0, lqa:0, lifp:0, liqa:0, total:0 };
+Object.keys(shifts).forEach(function (sh) {
+  var d = shifts[sh];
+  grand.lfp += d.lfp; grand.lqa += d.lqa;
+  grand.lifp += d.lifp; grand.liqa += d.liqa; grand.total += d.total;
+});
 
-  var html =
-    '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;' +
-    'padding:10px 16px;background:white;border:1px solid var(--border);border-radius:10px;' +
-    'box-shadow:var(--shadow);font-size:12px;font-weight:700">' +
-    '<span style="color:var(--gray)">📊 ' + grand.total + ' tasks</span>' +
-    '<span style="color:var(--border)">|</span>' +
-    (grand.lfp  ? '<span style="color:#1e8e3e;background:#e8f5e9;padding:2px 8px;border-radius:6px">LFP: '  + grand.lfp  + '</span>' : '') +
-    (grand.lqa  ? '<span style="color:#e37400;background:#fff3cd;padding:2px 8px;border-radius:6px">LQA: '  + grand.lqa  + '</span>' : '') +
-    (grand.lifp ? '<span style="color:#007b83;background:#e0f7fa;padding:2px 8px;border-radius:6px">LiFP: ' + grand.lifp + '</span>' : '') +
-    (grand.liqa ? '<span style="color:#7b1fa2;background:#f3e5f5;padding:2px 8px;border-radius:6px">LiQA: ' + grand.liqa + '</span>' : '') +
-    '<span style="color:var(--blue);background:var(--blue-bg);padding:2px 8px;border-radius:6px;font-weight:800">Total: ' + grand.total + '</span>' +
-    (totalNotSub > 0
-     ? '<span style="color:#c5221f;background:#fce8e6;padding:2px 8px;border-radius:6px;border:1px solid #f5c6cb">⚠️ Not Submitted: ' + totalNotSub + '</span>'
-  : '') +
-    (!attSrc
-      ? '<a onclick="(function(btn){btn.style.opacity=\'0.6\';btn.style.pointerEvents=\'none\';navTo(\'attdetails\');setTimeout(function(){navTo(\'detailsofdata\');btn.style.opacity=\'\';btn.style.pointerEvents=\'\';},3000);})(this)" style="color:white;background:#e37400;font-size:12px;font-weight:800;padding:4px 14px;border-radius:7px;cursor:pointer;margin-left:8px;text-decoration:none;border:none;display:inline-block">⚠️ اضغط هنا أولاً لتحميل الـ Attendance</a>'
-      : '') +
-    '</div>';
+// تحديد حالة زرار التحميل الاحترافي
+var attendanceBtnHtml = "";
+if (!attSrc) {
+  attendanceBtnHtml = 
+    '<div id="attWarningContainer" style="flex:1; display:flex; justify-content:center; padding:5px 0;">' +
+      '<button onclick="forceSyncAttendance(this)" style="' +
+        'background: linear-gradient(135deg, #e37400 0%, #ff9800 100%);' +
+        'color: white; border: none; padding: 12px 28px; border-radius: 12px;' +
+        'font-size: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 20px rgba(227,116,0,0.4);' +
+        'display: flex; align-items: center; gap: 10px; transition: all 0.3s ease;' +
+        'animation: pulse-border 2s infinite; border: 2px solid rgba(255,255,255,0.3);">' +
+        '<span style="font-size:22px;">⚠️</span>' +
+        '<span>اضغط هنا أولاً لتفعيل بيانات الـ Attendance</span>' +
+      '</button>' +
+    '</div>' +
+    '<style>' +
+      '@keyframes pulse-border { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }' +
+    '</style>';
+}
 
+var html =
+  '<div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-bottom:16px;' +
+  'padding:15px 25px; background:white; border:1.5px solid var(--blue-lt); border-radius:16px;' +
+  'box-shadow:var(--shadow); font-size:13px; font-weight:700">' +
+  '<span style="color:var(--blue); background:var(--blue-bg); padding:6px 14px; border-radius:10px; border:1.5px solid var(--blue-lt)">📊 ' + grand.total + ' Tasks Total</span>' +
+  '<span style="color:var(--border)">|</span>' +
+  (grand.lfp  ? '<span style="color:#1e8e3e; background:#e8f5e9; padding:6px 12px; border-radius:10px; border:1px solid #c3e6cb">LFP: ' + grand.lfp + '</span>' : '') +
+  (grand.lqa  ? '<span style="color:#e37400; background:#fff3cd; padding:6px 12px; border-radius:10px; border:1px solid #ffcc80">LQA: ' + grand.lqa + '</span>' : '') +
+  (grand.lifp ? '<span style="color:#007b83; background:#e0f7fa; padding:6px 12px; border-radius:10px; border:1px solid #80cbc4">LiFP: ' + grand.lifp + '</span>' : '') +
+  (grand.liqa ? '<span style="color:#7b1fa2; background:#f3e5f5; padding:6px 12px; border-radius:10px; border:1px solid #ce93d8">LiQA: ' + grand.liqa + '</span>' : '') +
+  attendanceBtnHtml +
+  '</div>';
+
+// دالة الانتقال السريع (نص ثانية)
+window.forceSyncAttendance = function(btn) {
+  btn.style.opacity = "0.7";
+  btn.style.transform = "scale(0.95)";
+  btn.innerHTML = "⏳ جارٍ المزامنة الآن...";
+  
+  navTo('attdetails'); // روح للأتيند
+  
+  setTimeout(function() {
+    navTo('detailsofdata'); // ارجع للداتا
+    toast('تمت مزامنة البيانات وتحديث القائمة ✅', 'ok');
+  }, 500); 
+};
   // ── Shifts ──
   var shiftKeys = SH_ORD.filter(function (s) { return !!shifts[s]; });
   Object.keys(shifts).forEach(function (s) { if (shiftKeys.indexOf(s) === -1) shiftKeys.push(s); });
