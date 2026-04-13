@@ -3926,30 +3926,36 @@ switchUserTab = function(tab){
 };
 // ══ END OF PATCH ══
 console.log('✅ METI Roles Patch Loaded (With Approve Permissions & Hierarchy)');
-  function exportNotSubmitted(people, unit, shift) {
-  var rows = [['Name', 'PC', 'Yubikey', 'Unit', 'Shift']];
-  people.forEach(function(p) {
-    var pc = (p.pc || '-').toString().split('-').pop();
-    rows.push([
+ function exportNotSubmitted(people, unit, shift) {
+  var btn = event.target;
+  var origText = btn.innerHTML;
+  btn.innerHTML = '⏳ Creating...';
+  btn.disabled = true;
+
+  var rows = people.map(function(p) {
+    return [
       titleCase(p.name || '-'),
-      pc,
+      (p.pc || '-').toString().split('-').pop(),
       fmtUbkey(p.yubikey || ''),
       unit,
       shift
-    ]);
+    ];
   });
-  var csv = rows.map(function(r) {
-    return r.map(function(cell) {
-      return '"' + (cell || '').toString().replace(/"/g, '""') + '"';
-    }).join(',');
-  }).join('\n');
-  var blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' });
-  var url = URL.createObjectURL(blob);
-  var a = document.createElement('a');
-  a.href = url;
-  a.download = 'Not_Submitted_' + unit.replace(/\s/g,'_') + '_' + shift.replace(/\s/g,'_') + '.csv';
-  a.click();
-  URL.revokeObjectURL(url);
+
+  google.script.run
+    .withSuccessHandler(function(r) {
+      btn.innerHTML = origText;
+      btn.disabled = false;
+      if (r.err) { toast(r.err, 'err'); return; }
+      window.open(r.url, '_blank');
+      toast('Sheet created ✅', 'ok');
+    })
+    .withFailureHandler(function(e) {
+      btn.innerHTML = origText;
+      btn.disabled = false;
+      toast('Error: ' + e.message, 'err');
+    })
+    .execute('createNotSubmittedSheet', [TOKEN, rows, unit, shift]);
 }
 </script>
 </body>
