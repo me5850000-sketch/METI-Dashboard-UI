@@ -4013,25 +4013,7 @@ console.log('✅ METI Roles Patch Loaded (With Approve Permissions & Hierarchy)'
       if (newWin) newWin.close();
       toast('Error: ' + e.message, 'err');
     })
-    .withSuccessHandler(function(r) {
-  btn.innerHTML = origText;
-  btn.disabled = false;
-  if (r.err) {
-    if (newWin) newWin.close();
-    toast(r.err, 'err');
-    return;
-  }
-  if (newWin) newWin.location.href = r.url;
-  else window.open(r.url, '_blank');
-  toast('Sheet created ✅', 'ok');
-})
-.withFailureHandler(function(e) {
-  btn.innerHTML = origText;
-  btn.disabled = false;
-  if (newWin) newWin.close();
-  toast('Error: ' + e.message, 'err');
-})
-}
+    
 </script>
 </body>
 </html>
