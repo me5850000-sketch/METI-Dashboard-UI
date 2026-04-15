@@ -731,8 +731,6 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
           </div>
         </div>
       </div>
-<div style="position:relative">
-  <button id="arBtn" title="Auto Refresh" style="display:flex;align-items:center;gap:5px;padding:4px 10px;border:1.5px solid var(--border);border-radius:20px;background:none;cursor:pointer;font-size:12px;font-weight:700;color:var(--gray)">
     <span id="arIcon" style="font-size:14px;display:inline-block">⟳</span>
     <span id="arLabel">1m</span>
     <span id="arCountdown" style="font-size:10px;color:var(--blue);font-family:var(--mono);min-width:28px">00:60</span>
@@ -758,7 +756,15 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
             <button class="fbtn fbtn-ghost" id="btnGlobalClear">✕ Clear</button>
           </div>
         <button class="fbtn fbtn-ghost" id="btnGlobalClear">✕ Clear</button>
-            <button id="globalFilterToggleBtn" class="global-filter-toggle active" style="background: #1e8e3e; color: white; border: none; padding: 12px 24px; border-radius: 9px; font-size: 14px; font-weight: 800; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(30, 142, 62, 0.3); flex-shrink: 0; margin-left: 8px;">🟢 ON</button>
+            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:8px">
+  <span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px" id="gfToggleLabel">ON</span>
+  <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;flex-shrink:0">
+    <input type="checkbox" id="globalFilterToggleBtn" checked style="opacity:0;width:0;height:0;position:absolute">
+    <span id="gfSlider" style="position:absolute;inset:0;background:#1e8e3e;border-radius:24px;transition:background .3s;display:flex;align-items:center">
+      <span style="position:absolute;left:3px;width:18px;height:18px;background:white;border-radius:50%;transition:transform .3s;transform:translateX(20px)" id="gfKnob"></span>
+    </span>
+  </label>
+</div>
           </div>
       </div>
 
@@ -4191,20 +4197,22 @@ function initGlobalFilterToggle() {
 }
 
 function updateToggleButton() {
-  var btn = gid('globalFilterToggleBtn');
-  if (!btn) return;
+  var inp = gid('globalFilterToggleBtn');
+  var slider = gid('gfSlider');
+  var knob = gid('gfKnob');
+  var label = gid('gfToggleLabel');
+  if (!slider) return;
   
   if (GLOBAL_FILTER_ENABLED) {
-    btn.innerHTML = '🟢 ON';
-    btn.style.background = '#1e8e3e';
-    btn.style.boxShadow = '0 4px 12px rgba(30, 142, 62, 0.3)';
+    slider.style.background = '#1e8e3e';
+    knob.style.transform = 'translateX(20px)';
+    if(label) label.textContent = 'ON';
   } else {
-    btn.innerHTML = '🔴 OFF';
-    btn.style.background = '#c5221f';
-    btn.style.boxShadow = '0 4px 12px rgba(197, 34, 31, 0.3)';
+    slider.style.background = '#9aa0a6';
+    knob.style.transform = 'translateX(0px)';
+    if(label) label.textContent = 'OFF';
   }
 }
-
 // تفعيل الزر عند التحميل
 setTimeout(initGlobalFilterToggle, 500);
 </script>
