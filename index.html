@@ -731,13 +731,20 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
           </div>
         </div>
       </div>
-<div style="display:flex; align-items:center; margin-left: 10px;">
-  <button id="arBtn" title="Toggle Auto Refresh (1m)" style="display:flex; align-items:center; gap:8px; padding:6px 14px; border:1.5px solid var(--border); border-radius:20px; background:white; cursor:pointer; font-size:12px; font-weight:700; color:var(--gray); transition: all 0.2s ease;">
-    <span id="arIcon" style="font-size:14px; display:inline-block;">⟳</span>
-    <span id="arLabel">Auto Refresh: OFF</span>
-    <span id="arCountdown" style="display:none; font-size:11px; color:var(--blue); font-family:var(--mono); background:var(--blue-bg); padding:2px 6px; border-radius:10px; margin-left:4px;">01:00</span>
+<div style="position:relative">
+  <button id="arBtn" title="Auto Refresh" style="display:flex;align-items:center;gap:5px;padding:4px 10px;border:1.5px solid var(--border);border-radius:20px;background:none;cursor:pointer;font-size:12px;font-weight:700;color:var(--gray)">
+    <span id="arIcon" style="font-size:14px;display:inline-block">⟳</span>
+    <span id="arLabel">1m</span>
+    <span id="arCountdown" style="font-size:10px;color:var(--blue);font-family:var(--mono);min-width:28px">00:60</span>
   </button>
-</div>
+  <div id="arMenu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:white;border:1.5px solid var(--blue-lt);border-radius:12px;box-shadow:0 8px 24px rgba(28,69,135,.15);z-index:9999;min-width:170px;overflow:hidden">
+    <div style="padding:8px 12px;background:var(--blue-bg);font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.5px">Auto Refresh</div>
+    <div class="ar-opt" data-sec="30"  style="padding:10px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--dark)">30 seconds<span style="font-size:10px;color:var(--gray)">fast</span></div>
+    <div class="ar-opt" data-sec="60"  style="padding:10px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--dark)">1 minute<span style="font-size:10px;color:var(--gray)">★ default</span></div>
+    <div class="ar-opt" data-sec="120" style="padding:10px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--dark)">2 minutes<span style="font-size:10px;color:var(--gray)">balanced</span></div>
+    <div class="ar-opt" data-sec="300" style="padding:10px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--dark)">5 minutes<span style="font-size:10px;color:var(--gray)">light</span></div>
+    <div class="ar-opt" data-sec="0"   style="padding:10px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--red);border-top:1px solid var(--border)">Off<span style="font-size:10px;color:var(--gray)">manual</span></div>
+  </div>
 </div>
       <div class="global-filter-bar" id="globalFilterBar" style="display:none;">
           <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; width: 100%;">
@@ -2911,84 +2918,98 @@ window.onload=function(){
 
   // Auto refresh
   // ══ AUTO REFRESH SYSTEM ══
-  var AR = {
-sec: 60,
+var AR = {
+  sec: 60,
   remain: 60,
   timer: null,
-  isActive: false,
+  cdTimer: null,
+  labels: {30:'30s', 60:'1m', 120:'2m', 300:'5m', 0:'Off'},
 
-  init: function() {
+  init: function(){
+    var saved = parseInt(localStorage.getItem('meti_ar_sec'));
+    AR.sec = (!isNaN(saved) && [30,60,120,300,0].indexOf(saved)!==-1) ? saved : 60;
+    AR.remain = AR.sec;
+    AR.updateUI();
+    AR.start();
+
+    // زرار الفتح/الإغلاق
     var btn = gid('arBtn');
-    if(btn) btn.addEventListener('click', function() { AR.toggle(); });
-    this.updateUI();
+    if(btn) btn.addEventListener('click', function(e){
+      e.stopPropagation();
+      var m = gid('arMenu');
+      if(m) m.style.display = m.style.display==='block' ? 'none' : 'block';
+    });
+
+    // خيارات القائمة
+    document.querySelectorAll('.ar-opt').forEach(function(opt){
+      opt.addEventListener('click', function(){
+        AR.set(parseInt(opt.getAttribute('data-sec')));
+        var m = gid('arMenu');
+        if(m) m.style.display = 'none';
+      });
+      opt.addEventListener('mouseover', function(){ opt.style.background='var(--blue-bg)'; });
+      opt.addEventListener('mouseout',  function(){ AR.highlightActive(); });
+    });
+
+    // إغلاق لو دوس برّا
+    document.addEventListener('click', function(e){
+      var m = gid('arMenu');
+      if(m && !e.target.closest('#arMenu') && !e.target.closest('#arBtn'))
+        m.style.display = 'none';
+    });
   },
 
-  toggle: function() {
-    this.isActive = !this.isActive;
-    if (this.isActive) {
-      this.remain = this.sec;
-      this.start();
-      toast('Auto Refresh: ON (1m) ✅', 'ok');
-    } else {
-      this.stop();
-      toast('Auto Refresh: OFF ❌', 'err');
-    }
-    this.updateUI();
+  set: function(sec){
+    AR.sec = sec;
+    AR.remain = sec;
+    localStorage.setItem('meti_ar_sec', sec);
+    AR.stop();
+    AR.updateUI();
+    AR.start();
+    toast(sec > 0 ? 'Auto Refresh: every ' + AR.labels[sec] + ' ✅' : 'Auto Refresh: Off', 'ok');
   },
 
-  start: function() {
-    if (this.timer) clearInterval(this.timer);
-    this.timer = setInterval(function() {
+  start: function(){
+    if(AR.sec === 0) return;
+    AR.stop();
+    AR.cdTimer = setInterval(function(){
       AR.remain--;
-      AR.updateCountdownUI();
-      if (AR.remain <= 0) {
+      AR.updateCountdown();
+      if(AR.remain <= 0){
         AR.remain = AR.sec;
         AR.doRefresh();
       }
     }, 1000);
+    AR.spin(true);
   },
 
-  stop: function() {
-    if (this.timer) clearInterval(this.timer);
-    this.timer = null;
-    this.remain = this.sec;
+  stop: function(){
+    if(AR.cdTimer) clearInterval(AR.cdTimer);
+    if(AR.timer)   clearInterval(AR.timer);
+    AR.cdTimer = null;
+    AR.spin(false);
   },
 
-  doRefresh: function() {
-    if (!SESSION || !TOKEN) return;
+  doRefresh: function(){
+    if(!SESSION || !TOKEN) return;
     SHARED.reloadActive();
   },
 
-  updateCountdownUI: function() {
+  updateCountdown: function(){
     var el = gid('arCountdown');
-    if (!el) return;
-    var m = Math.floor(this.remain / 60), s = this.remain % 60;
-    el.textContent = (m < 10 ? '0' : '') + m + ':' + (s < 10 ? '0' : '') + s;
+    if(!el) return;
+    if(AR.sec === 0){ el.textContent = '--'; return; }
+    var m = Math.floor(AR.remain/60), s = AR.remain%60;
+    el.textContent = (m>0?m+':':'') + (s<10?'0':'')+s;
   },
 
-  updateUI: function() {
-    var btn = gid('arBtn');
-    var lb = gid('arLabel');
-    var cd = gid('arCountdown');
-    var ic = gid('arIcon');
-
-    if (this.isActive) {
-      btn.style.borderColor = 'var(--blue)';
-      btn.style.background = 'var(--blue-bg)';
-      btn.style.color = 'var(--blue)';
-      lb.textContent = 'Auto Refresh: ON';
-      cd.style.display = 'inline-block';
-      ic.style.animation = 'ar-spin 2s linear infinite';
-      this.updateCountdownUI();
-    } else {
-      btn.style.borderColor = 'var(--border)';
-      btn.style.background = 'white';
-      btn.style.color = 'var(--gray)';
-      lb.textContent = 'Auto Refresh: OFF';
-      cd.style.display = 'none';
-      ic.style.animation = 'none';
-    }
-  }
+  updateUI: function(){
+    var lb = gid('arLabel'), cd = gid('arCountdown');
+    if(lb) lb.textContent = AR.labels[AR.sec] || 'Off';
+    if(cd){ cd.textContent = AR.sec===0?'--':'00:'+AR.sec; cd.style.color = AR.sec===0?'var(--gray)':'var(--blue)'; }
+    AR.highlightActive();
+    AR.updateCountdown();
+  },
 
   highlightActive: function(){
     document.querySelectorAll('.ar-opt').forEach(function(opt){
