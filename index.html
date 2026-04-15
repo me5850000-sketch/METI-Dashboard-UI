@@ -731,19 +731,7 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
           </div>
         </div>
       </div>
-    <span id="arIcon" style="font-size:14px;display:inline-block">⟳</span>
-    <span id="arLabel">1m</span>
-    <span id="arCountdown" style="font-size:10px;color:var(--blue);font-family:var(--mono);min-width:28px">00:60</span>
-  </button>
-  <div id="arMenu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:white;border:1.5px solid var(--blue-lt);border-radius:12px;box-shadow:0 8px 24px rgba(28,69,135,.15);z-index:9999;min-width:170px;overflow:hidden">
-    <div style="padding:8px 12px;background:var(--blue-bg);font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.5px">Auto Refresh</div>
-    <div class="ar-opt" data-sec="30"  style="padding:10px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--dark)">30 seconds<span style="font-size:10px;color:var(--gray)">fast</span></div>
-    <div class="ar-opt" data-sec="60"  style="padding:10px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--dark)">1 minute<span style="font-size:10px;color:var(--gray)">★ default</span></div>
-    <div class="ar-opt" data-sec="120" style="padding:10px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--dark)">2 minutes<span style="font-size:10px;color:var(--gray)">balanced</span></div>
-    <div class="ar-opt" data-sec="300" style="padding:10px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--dark)">5 minutes<span style="font-size:10px;color:var(--gray)">light</span></div>
-    <div class="ar-opt" data-sec="0"   style="padding:10px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--red);border-top:1px solid var(--border)">Off<span style="font-size:10px;color:var(--gray)">manual</span></div>
-  </div>
-</div>
+
       <div class="global-filter-bar" id="globalFilterBar" style="display:none;">
           <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; width: 100%;">
             <label style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;">From</label>
@@ -754,17 +742,6 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
             <select class="fb-time" id="gToTime"></select>
             <button class="fbtn fbtn-primary" id="btnGlobalFilter" style="margin-left:auto;">Filter</button>
             <button class="fbtn fbtn-ghost" id="btnGlobalClear">✕ Clear</button>
-          </div>
-        <button class="fbtn fbtn-ghost" id="btnGlobalClear">✕ Clear</button>
-            <div style="display:flex;align-items:center;gap:8px;flex-shrink:0;margin-left:8px">
-  <span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px" id="gfToggleLabel">ON</span>
-  <label style="position:relative;display:inline-block;width:44px;height:24px;cursor:pointer;flex-shrink:0">
-    <input type="checkbox" id="globalFilterToggleBtn" checked style="opacity:0;width:0;height:0;position:absolute">
-    <span id="gfSlider" style="position:absolute;inset:0;background:#1e8e3e;border-radius:24px;transition:background .3s;display:flex;align-items:center">
-      <span style="position:absolute;left:3px;width:18px;height:18px;background:white;border-radius:50%;transition:transform .3s;transform:translateX(20px)" id="gfKnob"></span>
-    </span>
-  </label>
-</div>
           </div>
       </div>
 
@@ -2926,126 +2903,7 @@ window.onload=function(){
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();closeDetail();closeChangePwd();}});
 
   // Auto refresh
-  // ══ AUTO REFRESH SYSTEM ══
-var AR = {
-  sec: 60,
-  remain: 60,
-  timer: null,
-  cdTimer: null,
-  labels: {30:'30s', 60:'1m', 120:'2m', 300:'5m', 0:'Off'},
-
-  init: function(){
-    var saved = parseInt(localStorage.getItem('meti_ar_sec'));
-    AR.sec = (!isNaN(saved) && [30,60,120,300,0].indexOf(saved)!==-1) ? saved : 60;
-    AR.remain = AR.sec;
-    AR.updateUI();
-    AR.start();
-
-    // زرار الفتح/الإغلاق
-    var btn = gid('arBtn');
-    if(btn) btn.addEventListener('click', function(e){
-      e.stopPropagation();
-      var m = gid('arMenu');
-      if(m) m.style.display = m.style.display==='block' ? 'none' : 'block';
-    });
-
-    // خيارات القائمة
-    document.querySelectorAll('.ar-opt').forEach(function(opt){
-      opt.addEventListener('click', function(){
-        AR.set(parseInt(opt.getAttribute('data-sec')));
-        var m = gid('arMenu');
-        if(m) m.style.display = 'none';
-      });
-      opt.addEventListener('mouseover', function(){ opt.style.background='var(--blue-bg)'; });
-      opt.addEventListener('mouseout',  function(){ AR.highlightActive(); });
-    });
-
-    // إغلاق لو دوس برّا
-    document.addEventListener('click', function(e){
-      var m = gid('arMenu');
-      if(m && !e.target.closest('#arMenu') && !e.target.closest('#arBtn'))
-        m.style.display = 'none';
-    });
-  },
-
-  set: function(sec){
-    AR.sec = sec;
-    AR.remain = sec;
-    localStorage.setItem('meti_ar_sec', sec);
-    AR.stop();
-    AR.updateUI();
-    AR.start();
-    toast(sec > 0 ? 'Auto Refresh: every ' + AR.labels[sec] + ' ✅' : 'Auto Refresh: Off', 'ok');
-  },
-
-  start: function(){
-    if(AR.sec === 0) return;
-    AR.stop();
-    AR.cdTimer = setInterval(function(){
-      AR.remain--;
-      AR.updateCountdown();
-      if(AR.remain <= 0){
-        AR.remain = AR.sec;
-        AR.doRefresh();
-      }
-    }, 1000);
-    AR.spin(true);
-  },
-
-  stop: function(){
-    if(AR.cdTimer) clearInterval(AR.cdTimer);
-    if(AR.timer)   clearInterval(AR.timer);
-    AR.cdTimer = null;
-    AR.spin(false);
-  },
-
-  doRefresh: function(){
-    if(!SESSION || !TOKEN) return;
-    SHARED.reloadActive();
-  },
-
-  updateCountdown: function(){
-    var el = gid('arCountdown');
-    if(!el) return;
-    if(AR.sec === 0){ el.textContent = '--'; return; }
-    var m = Math.floor(AR.remain/60), s = AR.remain%60;
-    el.textContent = (m>0?m+':':'') + (s<10?'0':'')+s;
-  },
-
-  updateUI: function(){
-    var lb = gid('arLabel'), cd = gid('arCountdown');
-    if(lb) lb.textContent = AR.labels[AR.sec] || 'Off';
-    if(cd){ cd.textContent = AR.sec===0?'--':'00:'+AR.sec; cd.style.color = AR.sec===0?'var(--gray)':'var(--blue)'; }
-    AR.highlightActive();
-    AR.updateCountdown();
-  },
-
-  highlightActive: function(){
-    document.querySelectorAll('.ar-opt').forEach(function(opt){
-      var s = parseInt(opt.getAttribute('data-sec'));
-      opt.style.background = s===AR.sec ? 'var(--blue-bg)' : '';
-      opt.style.fontWeight  = s===AR.sec ? '700' : '';
-      if(s!==0) opt.style.color = s===AR.sec ? 'var(--blue)' : 'var(--dark)';
-    });
-  },
-
-  spin: function(on){
-    var ic = gid('arIcon');
-    if(!ic) return;
-    ic.style.animation = on ? 'ar-spin '+(AR.sec||60)+'s linear infinite' : 'none';
-    ic.style.color = on ? 'var(--blue)' : 'var(--gray)';
-  }
-};
-
-// CSS للـ spin animation
-(function(){
-  var st = document.createElement('style');
-  st.textContent = '@keyframes ar-spin{to{transform:rotate(360deg)}} #arBtn:hover{border-color:var(--blue)!important} .ar-opt:hover{background:var(--blue-bg)!important}';
-  if(document.body.classList.contains('dark')) st.textContent += '#arMenu{background:#1e2130!important;border-color:#2d3250!important} .ar-opt{color:#e8eaf0!important}';
-   document.head.appendChild(st);
-})();
-
-  AR.init();
+  setInterval(function(){if(SESSION&&TOKEN&&gid('pgHome').style.display!=='none')loadStats();},120000);
 };
 </script>
 <script>
@@ -3185,6 +3043,15 @@ function declineUser(rowId, encodedName) {
 // ══ DETAILS OF DATA — Card View ══
 var dodPage = 1;
  
+// ══════════════════════════════════════════════════════════════
+// PATCH: Details of Data — إظهار الموظفين الحاضرين اللي مسبمتوش
+// ضيف الـ script ده قبل </body> في الـ HTML مباشرةً
+// ══════════════════════════════════════════════════════════════
+// كيفية العمل:
+// 1. بيجيب كل الـ yubikeys الموجودة في الـ data submissions
+// 2. بيجيب الأتيند المحفوظ (_attShift2Cache أو _lastAttR)
+// 3. أي موظف P وفلاشته مش في الـ data → يظهر بـ PC أحمر
+
 renderDetailsOfData = function () {
   var area = gid('dodArea');
   if (!area) return;
@@ -4179,42 +4046,6 @@ console.log('✅ METI Roles Patch Loaded (With Approve Permissions & Hierarchy)'
     console.error(e);
   }
 }
-  // ══ GLOBAL FILTER TOGGLE (ON/OFF) ══
-var GLOBAL_FILTER_ENABLED = true;
-
-function initGlobalFilterToggle() {
-  var btn = gid('globalFilterToggleBtn');
-  if (!btn) return;
-  
-  btn.addEventListener('click', function(e) {
-    e.preventDefault();
-    GLOBAL_FILTER_ENABLED = !GLOBAL_FILTER_ENABLED;
-    updateToggleButton();
-    if (SESSION) SHARED.reloadActive();
-  });
-  
-  updateToggleButton();
-}
-
-function updateToggleButton() {
-  var inp = gid('globalFilterToggleBtn');
-  var slider = gid('gfSlider');
-  var knob = gid('gfKnob');
-  var label = gid('gfToggleLabel');
-  if (!slider) return;
-  
-  if (GLOBAL_FILTER_ENABLED) {
-    slider.style.background = '#1e8e3e';
-    knob.style.transform = 'translateX(20px)';
-    if(label) label.textContent = 'ON';
-  } else {
-    slider.style.background = '#9aa0a6';
-    knob.style.transform = 'translateX(0px)';
-    if(label) label.textContent = 'OFF';
-  }
-}
-// تفعيل الزر عند التحميل
-setTimeout(initGlobalFilterToggle, 500);
 </script>
 </body>
 </html>
