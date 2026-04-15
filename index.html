@@ -4078,24 +4078,26 @@ function toggleAutoReload() {
   var wrap = gid('autoReloadWrap');
 
   if (_arEnabled) {
-    tog.style.background = 'var(--green)';
+    // ON — أخضر
+    tog.style.background = '#1e8e3e';  // ✅ اللون الفعلي بدل var(--green)
     thumb.style.left = '20px';
-    lbl.style.color = 'var(--green)';
+    lbl.style.color = '#1e8e3e';
     lbl.textContent = 'ON';
     if (sel) sel.style.display = 'inline-block';
     if (cd) cd.style.display = 'inline-block';
-    wrap.style.borderColor = 'var(--green)';
-    wrap.style.background = 'var(--green-lt)';
+    wrap.style.borderColor = '#1e8e3e';
+    wrap.style.background = '#d4edda';
     startAutoReload();
   } else {
+    // OFF — رمادي
     tog.style.background = '#ccc';
     thumb.style.left = '2px';
-    lbl.style.color = 'var(--gray)';
+    lbl.style.color = '#5f6368';
     lbl.textContent = 'OFF';
     if (sel) sel.style.display = 'none';
     if (cd) { cd.style.display = 'none'; cd.textContent = ''; }
-    wrap.style.borderColor = 'var(--border)';
-    wrap.style.background = 'var(--gray-lt)';
+    wrap.style.borderColor = '#e0e0e0';
+    wrap.style.background = '#f1f3f4';
     stopAutoReload();
   }
 }
