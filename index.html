@@ -757,6 +757,9 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
             <button class="fbtn fbtn-primary" id="btnGlobalFilter" style="margin-left:auto;">Filter</button>
             <button class="fbtn fbtn-ghost" id="btnGlobalClear">✕ Clear</button>
           </div>
+        <button class="fbtn fbtn-ghost" id="btnGlobalClear">✕ Clear</button>
+            <button id="globalFilterToggleBtn" class="global-filter-toggle active" style="background: #1e8e3e; color: white; border: none; padding: 12px 24px; border-radius: 9px; font-size: 14px; font-weight: 800; cursor: pointer; transition: all 0.3s ease; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(30, 142, 62, 0.3); flex-shrink: 0; margin-left: 8px;">🟢 ON</button>
+          </div>
       </div>
 
       <div class="content">
@@ -3176,15 +3179,6 @@ function declineUser(rowId, encodedName) {
 // ══ DETAILS OF DATA — Card View ══
 var dodPage = 1;
  
-// ══════════════════════════════════════════════════════════════
-// PATCH: Details of Data — إظهار الموظفين الحاضرين اللي مسبمتوش
-// ضيف الـ script ده قبل </body> في الـ HTML مباشرةً
-// ══════════════════════════════════════════════════════════════
-// كيفية العمل:
-// 1. بيجيب كل الـ yubikeys الموجودة في الـ data submissions
-// 2. بيجيب الأتيند المحفوظ (_attShift2Cache أو _lastAttR)
-// 3. أي موظف P وفلاشته مش في الـ data → يظهر بـ PC أحمر
-
 renderDetailsOfData = function () {
   var area = gid('dodArea');
   if (!area) return;
@@ -4179,6 +4173,40 @@ console.log('✅ METI Roles Patch Loaded (With Approve Permissions & Hierarchy)'
     console.error(e);
   }
 }
+  // ══ GLOBAL FILTER TOGGLE (ON/OFF) ══
+var GLOBAL_FILTER_ENABLED = true;
+
+function initGlobalFilterToggle() {
+  var btn = gid('globalFilterToggleBtn');
+  if (!btn) return;
+  
+  btn.addEventListener('click', function(e) {
+    e.preventDefault();
+    GLOBAL_FILTER_ENABLED = !GLOBAL_FILTER_ENABLED;
+    updateToggleButton();
+    if (SESSION) SHARED.reloadActive();
+  });
+  
+  updateToggleButton();
+}
+
+function updateToggleButton() {
+  var btn = gid('globalFilterToggleBtn');
+  if (!btn) return;
+  
+  if (GLOBAL_FILTER_ENABLED) {
+    btn.innerHTML = '🟢 ON';
+    btn.style.background = '#1e8e3e';
+    btn.style.boxShadow = '0 4px 12px rgba(30, 142, 62, 0.3)';
+  } else {
+    btn.innerHTML = '🔴 OFF';
+    btn.style.background = '#c5221f';
+    btn.style.boxShadow = '0 4px 12px rgba(197, 34, 31, 0.3)';
+  }
+}
+
+// تفعيل الزر عند التحميل
+setTimeout(initGlobalFilterToggle, 500);
 </script>
 </body>
 </html>
