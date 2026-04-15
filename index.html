@@ -731,21 +731,6 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
           </div>
         </div>
       </div>
-<div style="position:relative">
-  <button id="arBtn" title="Auto Refresh" style="display:flex;align-items:center;gap:5px;padding:4px 10px;border:1.5px solid var(--border);border-radius:20px;background:none;cursor:pointer;font-size:12px;font-weight:700;color:var(--gray)">
-    <span id="arIcon" style="font-size:14px;display:inline-block">⟳</span>
-    <span id="arLabel">1m</span>
-    <span id="arCountdown" style="font-size:10px;color:var(--blue);font-family:var(--mono);min-width:28px">00:60</span>
-  </button>
-  <div id="arMenu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;background:white;border:1.5px solid var(--blue-lt);border-radius:12px;box-shadow:0 8px 24px rgba(28,69,135,.15);z-index:9999;min-width:170px;overflow:hidden">
-    <div style="padding:8px 12px;background:var(--blue-bg);font-size:10px;font-weight:700;color:var(--blue);text-transform:uppercase;letter-spacing:.5px">Auto Refresh</div>
-    <div class="ar-opt" data-sec="30"  style="padding:10px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--dark)">30 seconds<span style="font-size:10px;color:var(--gray)">fast</span></div>
-    <div class="ar-opt" data-sec="60"  style="padding:10px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--dark)">1 minute<span style="font-size:10px;color:var(--gray)">★ default</span></div>
-    <div class="ar-opt" data-sec="120" style="padding:10px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--dark)">2 minutes<span style="font-size:10px;color:var(--gray)">balanced</span></div>
-    <div class="ar-opt" data-sec="300" style="padding:10px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--dark)">5 minutes<span style="font-size:10px;color:var(--gray)">light</span></div>
-    <div class="ar-opt" data-sec="0"   style="padding:10px 14px;cursor:pointer;font-size:13px;display:flex;justify-content:space-between;align-items:center;color:var(--red);border-top:1px solid var(--border)">Off<span style="font-size:10px;color:var(--gray)">manual</span></div>
-  </div>
-</div>
       <div class="global-filter-bar" id="globalFilterBar" style="display:none;">
           <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; width: 100%;">
             <label style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;">From</label>
@@ -755,7 +740,13 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
             <div class="dp-wrap" id="dpWrap-gTo"><input type="text" class="dp-input" id="gTo" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
             <select class="fb-time" id="gToTime"></select>
             <button class="fbtn fbtn-primary" id="btnGlobalFilter" style="margin-left:auto;">Filter</button>
-            <button class="fbtn fbtn-ghost" id="btnGlobalClear">✕ Clear</button>
+            <button class="fbtn fbtn-ghost" id="btnGlobalClear">✕ Clear</button><div style="position:relative;margin-left:auto">
+  <button id="arBtn" title="Auto Refresh" style="display:flex;align-items:center;gap:5px;padding:8px 14px;border:none;border-radius:7px;background:var(--blue);cursor:pointer;font-size:13px;font-weight:700;color:white">
+    <span id="arIcon" style="font-size:14px;display:inline-block">⟳</span>
+    <span id="arLabel">1m</span>
+    <span id="arCountdown" style="font-size:10px;color:rgba(255,255,255,.8);font-family:var(--mono);min-width:28px">00:60</span>
+  </button>
+  <div id="arMenu" style="display:none;position:absolute;top:calc(100% + 8px);right:0;...">
           </div>
       </div>
 
