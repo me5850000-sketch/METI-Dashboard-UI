@@ -731,7 +731,7 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
           </div>
         </div>
       </div>
-<div style="display:flex; align-items:center;">
+<div style="display:flex; align-items:center; margin-left: 10px;">
   <button id="arBtn" title="Toggle Auto Refresh (1m)" style="display:flex; align-items:center; gap:8px; padding:6px 14px; border:1.5px solid var(--border); border-radius:20px; background:white; cursor:pointer; font-size:12px; font-weight:700; color:var(--gray); transition: all 0.2s ease;">
     <span id="arIcon" style="font-size:14px; display:inline-block;">⟳</span>
     <span id="arLabel">Auto Refresh: OFF</span>
@@ -2911,6 +2911,7 @@ window.onload=function(){
 
   // Auto refresh
   // ══ AUTO REFRESH SYSTEM ══
+  var AR = {
 sec: 60,
   remain: 60,
   timer: null,
