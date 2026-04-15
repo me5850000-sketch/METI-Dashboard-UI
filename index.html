@@ -742,6 +742,21 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
             <select class="fb-time" id="gToTime"></select>
             <button class="fbtn fbtn-primary" id="btnGlobalFilter" style="margin-left:auto;">Filter</button>
             <button class="fbtn fbtn-ghost" id="btnGlobalClear">✕ Clear</button>
+            <!-- Auto Reload Toggle -->
+<div id="autoReloadWrap" style="display:flex;align-items:center;gap:8px;padding:4px 12px;background:var(--gray-lt);border-radius:20px;border:1.5px solid var(--border)">
+  <span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;white-space:nowrap">Auto Reload</span>
+  <div id="arToggle" onclick="toggleAutoReload()" style="width:38px;height:20px;border-radius:10px;background:#ccc;cursor:pointer;position:relative;transition:background .3s;flex-shrink:0">
+    <div id="arThumb" style="position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:white;transition:left .3s;box-shadow:0 1px 3px rgba(0,0,0,.2)"></div>
+  </div>
+  <span id="arLabel" style="font-size:11px;font-weight:700;color:var(--gray);min-width:28px">OFF</span>
+  <select id="arInterval" style="font-size:11px;font-weight:700;border:1px solid var(--border);border-radius:6px;padding:2px 6px;background:white;color:var(--dark);outline:none;display:none">
+    <option value="30000">30s</option>
+    <option value="60000" selected>1m</option>
+    <option value="120000">2m</option>
+    <option value="300000">5m</option>
+  </select>
+  <span id="arCountdown" style="font-size:11px;font-weight:800;color:var(--blue);min-width:30px;display:none"></span>
+</div>
           </div>
       </div>
 
@@ -4046,6 +4061,142 @@ console.log('✅ METI Roles Patch Loaded (With Approve Permissions & Hierarchy)'
     console.error(e);
   }
 }
+<script>
+// ══ AUTO RELOAD ══
+var _arEnabled = false;
+var _arTimer = null;
+var _arCdTimer = null;
+var _arRemaining = 0;
+
+function toggleAutoReload() {
+  _arEnabled = !_arEnabled;
+  var tog = gid('arToggle');
+  var thumb = gid('arThumb');
+  var lbl = gid('arLabel');
+  var sel = gid('arInterval');
+  var cd = gid('arCountdown');
+  var wrap = gid('autoReloadWrap');
+
+  if (_arEnabled) {
+    tog.style.background = 'var(--green)';
+    thumb.style.left = '20px';
+    lbl.style.color = 'var(--green)';
+    lbl.textContent = 'ON';
+    if (sel) sel.style.display = 'inline-block';
+    if (cd) cd.style.display = 'inline-block';
+    wrap.style.borderColor = 'var(--green)';
+    wrap.style.background = 'var(--green-lt)';
+    startAutoReload();
+  } else {
+    tog.style.background = '#ccc';
+    thumb.style.left = '2px';
+    lbl.style.color = 'var(--gray)';
+    lbl.textContent = 'OFF';
+    if (sel) sel.style.display = 'none';
+    if (cd) { cd.style.display = 'none'; cd.textContent = ''; }
+    wrap.style.borderColor = 'var(--border)';
+    wrap.style.background = 'var(--gray-lt)';
+    stopAutoReload();
+  }
+}
+
+function startAutoReload() {
+  stopAutoReload();
+  if (!_arEnabled) return;
+  var sel = gid('arInterval');
+  var ms = sel ? parseInt(sel.value) : 60000;
+  _arRemaining = ms / 1000;
+  updateCountdown();
+  _arCdTimer = setInterval(function() {
+    _arRemaining--;
+    updateCountdown();
+    if (_arRemaining <= 0) {
+      doSilentReload();
+      _arRemaining = ms / 1000;
+    }
+  }, 1000);
+}
+
+function stopAutoReload() {
+  if (_arTimer) { clearTimeout(_arTimer); _arTimer = null; }
+  if (_arCdTimer) { clearInterval(_arCdTimer); _arCdTimer = null; }
+}
+
+function updateCountdown() {
+  var cd = gid('arCountdown');
+  if (!cd) return;
+  var m = Math.floor(_arRemaining / 60);
+  var s = _arRemaining % 60;
+  cd.textContent = m > 0 ? m + 'm' + ('0'+s).slice(-2) + 's' : s + 's';
+}
+
+function doSilentReload() {
+  if (!SESSION || !TOKEN) return;
+  // حفظ الـ scroll position
+  var scrollY = window.scrollY || 0;
+  
+  // نعرف إيه الصفحة النشطة
+  var activePage = null;
+  var pagesKeys = Object.keys(PAGES);
+  for (var i = 0; i < pagesKeys.length; i++) {
+    var pg = gid(PAGES[pagesKeys[i]].pg);
+    if (pg && pg.style.display !== 'none') { activePage = pagesKeys[i]; break; }
+  }
+  if (!activePage) return;
+
+  // نعمل reload للبيانات بدون تغيير أي view
+  var from = getFilterISO(true), to = getFilterISO(false);
+  google.script.run
+    .withSuccessHandler(function(r) {
+      if (r && !r.err && r.data) {
+        // تحديث الكاش
+        if (activePage === 'home') {
+          cachedStats = r.data; cachedUser = r.user;
+          // تحديث الأرقام في الكروت فقط بدون re-render
+          updateCardsOnly(r.data);
+        } else if (activePage === 'data' || activePage === 'detailsofdata') {
+          r.data.sort(function(a,b){ return new Date(b[F.date]||0)-new Date(a[F.date]||0); });
+          dataAll = r.data;
+          if (activePage === 'data') renderDataFiltered();
+          else renderDetailsOfData();
+        } else if (activePage === 'labelers') {
+          renderLabelersPage(r.data);
+        } else if (activePage === 'qtc') {
+          renderQtcPage(r.data);
+        } else if (activePage === 'qtcstats') {
+          // skip — no auto reload for qtcstats
+        }
+        // إرجاع الـ scroll
+        setTimeout(function(){ window.scrollTo(0, scrollY); }, 50);
+        toast('Auto reloaded ✓', 'ok');
+      }
+    })
+    .withFailureHandler(function(){})
+    .getStats(TOKEN, from, to);
+}
+
+function updateCardsOnly(data) {
+  // تحديث أرقام الكروت الأربعة بدون أي تغيير للـ view
+  var lf=0,lq=0,lif=0,liq=0;
+  data.forEach(function(r){
+    var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
+    var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;
+    if(isL&&pass==='FP')lf++;if(isL&&pass==='QA')lq++;
+    if(isLi&&pass==='FP')lif++;if(isLi&&pass==='QA')liq++;
+  });
+  var cards = document.querySelectorAll('#statsArea .card .card-val');
+  var vals = [lf, lq, lif, liq];
+  cards.forEach(function(el, i){ if(vals[i] !== undefined) el.textContent = vals[i]; });
+}
+
+// إعادة تشغيل لما يتغير الـ interval
+document.addEventListener('change', function(e){
+  if (e.target && e.target.id === 'arInterval' && _arEnabled) startAutoReload();
+});
+
+// إيقاف الـ auto reload لو الـ session منتهي
+var _origDoLogout = doLogout;
+doLogout = function(){ stopAutoReload(); _origDoLogout(); };
 </script>
 </body>
 </html>
