@@ -1455,12 +1455,13 @@ function buildShifts(data){
       var labKey=lb+'||'+(pc||'');
       function bump(o){o.total++;if(isFP)o.fp++;if(isQA)o.qa++;}
       if(!labelers[labKey])labelers[labKey]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0},shifts:{},units:{},pcs:{},_name:lb,_pc:pc};
-      if(!labelers[labKey].shifts[sh])labelers[labKey].shifts[sh]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0}};
-      labelers[labKey].total++;labelers[labKey].shifts[sh].total++;
-      if(un)labelers[labKey].units[un]=(labelers[labKey].units[un]||0)+1;
-      if(pc&&pc!=='-')labelers[labKey].pcs[pc]=(labelers[labKey].pcs[pc]||0)+1;
-      if(isL){bump(labelers[labKey].lane);bump(labelers[labKey].shifts[sh].lane);}
-      if(isLi){bump(labelers[labKey].lidar);bump(labelers[labKey].shifts[sh].lidar);}
+if(!labelers[labKey].shifts[sh])labelers[labKey].shifts[sh]={...};
+labelers[labKey].total++;
+labelers[labKey].shifts[sh].total++;
+if(un)labelers[labKey].units[un]=...
+if(pc&&pc!=='-')labelers[labKey].pcs[pc]=...
+if(isL){bump(labelers[labKey].lane);bump(labelers[labKey].shifts[sh].lane);}
+if(isLi){bump(labelers[labKey].lidar);bump(labelers[labKey].shifts[sh].lidar);}
   return shifts;
 }
 
