@@ -1452,12 +1452,15 @@ function buildShifts(data){
     var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
     var sh=nShift(r[F.shift]||'Unknown'),un=(r[F.unit]||'Unknown').trim();
     var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1,isFP=pass==='FP',isQA=pass==='QA';
-    function ensure(m,k){if(!m[k])m[k]={lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0},total:0,units:{}};}
-    function ensureU(m,k){if(!m[k])m[k]={lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0},total:0};}
-    function bump(o){o.total++;if(isFP)o.fp++;if(isQA)o.qa++;}
-    ensure(shifts,sh);shifts[sh].total++;if(isL)bump(shifts[sh].lane);if(isLi)bump(shifts[sh].lidar);
-    ensureU(shifts[sh].units,un);shifts[sh].units[un].total++;if(isL)bump(shifts[sh].units[un].lane);if(isLi)bump(shifts[sh].units[un].lidar);
-  });
+      var labKey=lb+'||'+(pc||'');
+      function bump(o){o.total++;if(isFP)o.fp++;if(isQA)o.qa++;}
+      if(!labelers[labKey])labelers[labKey]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0},shifts:{},units:{},pcs:{},_name:lb,_pc:pc};
+      if(!labelers[labKey].shifts[sh])labelers[labKey].shifts[sh]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0}};
+      labelers[labKey].total++;labelers[labKey].shifts[sh].total++;
+      if(un)labelers[labKey].units[un]=(labelers[labKey].units[un]||0)+1;
+      if(pc&&pc!=='-')labelers[labKey].pcs[pc]=(labelers[labKey].pcs[pc]||0)+1;
+      if(isL){bump(labelers[labKey].lane);bump(labelers[labKey].shifts[sh].lane);}
+      if(isLi){bump(labelers[labKey].lidar);bump(labelers[labKey].shifts[sh].lidar);}
   return shifts;
 }
 
@@ -1743,8 +1746,7 @@ function renderLabelersPage(data){
       // Determine dominant shift
       var domShift='';var maxS=0;
       Object.keys(lb.shifts).forEach(function(s){if(lb.shifts[s].total>maxS){maxS=lb.shifts[s].total;domShift=s;}});
-      return{name:k,total:lb.total,lfp:lb.lane.fp,lqa:lb.lane.qa,lifp:lb.lidar.fp,liqa:lb.lidar.qa,
-             laneTotal:lb.lane.fp+lb.lane.qa,lidarTotal:lb.lidar.fp+lb.lidar.qa,unit:topUnit,pc:topPc,shift:domShift};
+      return{name:lb._name||k,total:lb.total,lfp:lb.lane.fp,lqa:lb.lane.qa,lifp:lb.lidar.fp,liqa:lb.lidar.qa,laneTotal:lb.lane.fp+lb.lane.qa,lidarTotal:lb.lidar.fp+lb.lidar.qa,unit:topUnit,pc:lb._pc||topPc,shift:domShift};
     }).filter(function(lb){return lb.total>0;});
   }
 
@@ -1766,7 +1768,7 @@ function renderLabelersPage(data){
     var topPc=Object.keys(initLabs[best].pcs).sort(function(a,b){return initLabs[best].pcs[b]-initLabs[best].pcs[a];})[0]||'';
     bestHtml+='<div class="lab-mini-card" style="background:'+sc.bg+';border:1.5px solid '+sc.border+';border-radius:10px;padding:12px;cursor:pointer;overflow:hidden">'
       +'<div style="font-size:9px;font-weight:800;color:'+sc.color+';text-transform:uppercase;letter-spacing:.4px">🏆 '+sh+'</div>'
-      +'<div style="font-size:13px;font-weight:800;color:var(--dark);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+best+'</div>'
+      +'<div style="font-size:13px;font-weight:800;color:var(--dark);margin-top:4px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+(initLabs[best]._name||best.split('||')[0])+'</div>'
       +'<div class="lab-mini-card-stats">'
       +'<div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:5px">'
       +'<span style="font-size:10px;font-weight:700;background:rgba(255,255,255,.7);padding:1px 6px;border-radius:5px;color:#1e8e3e">LFP: '+bd.lane.fp+'</span>'
@@ -3111,10 +3113,11 @@ renderDetailsOfData = function () {
     if (!shifts[sh].units) shifts[sh].units = {};
     ensure(shifts[sh].units, un); bump(shifts[sh].units[un]);
     if (!shifts[sh].units[un].labelers) shifts[sh].units[un].labelers = {};
-    ensure(shifts[sh].units[un].labelers, lb, { pc: pc, ub: ub });
-    bump(shifts[sh].units[un].labelers[lb]);
-    if (!shifts[sh].units[un].labelers[lb].pc && pc)              shifts[sh].units[un].labelers[lb].pc = pc;
-    if (!shifts[sh].units[un].labelers[lb].ub && ub && ub!=='-') shifts[sh].units[un].labelers[lb].ub = ub;
+    var labKey = lb+'||'+(pc||'');
+    ensure(shifts[sh].units[un].labelers, labKey, { pc: pc, ub: ub, _name: lb });
+    bump(shifts[sh].units[un].labelers[labKey]);
+    if (!shifts[sh].units[un].labelers[labKey].pc && pc)              shifts[sh].units[un].labelers[labKey].pc = pc;
+    if (!shifts[sh].units[un].labelers[labKey].ub && ub && ub!=='-') shifts[sh].units[un].labelers[labKey].ub = ub;
   });
 
   // ── جمع كل الـ yubikeys اللي سبمتت فعلاً ──
@@ -3327,7 +3330,7 @@ window.forceSyncAttendance = function(btn) {
           '<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:' +
           (isTopAny ? '#f9ab00' : 'var(--blue)') + ';color:white;font-size:11px;font-weight:800;align-items:center;justify-content:center">' + (idx+1) + '</span>' +
           '</td>' +
-          '<td style="padding:8px 12px;font-size:13px;font-weight:700;color:var(--dark)">' + (isTopAny ? '<span style="font-size:12px;margin-right:4px">👑</span>' : '') + n + '</td>' +
+          '<td style="padding:8px 12px;font-size:13px;font-weight:700;color:var(--dark)">' + (isTopAny ? '<span style="font-size:12px;margin-right:4px">👑</span>' : '') + (ud.labelers[n]._name||n.split('||')[0]) + '</td>' +
           '<td style="padding:8px 12px;text-align:center;font-size:13px;font-weight:800;color:var(--blue)">'  + (d.pc || '-') + '</td>' +
           '<td style="padding:8px 12px;text-align:center;font-family:var(--mono);font-size:11px;color:var(--gray)">' + (d.ub && d.ub !== '-' ? d.ub : '-') + '</td>' +
           colCell('lfp', '#1e8e3e') + colCell('lqa', '#e37400') +
