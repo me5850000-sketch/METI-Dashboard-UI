@@ -1446,23 +1446,29 @@ function initStatsListener(){
   });
 }
 
-function buildShifts(data){
-  var shifts={};
-  data.forEach(function(r){
+function buildLabelers(rows){
+  var labelers={};
+  rows.forEach(function(r){
     var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
-    var sh=nShift(r[F.shift]||'Unknown'),un=(r[F.unit]||'Unknown').trim();
+    var sh=nShift(r[F.shift]||'Unknown'),lb=titleCase(r[F.labeler]||'Unknown');
+    var un=(r[F.unit]||'').trim(),pc=(r[F.pc]||'').toString().trim();
     var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1,isFP=pass==='FP',isQA=pass==='QA';
-      var labKey=lb+'||'+(pc||'');
-      function bump(o){o.total++;if(isFP)o.fp++;if(isQA)o.qa++;}
-      if(!labelers[labKey])labelers[labKey]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0},shifts:{},units:{},pcs:{},_name:lb,_pc:pc};
-if(!labelers[labKey].shifts[sh])labelers[labKey].shifts[sh]={...};
-labelers[labKey].total++;
-labelers[labKey].shifts[sh].total++;
-if(un)labelers[labKey].units[un]=...
-if(pc&&pc!=='-')labelers[labKey].pcs[pc]=...
-if(isL){bump(labelers[labKey].lane);bump(labelers[labKey].shifts[sh].lane);}
-if(isLi){bump(labelers[labKey].lidar);bump(labelers[labKey].shifts[sh].lidar);}
-  return shifts;
+    
+    var labKey = lb + '||' + pc; // 👈 مفتاح التفرقة الجديد
+    
+    function bump(o){o.total++;if(isFP)o.fp++;if(isQA)o.qa++;}
+    
+    if(!labelers[labKey])labelers[labKey]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0},shifts:{},units:{},pcs:{},_name:lb,_pc:pc};
+    if(!labelers[labKey].shifts[sh])labelers[labKey].shifts[sh]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0}};
+    
+    labelers[labKey].total++;
+    labelers[labKey].shifts[sh].total++;
+    if(un)labelers[labKey].units[un]=(labelers[labKey].units[un]||0)+1;
+    if(pc&&pc!=='-')labelers[labKey].pcs[pc]=(labelers[labKey].pcs[pc]||0)+1;
+    if(isL){bump(labelers[labKey].lane);bump(labelers[labKey].shifts[sh].lane);}
+    if(isLi){bump(labelers[labKey].lidar);bump(labelers[labKey].shifts[sh].lidar);}
+  });
+  return labelers;
 }
 
 function getDrillVal(d,dtype){if(dtype==='total')return d.total;if(dtype==='lane_fp')return d.lane.fp;if(dtype==='lane_qa')return d.lane.qa;if(dtype==='lidar_fp')return d.lidar.fp;if(dtype==='lidar_qa')return d.lidar.qa;return 0;}
@@ -1823,7 +1829,7 @@ function renderLabelersPage(data){
         var sd=initLabs[k].shifts[sh];
         var topUnit=Object.keys(initLabs[k].units).sort(function(a,b){return initLabs[k].units[b]-initLabs[k].units[a];})[0]||'';
         var topPc=Object.keys(initLabs[k].pcs).sort(function(a,b){return initLabs[k].pcs[b]-initLabs[k].pcs[a];})[0]||'';
-        return{name:k,total:sd.total,lfp:sd.lane.fp,lqa:sd.lane.qa,lifp:sd.lidar.fp,liqa:sd.lidar.qa,laneTotal:sd.lane.fp+sd.lane.qa,lidarTotal:sd.lidar.fp+sd.lidar.qa,unit:topUnit,pc:topPc,shift:sh};
+        return{name:(initLabs? initLabs[k]._name : labelers[k]._name) || k.split('||')[0], total:sd.total, lfp:sd.lane.fp, lqa:sd.lane.qa, lifp:sd.lidar.fp, liqa:sd.lidar.qa, laneTotal:sd.lane.fp+sd.lane.qa, lidarTotal:sd.lidar.fp+sd.lidar.qa, unit:topUnit, pc:topPc, shift:sh};
       });
     }
     html+='<div class="lab-tab-content" data-labtabcontent="'+sh+'" data-labs="'+encodeURIComponent(JSON.stringify(shLabs))+'" style="display:'+(isF?'block':'none')+'"><div class="lab-list-wrap"></div></div>';
@@ -1848,7 +1854,7 @@ function renderLabelersPage(data){
         var sd=labelers[k].shifts[sh];
         var topUnit=Object.keys(labelers[k].units).sort(function(a,b){return labelers[k].units[b]-labelers[k].units[a];})[0]||'';
         var topPc=Object.keys(labelers[k].pcs).sort(function(a,b){return labelers[k].pcs[b]-labelers[k].pcs[a];})[0]||'';
-        return{name:k,total:sd.total,lfp:sd.lane.fp,lqa:sd.lane.qa,lifp:sd.lidar.fp,liqa:sd.lidar.qa,laneTotal:sd.lane.fp+sd.lane.qa,lidarTotal:sd.lidar.fp+sd.lidar.qa,unit:topUnit,pc:topPc,shift:sh};
+        return{name:(initLabs? initLabs[k]._name : labelers[k]._name) || k.split('||')[0], total:sd.total, lfp:sd.lane.fp, lqa:sd.lane.qa, lifp:sd.lidar.fp, liqa:sd.lidar.qa, laneTotal:sd.lane.fp+sd.lane.qa, lidarTotal:sd.lidar.fp+sd.lidar.qa, unit:topUnit, pc:topPc, shift:sh};
       });}
       h+='<div class="lab-tab-content" data-labtabcontent="'+sh+'" data-labs="'+encodeURIComponent(JSON.stringify(shLabs))+'" style="display:'+(isF?'block':'none')+'"><div class="lab-list-wrap"></div></div>';
     });
