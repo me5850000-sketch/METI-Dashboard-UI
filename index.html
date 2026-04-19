@@ -4209,66 +4209,6 @@ document.addEventListener('change', function(e){
 // إيقاف الـ auto reload لو الـ session منتهي
 var _origDoLogout = doLogout;
 doLogout = function(){ stopAutoReload(); _origDoLogout(); };
-  <script>
-// ══ DATE SYNC PATCH — gFrom ↔ attDate2 ↔ attDate ══
-(function(){
-  var _origDpOnChange = DP.onChange;
-  DP.onChange = function(id){
-    // لما gFrom يتغير → حدّث attDate و attDate2 تلقائياً
-    if(id === 'gFrom'){
-      var iso = DP.vals['gFrom'];
-      if(iso){
-        DP.vals['attDate']  = iso;
-        var el1 = gid('attDate');
-        if(el1) el1.value = DP.fmtDisplay(iso);
-
-        DP.vals['attDate2'] = iso;
-        var el2 = gid('attDate2');
-        if(el2) el2.value = DP.fmtDisplay(iso);
-
-        // مسح الكاش عشان يعمل reload بالتاريخ الجديد
-        _lastAttDate  = '';
-        _lastAttDate2 = '';
-      }
-    }
-
-    // لما attDate2 يتغير → حدّث gFrom و attDate برضو
-    if(id === 'attDate2'){
-      var iso2 = DP.vals['attDate2'];
-      if(iso2){
-        SHARED.from = iso2;
-        DP.vals['gFrom'] = iso2;
-        var gFromEl = gid('gFrom');
-        if(gFromEl) gFromEl.value = DP.fmtDisplay(iso2);
-
-        DP.vals['attDate'] = iso2;
-        var attEl = gid('attDate');
-        if(attEl) attEl.value = DP.fmtDisplay(iso2);
-
-        _lastAttDate = '';
-      }
-    }
-
-    // لما attDate يتغير → حدّث gFrom و attDate2
-    if(id === 'attDate'){
-      var iso3 = DP.vals['attDate'];
-      if(iso3){
-        SHARED.from = iso3;
-        DP.vals['gFrom'] = iso3;
-        var gFromEl2 = gid('gFrom');
-        if(gFromEl2) gFromEl2.value = DP.fmtDisplay(iso3);
-
-        DP.vals['attDate2'] = iso3;
-        var attEl2 = gid('attDate2');
-        if(attEl2) attEl2.value = DP.fmtDisplay(iso3);
-
-        _lastAttDate2 = '';
-      }
-    }
-
-    _origDpOnChange(id);
-  };
-})();
 </script>
 </body>
 </html>
