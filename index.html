@@ -1734,13 +1734,14 @@ function renderLabelersPage(data){
       var un=(r[F.unit]||'').trim(),pc=(r[F.pc]||'').toString().trim();
       var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1,isFP=pass==='FP',isQA=pass==='QA';
       function bump(o){o.total++;if(isFP)o.fp++;if(isQA)o.qa++;}
-      if(!labelers[lb])labelers[lb]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0},shifts:{},units:{},pcs:{}};
-      if(!labelers[lb].shifts[sh])labelers[lb].shifts[sh]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0}};
-      labelers[lb].total++;labelers[lb].shifts[sh].total++;
-      if(un)labelers[lb].units[un]=(labelers[lb].units[un]||0)+1;
-      if(pc&&pc!=='-')labelers[lb].pcs[pc]=(labelers[lb].pcs[pc]||0)+1;
-      if(isL){bump(labelers[lb].lane);bump(labelers[lb].shifts[sh].lane);}
-      if(isLi){bump(labelers[lb].lidar);bump(labelers[lb].shifts[sh].lidar);}
+      var labKey = lb + '||' + pc;
+if(!labelers[labKey])labelers[labKey]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0},shifts:{},units:{},pcs:{},_name:lb,_pc:pc};
+if(!labelers[labKey].shifts[sh])labelers[labKey].shifts[sh]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0}};
+labelers[labKey].total++;labelers[labKey].shifts[sh].total++;
+if(un)labelers[labKey].units[un]=(labelers[labKey].units[un]||0)+1;
+if(pc&&pc!=='-')labelers[labKey].pcs[pc]=(labelers[labKey].pcs[pc]||0)+1;
+if(isL){bump(labelers[labKey].lane);bump(labelers[labKey].shifts[sh].lane);}
+if(isLi){bump(labelers[labKey].lidar);bump(labelers[labKey].shifts[sh].lidar);}
     });
     return labelers;
   }
