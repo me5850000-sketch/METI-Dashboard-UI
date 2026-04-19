@@ -2290,8 +2290,8 @@ function _wireAttCards(areaId,isDetails){
 }
 
 function loadAttendance(){
-  var dateISO=DP.getVal('attDate')||todayISO();
-  if(!gid('attDate').value)DP.setVal('attDate',dateISO,false);
+  var dateISO=SHARED.from||DP.getVal('attDate')||todayISO();
+  DP.setVal('attDate',dateISO,false);
   document.querySelectorAll('.att-shift-btn').forEach(function(b){var act=b.getAttribute('data-attshift')===_attShift;b.style.background=act?'var(--blue)':'white';b.style.color=act?'white':'var(--gray)';b.style.borderColor=act?'var(--blue)':'var(--border)';});
   var cacheKey=dateISO+'|'+_attShift;
   if(_lastAttDate===cacheKey&&_lastAttR){renderAttendanceSimple(_lastAttR,dateISO);return;}
@@ -2315,8 +2315,8 @@ function renderAttendanceSimple(r,dateISO){
 }
 
 function loadAttDetails(){
-  var dateISO=DP.getVal('attDate2')||todayISO();
-  if(!gid('attDate2').value)DP.setVal('attDate2',dateISO,false);
+  var dateISO=SHARED.from||DP.getVal('attDate2')||todayISO();
+  DP.setVal('attDate2',dateISO,false);
   document.querySelectorAll('.att-shift-btn2').forEach(function(b){var act=b.getAttribute('data-attshift2')===_attShift2;b.style.background=act?'var(--blue)':'white';b.style.color=act?'white':'var(--gray)';b.style.borderColor=act?'var(--blue)':'var(--border)';});
   var cacheKey=dateISO+'|'+_attShift2;
   if(_lastAttDate2===cacheKey&&_attShift2Cache){renderAttDetailsPage(_attShift2Cache,dateISO);return;}
