@@ -3859,7 +3859,7 @@ function _renderUsersPatch(users, pending){
     ? ' <span style="background:#c5221f;color:white;font-size:10px;font-weight:800;padding:1px 7px;border-radius:10px;margin-left:4px">'+filteredPending.length+'</span>'
     : '';
 
-  var canAdd = isFullAdmin; 
+  var canAdd = hasRole(role, ['admin','sm','svv','sv']); 
   var addBtnEl = gid('btnAddUser');
   if(addBtnEl) addBtnEl.style.display = canAdd ? 'flex' : 'none';
 
