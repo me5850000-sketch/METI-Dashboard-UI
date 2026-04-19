@@ -3133,7 +3133,7 @@ renderDetailsOfData = function () {
 
   var UNIT_ORD = ['NC Room 102', 'NC Room 106', 'NC Room 108', '4th Floor', '2nd Floor'];
   var SH_ORD   = ['Morning', 'Night', 'Over Night', 'Over Shift'];
-  var SH_ICON  = { Morning: '☀️', Night: '🌙', 'Over Night': '🌑', 'Over Shift': '🔄' };
+  var SH_ICON  = { Morning: '☀️', Night: '🌙', 'Over Night': '🦉', 'Over Shift': '🔄' };
 
   // ── بناء الهيكل الأساسي (نفس الأصلي) ──
   var shifts = {};
@@ -3536,7 +3536,7 @@ function renderOtDetails(data) {
   // تجميع البيانات وتصنيفها حسب الشفت
   var shifts = {};
   var SH_ORD = ['Morning', 'Night', 'Over Night', 'Over Shift'];
-  var SH_ICON = { 'Morning': '☀️', 'Night': '🌙', 'Over Night': '🌑', 'Over Shift': '🔄' };
+  var SH_ICON = { 'Morning': '☀️', 'Night': '🌙', 'Over Night': '🦉', 'Over Shift': '🔄' };
   
   data.forEach(function(r) {
     var sh = titleCase((r.otShift || 'Unknown').trim());
