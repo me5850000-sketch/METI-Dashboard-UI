@@ -690,17 +690,17 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
       </div>
       <nav class="sb-nav">
         <div class="nav-section">Main</div>
-        <div class="nav-item active" id="nav-home" data-page="home">🏠 Home</div>
-        <div class="nav-item" id="nav-data" data-page="data">📊 Data</div>
-        <div class="nav-item" id="nav-detailsofdata" data-page="detailsofdata">📋 Details of Data</div>
-        <div class="nav-item" id="nav-labelers" data-page="labelers">🏆 Top Labelers</div>
-        <div class="nav-item" id="nav-qtc" data-page="qtc">⭐ Top QTC</div>
-        <div class="nav-item" id="nav-qtcstats" data-page="qtcstats">📈 QTC Stats</div>
+        <div class="nav-item active" id="nav-home" data-page="home">Home</div>
+        <div class="nav-item" id="nav-data" data-page="data">Data</div>
+        <div class="nav-item" id="nav-detailsofdata" data-page="detailsofdata">Details of Data</div>
+        <div class="nav-item" id="nav-labelers" data-page="labelers">Top Labelers</div>
+        <div class="nav-item" id="nav-qtc" data-page="qtc">Top QTC</div>
+        <div class="nav-item" id="nav-qtcstats" data-page="qtcstats">QTC Stats</div>
         <div class="nav-section admin-only" style="display:none">Admin</div>
-        <div class="nav-item" id="nav-attendance" data-page="attendance">📋 Attendance</div>
-        <div class="nav-item" id="nav-attdetails" data-page="attdetails">👥 Details of Attendance</div>
-        <div class="nav-item" id="nav-otdetails" data-page="otdetails">⏱️ Details of OT</div>
-        <div class="nav-item" id="nav-users" data-page="users" style="display:none">👤 Users</div>
+        <div class="nav-item" id="nav-attendance" data-page="attendance">Attendance</div>
+        <div class="nav-item" id="nav-attdetails" data-page="attdetails">Details of Attendance</div>
+        <div class="nav-item" id="nav-otdetails" data-page="otdetails">Details of OT</div>
+        <div class="nav-item" id="nav-users" data-page="users" style="display:none">Users</div>
       </nav>
       <div class="sb-footer">
         <div class="sb-user">
@@ -709,8 +709,8 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
           <div class="su-shift" id="sbShift" style="display:none"></div>
           <span class="role-badge" id="sbRole">-</span>
         </div>
-        <button class="logout-btn" id="logoutBtn">🚪 Sign Out</button>
-        <button class="logout-btn" id="changePwdBtn" style="margin-top:8px;background:rgba(255,255,255,.05)">🔑 Change Password</button>
+        <button class="logout-btn" id="logoutBtn">Sign Out</button>
+        <button class="logout-btn" id="changePwdBtn" style="margin-top:8px;background:rgba(255,255,255,.05)">Change Password</button>
       </div>
     </div>
 
@@ -2279,7 +2279,7 @@ function _buildAttCard(sh,sd,dateISO,isDetails){
   +'<div onclick="(function(el){var b=el.nextElementSibling;b.style.display=b.style.display===\'none\'?\'block\':\'none\';})(this)" '
   +'style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer">'
   +'<div style="display:flex;align-items:center;gap:10px">'
-  +'<span style="font-size:13px;font-weight:800;color:#f57f17">🔄 Buffer</span>'
+  +'<span style="font-size:13px;font-weight:800;color:#f57f17"> Buffer</span>'
   +'<span style="background:#1e8e3e;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px">P: '+sd.bufferStats.present.length+'</span>'
   +(sd.bufferStats.absent.length > 0 ? '<span style="background:#c5221f;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px">A: '+sd.bufferStats.absent.length+'</span>' : '')
   +'<span style="background:#f57f17;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px">Total: '+sd.bufferStats.total+'</span>'
@@ -3115,7 +3115,7 @@ renderDetailsOfData = function () {
 
   var UNIT_ORD = ['NC Room 102', 'NC Room 106', 'NC Room 108', '4th Floor', '2nd Floor'];
   var SH_ORD   = ['Morning', 'Night', 'Over Night', 'Over Shift'];
-  var SH_ICON  = { Morning: '☀️', Night: '🌙', 'Over Night': '🦉', 'Over Shift': '🔄' };
+  var SH_ICON  = { Morning: '', Night: '', 'Over Night': '', 'Over Shift': '' };
 
   // ── بناء الهيكل الأساسي (نفس الأصلي) ──
   var shifts = {};
@@ -3518,7 +3518,7 @@ function renderOtDetails(data) {
   // تجميع البيانات وتصنيفها حسب الشفت
   var shifts = {};
   var SH_ORD = ['Morning', 'Night', 'Over Night', 'Over Shift'];
-  var SH_ICON = { 'Morning': '☀️', 'Night': '🌙', 'Over Night': '🦉', 'Over Shift': '🔄' };
+  var SH_ICON = { 'Morning': '', 'Night': '', 'Over Night': '', 'Over Shift': '' };
   
   data.forEach(function(r) {
     var sh = titleCase((r.otShift || 'Unknown').trim());
