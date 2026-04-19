@@ -824,8 +824,10 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
           <div id="qtcStatsArea"><div class="empty">Select a QTC to see their stats.</div></div>
         </div>
 
-        <label>Date</label>
-<div class="dp-wrap" id="dpWrap-attDate"><input type="text" class="dp-input" id="attDate" readonly placeholder="Select date" autocomplete="off"><span class="dp-icon">📅</span></div>
+        <div id="pgAttendance" style="display:none">
+          <div class="filter-bar">
+            <label>Date</label>
+            <div class="dp-wrap" id="dpWrap-attDate"><input type="text" class="dp-input" id="attDate" readonly placeholder="Select date" autocomplete="off"><span class="dp-icon">📅</span></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center" id="attShiftBtns">
               <label>Shift</label>
               <button class="mod-btn att-shift-btn" data-attshift="All" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>
@@ -1194,8 +1196,9 @@ function navTo(page){
   if(page==='users'&&SESSION&&!hasRole(SESSION.role,ROLES_MANAGE_USERS))return;
   
   // Toggle Global Filter Bar visibility
+  var pagesWithGlobalFilter = ['home', 'data', 'detailsofdata', 'labelers', 'qtc', 'qtcstats'];
   var gf = gid('globalFilterBar');
-  if(gf) gf.style.display = 'flex';
+  if(gf) gf.style.display = pagesWithGlobalFilter.includes(page) ? 'flex' : 'none';
 
   Object.keys(PAGES).forEach(function(k){
     var s=k===page;
@@ -2284,7 +2287,7 @@ function _wireAttCards(areaId,isDetails){
 }
 
 function loadAttendance(){
-  var dateISO=SHARED.from||todayISO();
+  var dateISO=DP.getVal('attDate')||todayISO();
   if(!gid('attDate').value)DP.setVal('attDate',dateISO,false);
   document.querySelectorAll('.att-shift-btn').forEach(function(b){var act=b.getAttribute('data-attshift')===_attShift;b.style.background=act?'var(--blue)':'white';b.style.color=act?'white':'var(--gray)';b.style.borderColor=act?'var(--blue)':'var(--border)';});
   var cacheKey=dateISO+'|'+_attShift;
@@ -2294,6 +2297,7 @@ function loadAttendance(){
 }
 
 function initAttendancePage(){
+  var di=gid('attDate');if(di&&!di._dpWired){di.addEventListener('click',function(){DP.open('attDate');});di._dpWired=true;}
   document.querySelectorAll('.att-shift-btn').forEach(function(b){b.addEventListener('click',function(){_attShift=b.getAttribute('data-attshift');_lastAttDate='';loadAttendance();});});
 }
 
