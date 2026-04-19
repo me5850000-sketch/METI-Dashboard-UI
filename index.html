@@ -3201,14 +3201,33 @@ var html =
 window.forceSyncAttendance = function(btn) {
   btn.style.opacity = "0.7";
   btn.style.transform = "scale(0.95)";
-  btn.innerHTML = "⏳ جارٍ المزامنة الآن...";
-  
-  navTo('attdetails'); // روح للأتيند
-  
+  btn.innerHTML = "⏳ جارٍ تحميل بيانات الـ Attendance...";
+  btn.disabled = true;
+
+  // روح لصفحة Details of Attendance
+  navTo('attdetails');
+
+  // استنى الـ Attendance يخلص تحميله
+  var checkReady = setInterval(function() {
+    var area = gid('attDetailsArea');
+    // لو التحميل خلص (مفيش spin)
+    if (area && !area.querySelector('.spin')) {
+      clearInterval(checkReady);
+
+      // استنى ثانية وبعدين ارجع
+      setTimeout(function() {
+        navTo('detailsofdata');
+        toast('تم تحميل بيانات الـ Attendance ✅', 'ok');
+      }, 1000);
+    }
+  }, 300); // بيتشيك كل 300ms
+
+  // Safety timeout — لو بعد 15 ثانية مرجعش، يرجع على طول
   setTimeout(function() {
-    navTo('detailsofdata'); // ارجع للداتا
-    toast('تمت مزامنة البيانات وتحديث القائمة ✅', 'ok');
-  }, 500); 
+    clearInterval(checkReady);
+    navTo('detailsofdata');
+    toast('تم تحميل بيانات الـ Attendance ✅', 'ok');
+  }, 15000);
 };
   // ── Shifts ──
   var shiftKeys = SH_ORD.filter(function (s) { return !!shifts[s]; });
