@@ -1477,7 +1477,14 @@ function buildShifts(rows) {
   return shifts;
 }
 
-function getDrillVal(d,dtype){if(dtype==='total')return d.total;if(dtype==='lane_fp')return d.lane.fp;if(dtype==='lane_qa')return d.lane.qa;if(dtype==='lidar_fp')return d.lidar.fp;if(dtype==='lidar_qa')return d.lidar.qa;return 0;}
+function getDrillVal(d,dtype){
+  if(dtype==='total')return d.total||0;
+  if(dtype==='lane_fp')return d.lfp||0;
+  if(dtype==='lane_qa')return d.lqa||0;
+  if(dtype==='lidar_fp')return d.lifp||0;
+  if(dtype==='lidar_qa')return d.liqa||0;
+  return 0;
+}
 
 function renderDrill(shifts){
   var MAIN=['Morning','Night','Over Night'],ROOM_ORD=['NC Room 102','NC Room 106','NC Room 108','4th Floor','2nd Floor'];
@@ -1496,7 +1503,11 @@ function renderDrill(shifts){
     su.forEach(function(un){
       var ud=sd.units[un],val=getDrillVal(ud,dtype);if(!val)return;
       var st='';
-      if(dtype==='total')st='<span class="drill-stat ds-lfp">LFP: '+ud.lane.fp+'</span><span class="drill-stat ds-lqa">LQA: '+ud.lane.qa+'</span><span class="drill-stat ds-lifp">LiFP: '+ud.lidar.fp+'</span><span class="drill-stat ds-liqa">LiQA: '+ud.lidar.qa+'</span><span class="drill-stat ds-tot">'+val+'</span>';
+      if(dtype==='total')st='<span class="drill-stat ds-lfp">LFP: '+ud.lfp+'</span><span class="drill-stat ds-lqa">LQA: '+ud.lqa+'</span><span class="drill-stat ds-lifp">LiFP: '+ud.lifp+'</span><span class="drill-stat ds-liqa">LiQA: '+ud.liqa+'</span><span class="drill-stat ds-tot">'+val+'</span>';
+else if(dtype==='lane_fp')st='<span class="drill-stat ds-lfp">'+val+'</span>';
+else if(dtype==='lane_qa')st='<span class="drill-stat ds-lqa">'+val+'</span>';
+else if(dtype==='lidar_fp')st='<span class="drill-stat ds-lifp">'+val+'</span>';
+else if(dtype==='lidar_qa')st='<span class="drill-stat ds-liqa">'+val+'</span>';
       else if(dtype==='lane_fp')st='<span class="drill-stat ds-lfp">'+val+'</span>';
       else if(dtype==='lane_qa')st='<span class="drill-stat ds-lqa">'+val+'</span>';
       else if(dtype==='lidar_fp')st='<span class="drill-stat ds-lifp">'+val+'</span>';
