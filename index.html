@@ -1197,7 +1197,7 @@ function navTo(page){
   
   // Toggle Global Filter Bar visibility
   var gf = gid('globalFilterBar');
-  if(gf) gf.style.display = pagesWithGlobalFilter.includes(page) ? 'flex' : 'none';
+  if(gf) gf.style.display = 'flex';
 
   Object.keys(PAGES).forEach(function(k){
     var s=k===page;
