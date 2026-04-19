@@ -1045,6 +1045,7 @@ var SHARED={
   reloadActive:function(){
     if(gid('pgHome').style.display!=='none')loadStats();
     else if(gid('pgData').style.display!=='none')loadData();
+else if(gid('pgDetailsOfData').style.display!=='none')loadData();
     else if(gid('pgLabelers').style.display!=='none')loadLabelers();
     else if(gid('pgQtc').style.display!=='none')loadQtc();
     else if(gid('pgQtcStats').style.display!=='none')initQtcStats();
@@ -1211,11 +1212,7 @@ function navTo(page){
   if(page==='data')loadData();
   if(page==='detailsofdata'){
   dodPage=1;
-  if(!dataAll||!dataAll.length){
-    loadData();
-  } else {
-    renderDetailsOfData();
-  }
+  loadData();
 }
   if(page==='users')loadUsers();
   if(page==='labelers')loadLabelers();
