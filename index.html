@@ -2010,43 +2010,83 @@ function renderQtcPage(data){
 
  setTimeout(function(){
     function renderTop4(sh){
-      var el=gid('qtcTop4');if(!el)return;
-      var list=allQtcs.filter(function(q){return sh==='all'||q.shift===sh;});
-      var cats=[
-        {key:'lfp',label:'Lane FP',color:'#1e8e3e',bg:'#e8f5e9',border:'#c3e6cb'},
-        {key:'lqa',label:'Lane QA',color:'#e37400',bg:'#fff3cd',border:'#ffc107'},
-        {key:'lifp',label:'Lidar FP',color:'#007b83',bg:'#e0f7fa',border:'#80cbc4'},
-        {key:'liqa',label:'Lidar QA',color:'#7b1fa2',bg:'#f3e5f5',border:'#ce93d8'}
-      ];
-      var ranks=['🥇','🥈','🥉','4️⃣'];
-      var h='<div class="sec-hdr" style="margin-bottom:12px">Top 4 per Category'+(sh!=='all'?' — '+sh:'')+'</div>';
-      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:4px">';
-      cats.forEach(function(cat){
-        var sorted=list.slice().filter(function(q){return(q[cat.key]||0)>0;}).sort(function(a,b){return(b[cat.key]||0)-(a[cat.key]||0);}).slice(0,4);
-        h+='<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);border:1.5px solid '+cat.border+'">';
-        h+='<div style="background:'+cat.color+';padding:11px 16px"><span style="color:white;font-size:14px;font-weight:800">'+cat.label+'</span></div>';
-        if(!sorted.length){h+='<div style="padding:18px;text-align:center;color:var(--gray);font-size:12px">No data</div>';}
-        else{sorted.forEach(function(q,i){
-          var isF=i===0;
-          h+='<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:'+(isF?cat.bg:'')+';border-bottom:1px solid #f5f5f5">';
-          h+='<span style="font-size:18px;flex-shrink:0">'+ranks[i]+'</span>';
-          h+='<span style="flex:1;font-size:13px;font-weight:'+(isF?'800':'700')+';color:var(--dark)">'+q.name+(sh==='all'?'<span class="badge '+shiftBadge(q.shift)+'" style="margin-left:6px;font-size:10px;vertical-align:middle">'+q.shift+'</span>':'')+'</span>';
-          h+='<span style="font-size:16px;font-weight:800;color:'+cat.color+'">'+q[cat.key]+'</span>';
-          h+='</div>';
-        });}
-        h+='</div>';
-      });
+  var el=gid('qtcTop4');if(!el)return;
+  var list=allQtcs.filter(function(q){return sh==='all'||q.shift===sh;});
+  var cats=[
+    {key:'lfp',label:'Lane FP',color:'#1e8e3e',bg:'#e8f5e9',border:'#c3e6cb'},
+    {key:'lqa',label:'Lane QA',color:'#e37400',bg:'#fff3cd',border:'#ffc107'},
+    {key:'lifp',label:'Lidar FP',color:'#007b83',bg:'#e0f7fa',border:'#80cbc4'},
+    {key:'liqa',label:'Lidar QA',color:'#7b1fa2',bg:'#f3e5f5',border:'#ce93d8'}
+  ];
+  var ranks=['🥇','🥈','🥉','4️⃣'];
+  var h='<div class="sec-hdr" style="margin-bottom:12px">Top 4 per Category'+(sh!=='all'?' — '+sh:'')+'</div>';
+  
+  // QTC Popup
+  h+='<div id="qtcMiniPopup" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeQtcMiniPopup()">';
+  h+='<div style="background:white;border-radius:16px;width:100%;max-width:380px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35)">';
+  h+='<div id="qtcMiniPopupInner"></div></div></div>';
+  
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:4px">';
+  cats.forEach(function(cat){
+    var sorted=list.slice().filter(function(q){return(q[cat.key]||0)>0;}).sort(function(a,b){return(b[cat.key]||0)-(a[cat.key]||0);}).slice(0,4);
+    h+='<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);border:1.5px solid '+cat.border+'">';
+    h+='<div style="background:'+cat.color+';padding:11px 16px"><span style="color:white;font-size:14px;font-weight:800">'+cat.label+'</span></div>';
+    if(!sorted.length){h+='<div style="padding:18px;text-align:center;color:var(--gray);font-size:12px">No data</div>';}
+    else{sorted.forEach(function(q,i){
+      var isF=i===0;
+      var qData=JSON.stringify({name:q.name,shift:q.shift,lfp:q.lfp,lqa:q.lqa,lifp:q.lifp,liqa:q.liqa,total:q.total}).replace(/"/g,'&quot;');
+      h+='<div onclick="openQtcMiniPopup(this)" data-qtcinfo="'+qData+'" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:'+(isF?cat.bg:'')+';border-bottom:1px solid #f5f5f5;cursor:pointer;transition:background .15s" onmouseover="this.style.background=\''+cat.bg+'\'" onmouseout="this.style.background=\''+(isF?cat.bg:'')+'\'">';
+      h+='<span style="font-size:18px;flex-shrink:0">'+ranks[i]+'</span>';
+      h+='<span style="flex:1;font-size:13px;font-weight:'+(isF?'800':'700')+';color:var(--dark)">'+q.name+(sh==='all'?'<span class="badge '+shiftBadge(q.shift)+'" style="margin-left:6px;font-size:10px;vertical-align:middle">'+q.shift+'</span>':'')+'</span>';
+      h+='<span style="font-size:16px;font-weight:800;color:'+cat.color+'">'+q[cat.key]+'</span>';
+      h+='<span style="font-size:11px;color:rgba(0,0,0,.25)">›</span>';
       h+='</div>';
-      el.innerHTML=h;
-    }
-    renderQtcList();
-    renderTop4(activeShift);
-    document.querySelectorAll('.qtc-unit-btn').forEach(function(b){b.addEventListener('click',function(){var u=b.getAttribute('data-unit');if(u==='all'){activeUnits.clear();activeUnits.add('all');}else{activeUnits.delete('all');if(activeUnits.has(u)){activeUnits.delete(u);if(activeUnits.size===0)activeUnits.add('all');}else activeUnits.add(u);}updateUnitBtns();renderQtcList();});});
-    document.querySelectorAll('#qtcCard .qtc-tab').forEach(function(t){t.addEventListener('click',function(){activeShift=t.getAttribute('data-qtcsh');document.querySelectorAll('#qtcCard .qtc-tab').forEach(function(x){var a=x.getAttribute('data-qtcsh')===activeShift;x.style.borderBottomColor=a?'var(--blue)':'transparent';x.style.color=a?'var(--blue)':'var(--gray)';});renderQtcList();renderTop4(activeShift);});});
-    var pillsEl=gid('qtcSortPills');
-    if(pillsEl){pillsEl.addEventListener('click',function(e){var p=e.target.closest('.lab-sort-pill');if(!p)return;var key=p.getAttribute('data-qsortkey');if(!key)return;qtcSortKey=key;pillsEl.querySelectorAll('.lab-sort-pill').forEach(function(x){SORT_PILLS.forEach(function(sp){x.classList.remove(sp.ac);});if(x.getAttribute('data-qsortkey')===key){var sp=SORT_PILLS.filter(function(s){return s.key===key;})[0];if(sp)x.classList.add(sp.ac);}});renderQtcList();});}
-  },0);
+    });}
+    h+='</div>';
+  });
+  h+='</div>';
+  el.innerHTML=h;
 }
+
+window.openQtcMiniPopup=function(row){
+  var info=JSON.parse(row.getAttribute('data-qtcinfo').replace(/&quot;/g,'"'));
+  var pop=gid('qtcMiniPopup');if(!pop)return;
+  var shBadge='<span class="badge '+shiftBadge(info.shift)+'" style="font-size:11px;margin-left:6px">'+info.shift+'</span>';
+  var cats=[
+    {key:'lfp',label:'Lane FP',color:'#1e8e3e',bg:'#e8f5e9'},
+    {key:'lqa',label:'Lane QA',color:'#e37400',bg:'#fff3cd'},
+    {key:'lifp',label:'Lidar FP',color:'#007b83',bg:'#e0f7fa'},
+    {key:'liqa',label:'Lidar QA',color:'#7b1fa2',bg:'#f3e5f5'}
+  ];
+  var h='<div style="background:var(--blue);padding:14px 18px;display:flex;align-items:center;justify-content:space-between">';
+  h+='<div><div style="color:white;font-size:15px;font-weight:800">'+info.name+'</div>';
+  h+='<div style="margin-top:4px">'+shBadge+'</div></div>';
+  h+='<button onclick="closeQtcMiniPopup()" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;color:white;font-size:14px;display:flex;align-items:center;justify-content:center">✕</button>';
+  h+='</div>';
+  h+='<div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  cats.forEach(function(cat){
+    var val=info[cat.key]||0;
+    h+='<div style="background:'+cat.bg+';border-radius:10px;padding:12px;text-align:center">';
+    h+='<div style="font-size:10px;font-weight:700;color:'+cat.color+';text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">'+cat.label+'</div>';
+    h+='<div style="font-size:30px;font-weight:800;color:'+cat.color+';line-height:1">'+val+'</div>';
+    h+='</div>';
+  });
+  h+='</div>';
+  h+='<div style="padding:0 16px 14px">';
+  h+='<div style="background:var(--blue);border-radius:10px;padding:12px;text-align:center">';
+  h+='<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Total</div>';
+  h+='<div style="font-size:34px;font-weight:800;color:white;line-height:1">'+info.total+'</div>';
+  h+='</div></div>';
+  gid('qtcMiniPopupInner').innerHTML=h;
+  pop.style.display='flex';
+  document.body.style.overflow='hidden';
+};
+
+window.closeQtcMiniPopup=function(){
+  var pop=gid('qtcMiniPopup');
+  if(pop)pop.style.display='none';
+  document.body.style.overflow='';
+};
 </script>
 
 <script>
