@@ -75,7 +75,7 @@ body{background:var(--bg);min-height:100vh;font-size:14px;color:var(--dark)}
 .topbar{background:white;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;box-shadow:var(--shadow)}
 .tb-left .tb-title{font-size:20px;font-weight:800;color:var(--blue)}
 .tb-left .tb-sub{font-size:12px;color:var(--gray);margin-top:2px}
-.content{padding:24px 28px;flex:1}
+padding:24px 28px;flex:1}
 
 /* ══ GLOBAL FILTER BAR ══ */
 .global-filter-bar {
@@ -105,8 +105,14 @@ body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
 .fb-time:focus{border-color:var(--blue)}
 .mod-btn{padding:7px 14px;border-radius:7px;border:2px solid var(--border);background:white;color:var(--gray);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
 .mod-btn:hover{border-color:var(--blue);color:var(--blue)}
-.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
-.card{background:white;border-radius:14px;padding:20px 18px;border:1px solid var(--border);position:relative;overflow:hidden;box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.cards{
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-bottom:14px;
+.card{
+  background:white;
+  border-radius:12px;
+  padding:12px 10px;border:1px solid var(--border);position:relative;overflow:hidden;box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
 .card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(28,69,135,.14)}
 .card.card-active{box-shadow:0 0 0 3px var(--blue),0 6px 20px rgba(28,69,135,.18)!important;transform:translateY(-3px)!important}
 .card-stripe{position:absolute;top:0;left:0;right:0;height:4px;border-radius:14px 14px 0 0}
@@ -420,7 +426,8 @@ body.dark #pgAttendance .mod-btn[style*="background:var(--blue)"]{background:#1c
   .hamburger{display:flex}.main{margin-left:0!important;padding-bottom:72px}
   .topbar{padding:10px 14px!important;gap:8px}.tb-left .tb-title{font-size:16px!important}
   .tb-left .tb-sub,#topClock{display:none}
-  .content{padding:12px!important}
+  .content{
+  padding:12px 14px;
   /* Hide Queue + Objects on mobile */
   #pgData table th:nth-child(11),
   #pgData table td:nth-child(11),
@@ -462,7 +469,7 @@ body.dark #pgAttendance .mod-btn[style*="background:var(--blue)"]{background:#1c
 #labTabsRow { flex-wrap: wrap !important; overflow-x: visible !important; }
 #labTabsRow .lab-tab { flex-shrink: 0; font-size: 12px !important; padding: 8px 10px !important; }}
 @media(min-width:769px) and (max-width:1024px){.sidebar{width:200px}.main{margin-left:200px}.content{padding:16px 20px}
-  .cards{grid-template-columns:repeat(2,1fr)!important;gap:12px!important}.grid2{grid-template-columns:1fr!important}
+  grid-template-columns:repeat(2,1fr)!important;gap:12px!important}.grid2{grid-template-columns:1fr!important}
   .target-cards{grid-template-columns:1fr 1fr;gap:14px}.modal{width:500px!important}.modal-wide{width:90%!important}
 }
 
