@@ -3201,14 +3201,34 @@ var html =
 window.forceSyncAttendance = function(btn) {
   btn.style.opacity = "0.7";
   btn.style.transform = "scale(0.95)";
-  btn.innerHTML = "⏳ جارٍ المزامنة الآن...";
-  
-  navTo('attdetails'); // روح للأتيند
-  
-  setTimeout(function() {
-    navTo('detailsofdata'); // ارجع للداتا
-    toast('تمت مزامنة البيانات وتحديث القائمة ✅', 'ok');
-  }, 500); 
+  btn.innerHTML = "⏳ جارٍ المزامنة...";
+
+  // روح لصفحة الأتيند
+  navTo('attdetails');
+
+  // انتظر لحد ما الـ cache يتملى (polling كل 300ms, max 10 ثواني)
+  var attempts = 0;
+  var maxAttempts = 33; // 33 × 300ms ≈ 10 ثواني
+
+  var checker = setInterval(function() {
+    attempts++;
+
+    // لو البيانات اتحملت
+    if (_attShift2Cache) {
+      clearInterval(checker);
+      // ارجع لصفحة الداتا
+      navTo('detailsofdata');
+      toast('تمت مزامنة البيانات ✅', 'ok');
+      return;
+    }
+
+    // لو وصلنا للـ max بدون نتيجة
+    if (attempts >= maxAttempts) {
+      clearInterval(checker);
+      navTo('detailsofdata');
+      toast('تم الرجوع (انتهت المهلة)', 'ok');
+    }
+  }, 300);
 };
   // ── Shifts ──
   var shiftKeys = SH_ORD.filter(function (s) { return !!shifts[s]; });
