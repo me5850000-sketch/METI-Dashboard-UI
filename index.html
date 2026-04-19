@@ -3863,7 +3863,7 @@ function _renderUsersPatch(users, pending){
   var role   = SESSION && SESSION.role;
   var myShift = SESSION && SESSION.shift;
   var isFullAdmin = hasRole(role, ['admin','sm']);
-  var isSvSsv    = hasRole(role, ['sv','ssv']);
+  var isSvSvv    = hasRole(role, ['sv','ssv']);
 
   var filteredUsers   = isFullAdmin ? users   : users.filter(function(u){ return u.shift === myShift; });
   var filteredPending = isFullAdmin ? pending : pending.filter(function(p){ return p.shift === myShift; });
@@ -3896,7 +3896,7 @@ function _renderUsersPatch(users, pending){
     '<th>Role</th><th>Shift</th><th>Status</th><th>Actions</th>'+
     '</tr></thead><tbody>'+
     sorted.map(function(u){
-      var canEdit = isFullAdmin || (isSvSsv && u.shift === myShift);
+      var canEdit = isFullAdmin || (isSvSvv && u.shift === myShift);
       var canDel  = isFullAdmin;
       return '<tr>'+
         '<td class="left bold">'+titleCase(u.name||'-')+'</td>'+
