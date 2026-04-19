@@ -75,7 +75,7 @@ body{background:var(--bg);min-height:100vh;font-size:14px;color:var(--dark)}
 .topbar{background:white;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);position:sticky;top:0;z-index:200;box-shadow:var(--shadow)}
 .tb-left .tb-title{font-size:20px;font-weight:800;color:var(--blue)}
 .tb-left .tb-sub{font-size:12px;color:var(--gray);margin-top:2px}
-padding:24px 28px;flex:1}
+.content{padding:24px 28px;flex:1}
 
 /* ══ GLOBAL FILTER BAR ══ */
 .global-filter-bar {
@@ -105,14 +105,8 @@ body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
 .fb-time:focus{border-color:var(--blue)}
 .mod-btn{padding:7px 14px;border-radius:7px;border:2px solid var(--border);background:white;color:var(--gray);font-size:13px;font-weight:700;cursor:pointer;transition:all .15s}
 .mod-btn:hover{border-color:var(--blue);color:var(--blue)}
-.cards{
-  grid-template-columns:repeat(4,1fr);
-  gap:10px;
-  margin-bottom:14px;
-.card{
-  background:white;
-  border-radius:12px;
-  padding:12px 10px;border:1px solid var(--border);position:relative;overflow:hidden;box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:24px}
+.card{background:white;border-radius:14px;padding:20px 18px;border:1px solid var(--border);position:relative;overflow:hidden;box-shadow:var(--shadow);transition:transform .15s,box-shadow .15s;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
 .card:hover{transform:translateY(-2px);box-shadow:0 6px 20px rgba(28,69,135,.14)}
 .card.card-active{box-shadow:0 0 0 3px var(--blue),0 6px 20px rgba(28,69,135,.18)!important;transform:translateY(-3px)!important}
 .card-stripe{position:absolute;top:0;left:0;right:0;height:4px;border-radius:14px 14px 0 0}
@@ -140,10 +134,7 @@ tbody tr.data-row.has-link:hover td{background:#e8f5e9!important}
 .b-admin{background:var(--orange-lt);color:#7f4f00}.b-sm{background:#ffebee;color:#b71c1c}.b-ssv{background:#f3e5f5;color:#4a148c}.b-sv{background:var(--green-lt);color:#155724}.b-qtc{background:#e0f7fa;color:#006064}
 .b-active{background:var(--green-lt);color:#155724}.b-inactive{background:var(--red-lt);color:var(--red)}
 .b-fp{background:#e8f5e9;color:#2e7d32}.b-qa{background:#e3f2fd;color:#0d47a1}
-.b-morning{background:#f1f3f4;color:#5f6368}
-.b-night{background:#f1f3f4;color:#5f6368}
-.b-overnight{background:#f1f3f4;color:#5f6368}
-.b-overshift{background:#f1f3f4;color:#5f6368}
+.b-morning{background:#fff3e0;color:#e65100}.b-night{background:#e8eaf6;color:#283593}.b-overnight{background:#e8f5e9;color:#1b5e20}.b-overshift{background:#f3e5f5;color:#4a148c}
 .card-drill{background:white;border:1.5px solid var(--blue-lt);border-radius:12px;margin-bottom:20px;overflow:hidden;box-shadow:var(--shadow);animation:fadeUp .2s ease}
 .card-drill-hdr{background:var(--blue);color:white;padding:10px 16px;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:space-between}
 .drill-close{background:rgba(255,255,255,.2);border:none;color:white;border-radius:50%;width:24px;height:24px;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center}
@@ -250,10 +241,7 @@ body.dark .content,body.dark .main{background:#0f1117}
 body.dark td{color:#e8eaf0}body.dark .detail-val{color:#e8eaf0}body.dark .detail-lbl{color:#9aa0b4}
 body.dark tbody tr:nth-child(even) td{background:#252840}body.dark tbody tr:hover td{background:#1a2040!important}body.dark tr.total-row td{background:#1c4587;color:white}body.dark .detail-item{background:#252840}
 body.dark input,body.dark select,body.dark .dp-input,body.dark .fb-time,body.dark .sel-inp{background:#252840!important;color:#e8eaf0!important;border-color:#2d3250!important}
-body.dark .badge.b-morning{background:#2d3250;color:#9aa0b4}
-body.dark .badge.b-night{background:#2d3250;color:#9aa0b4}
-body.dark .badge.b-overnight{background:#2d3250;color:#9aa0b4}
-body.dark .badge.b-overshift{background:#2d3250;color:#9aa0b4}body.dark .badge.b-fp{background:#1b2e1b;color:#81c784}body.dark .badge.b-qa{background:#1a2540;color:#64b5f6}body.dark .badge.b-active{background:#1b2e1b;color:#81c784}body.dark .badge.b-inactive{background:#3d1a1a;color:#ef9a9a}
+body.dark .badge.b-morning{background:#3d2800;color:#ffb74d}body.dark .badge.b-night{background:#1a1f3d;color:#90caf9}body.dark .badge.b-overnight{background:#1b2e1b;color:#81c784}body.dark .badge.b-overshift{background:#2d1f3d;color:#ce93d8}body.dark .badge.b-fp{background:#1b2e1b;color:#81c784}body.dark .badge.b-qa{background:#1a2540;color:#64b5f6}body.dark .badge.b-active{background:#1b2e1b;color:#81c784}body.dark .badge.b-inactive{background:#3d1a1a;color:#ef9a9a}
 body.dark .mod-btn{background:#252840;color:#9aa0b4;border-color:#2d3250}body.dark .mod-btn:hover{border-color:#4d7fff;color:#7eaaff}
 body.dark .lab-sort-pill{background:#252840;color:#9aa0b4;border-color:#2d3250}body.dark .lab-sort-pill:hover{border-color:#4d7fff;color:#7eaaff;background:#1a2040}
 body.dark .drill-unit-row{background:#1a2040}body.dark .drill-shift-btn{background:#252840;color:#9aa0b4;border-color:#2d3250}body.dark .drill-shift-btn.active{background:#1c4587;color:white}
@@ -426,8 +414,7 @@ body.dark #pgAttendance .mod-btn[style*="background:var(--blue)"]{background:#1c
   .hamburger{display:flex}.main{margin-left:0!important;padding-bottom:72px}
   .topbar{padding:10px 14px!important;gap:8px}.tb-left .tb-title{font-size:16px!important}
   .tb-left .tb-sub,#topClock{display:none}
-  .content{
-  padding:12px 14px;
+  .content{padding:12px!important}
   /* Hide Queue + Objects on mobile */
   #pgData table th:nth-child(11),
   #pgData table td:nth-child(11),
@@ -469,7 +456,7 @@ body.dark #pgAttendance .mod-btn[style*="background:var(--blue)"]{background:#1c
 #labTabsRow { flex-wrap: wrap !important; overflow-x: visible !important; }
 #labTabsRow .lab-tab { flex-shrink: 0; font-size: 12px !important; padding: 8px 10px !important; }}
 @media(min-width:769px) and (max-width:1024px){.sidebar{width:200px}.main{margin-left:200px}.content{padding:16px 20px}
-  grid-template-columns:repeat(2,1fr)!important;gap:12px!important}.grid2{grid-template-columns:1fr!important}
+  .cards{grid-template-columns:repeat(2,1fr)!important;gap:12px!important}.grid2{grid-template-columns:1fr!important}
   .target-cards{grid-template-columns:1fr 1fr;gap:14px}.modal{width:500px!important}.modal-wide{width:90%!important}
 }
 
@@ -697,17 +684,17 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
       </div>
       <nav class="sb-nav">
         <div class="nav-section">Main</div>
-        <div class="nav-item active" id="nav-home" data-page="home">Home</div>
-        <div class="nav-item" id="nav-data" data-page="data">Data</div>
-        <div class="nav-item" id="nav-detailsofdata" data-page="detailsofdata">Details of Data</div>
-        <div class="nav-item" id="nav-labelers" data-page="labelers">Top Labelers</div>
-        <div class="nav-item" id="nav-qtc" data-page="qtc">Top QTC</div>
-        <div class="nav-item" id="nav-qtcstats" data-page="qtcstats">QTC Stats</div>
+        <div class="nav-item active" id="nav-home" data-page="home">🏠 Home</div>
+        <div class="nav-item" id="nav-data" data-page="data">📊 Data</div>
+        <div class="nav-item" id="nav-detailsofdata" data-page="detailsofdata">📋 Details of Data</div>
+        <div class="nav-item" id="nav-labelers" data-page="labelers">🏆 Top Labelers</div>
+        <div class="nav-item" id="nav-qtc" data-page="qtc">⭐ Top QTC</div>
+        <div class="nav-item" id="nav-qtcstats" data-page="qtcstats">📈 QTC Stats</div>
         <div class="nav-section admin-only" style="display:none">Admin</div>
-        <div class="nav-item" id="nav-attendance" data-page="attendance">Attendance</div>
-        <div class="nav-item" id="nav-attdetails" data-page="attdetails">Details of Attendance</div>
-        <div class="nav-item" id="nav-otdetails" data-page="otdetails">Details of OT</div>
-        <div class="nav-item" id="nav-users" data-page="users" style="display:none">Users</div>
+        <div class="nav-item" id="nav-attendance" data-page="attendance">📋 Attendance</div>
+        <div class="nav-item" id="nav-attdetails" data-page="attdetails">👥 Details of Attendance</div>
+        <div class="nav-item" id="nav-otdetails" data-page="otdetails">⏱️ Details of OT</div>
+        <div class="nav-item" id="nav-users" data-page="users" style="display:none">👤 Users</div>
       </nav>
       <div class="sb-footer">
         <div class="sb-user">
@@ -716,8 +703,8 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
           <div class="su-shift" id="sbShift" style="display:none"></div>
           <span class="role-badge" id="sbRole">-</span>
         </div>
-        <button class="logout-btn" id="logoutBtn">Sign Out</button>
-        <button class="logout-btn" id="changePwdBtn" style="margin-top:8px;background:rgba(255,255,255,.05)">Change Password</button>
+        <button class="logout-btn" id="logoutBtn">🚪 Sign Out</button>
+        <button class="logout-btn" id="changePwdBtn" style="margin-top:8px;background:rgba(255,255,255,.05)">🔑 Change Password</button>
       </div>
     </div>
 
@@ -1459,45 +1446,32 @@ function initStatsListener(){
   });
 }
 
-// ══ BUILD SHIFTS FUNCTION ══
-// ══ BUILD SHIFTS FUNCTION ══
-function buildShifts(rows) {
-  var shifts = {};
-  var SH_ORD = ['Morning', 'Night', 'Over Night', 'Over Shift'];
-  
-  SH_ORD.forEach(function(sh) { shifts[sh] = { total:0, lfp:0, lqa:0, lifp:0, liqa:0, units:{} }; });
-  
-  rows.forEach(function(r) {
-    var sh = nShift(r[F.shift] || 'Unknown');
-    var un = (r[F.unit] || 'Unknown').trim();
-    var mod = (r[F.modality] || '').toLowerCase();
-    var pas = (r[F.pass] || '').toUpperCase();
-    var isL = mod.indexOf('lane') !== -1;
-    var isLi = mod.indexOf('lidar') !== -1;
+function buildLabelers(rows){
+  var labelers={};
+  rows.forEach(function(r){
+    var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
+    var sh=nShift(r[F.shift]||'Unknown'),lb=titleCase(r[F.labeler]||'Unknown');
+    var un=(r[F.unit]||'').trim(),pc=(r[F.pc]||'').toString().trim();
+    var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1,isFP=pass==='FP',isQA=pass==='QA';
     
-    if (!shifts[sh]) shifts[sh] = { total:0, lfp:0, lqa:0, lifp:0, liqa:0, units:{} };
-    if (!shifts[sh].units[un]) shifts[sh].units[un] = { total:0, lfp:0, lqa:0, lifp:0, liqa:0 };
+    var labKey = lb + '||' + pc; // 👈 مفتاح التفرقة الجديد
     
-    shifts[sh].total++;
-    shifts[sh].units[un].total++;
+    function bump(o){o.total++;if(isFP)o.fp++;if(isQA)o.qa++;}
     
-    if (isL && pas === 'FP') { shifts[sh].lfp++; shifts[sh].units[un].lfp++; }
-    if (isL && pas === 'QA') { shifts[sh].lqa++; shifts[sh].units[un].lqa++; }
-    if (isLi && pas === 'FP') { shifts[sh].lifp++; shifts[sh].units[un].lifp++; }
-    if (isLi && pas === 'QA') { shifts[sh].liqa++; shifts[sh].units[un].liqa++; }
+    if(!labelers[labKey])labelers[labKey]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0},shifts:{},units:{},pcs:{},_name:lb,_pc:pc};
+    if(!labelers[labKey].shifts[sh])labelers[labKey].shifts[sh]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0}};
+    
+    labelers[labKey].total++;
+    labelers[labKey].shifts[sh].total++;
+    if(un)labelers[labKey].units[un]=(labelers[labKey].units[un]||0)+1;
+    if(pc&&pc!=='-')labelers[labKey].pcs[pc]=(labelers[labKey].pcs[pc]||0)+1;
+    if(isL){bump(labelers[labKey].lane);bump(labelers[labKey].shifts[sh].lane);}
+    if(isLi){bump(labelers[labKey].lidar);bump(labelers[labKey].shifts[sh].lidar);}
   });
-  
-  return shifts;
+  return labelers;
 }
 
-function getDrillVal(d,dtype){
-  if(dtype==='total')return d.total||0;
-  if(dtype==='lane_fp')return d.lfp||0;
-  if(dtype==='lane_qa')return d.lqa||0;
-  if(dtype==='lidar_fp')return d.lifp||0;
-  if(dtype==='lidar_qa')return d.liqa||0;
-  return 0;
-}
+function getDrillVal(d,dtype){if(dtype==='total')return d.total;if(dtype==='lane_fp')return d.lane.fp;if(dtype==='lane_qa')return d.lane.qa;if(dtype==='lidar_fp')return d.lidar.fp;if(dtype==='lidar_qa')return d.lidar.qa;return 0;}
 
 function renderDrill(shifts){
   var MAIN=['Morning','Night','Over Night'],ROOM_ORD=['NC Room 102','NC Room 106','NC Room 108','4th Floor','2nd Floor'];
@@ -1516,11 +1490,7 @@ function renderDrill(shifts){
     su.forEach(function(un){
       var ud=sd.units[un],val=getDrillVal(ud,dtype);if(!val)return;
       var st='';
-      if(dtype==='total')st='<span class="drill-stat ds-lfp">LFP: '+ud.lfp+'</span><span class="drill-stat ds-lqa">LQA: '+ud.lqa+'</span><span class="drill-stat ds-lifp">LiFP: '+ud.lifp+'</span><span class="drill-stat ds-liqa">LiQA: '+ud.liqa+'</span><span class="drill-stat ds-tot">'+val+'</span>';
-else if(dtype==='lane_fp')st='<span class="drill-stat ds-lfp">'+val+'</span>';
-else if(dtype==='lane_qa')st='<span class="drill-stat ds-lqa">'+val+'</span>';
-else if(dtype==='lidar_fp')st='<span class="drill-stat ds-lifp">'+val+'</span>';
-else if(dtype==='lidar_qa')st='<span class="drill-stat ds-liqa">'+val+'</span>';
+      if(dtype==='total')st='<span class="drill-stat ds-lfp">LFP: '+ud.lane.fp+'</span><span class="drill-stat ds-lqa">LQA: '+ud.lane.qa+'</span><span class="drill-stat ds-lifp">LiFP: '+ud.lidar.fp+'</span><span class="drill-stat ds-liqa">LiQA: '+ud.lidar.qa+'</span><span class="drill-stat ds-tot">'+val+'</span>';
       else if(dtype==='lane_fp')st='<span class="drill-stat ds-lfp">'+val+'</span>';
       else if(dtype==='lane_qa')st='<span class="drill-stat ds-lqa">'+val+'</span>';
       else if(dtype==='lidar_fp')st='<span class="drill-stat ds-lifp">'+val+'</span>';
@@ -1905,9 +1875,7 @@ if(isLi){bump(labelers[labKey].lidar);bump(labelers[labKey].shifts[sh].lidar);}
     var sorted=allLabs.slice().sort(function(a,b){return(b[sortKey]||0)-(a[sortKey]||0);});
     var maxV=sorted.length?Math.max(sorted[0][sortKey]||0,1):1;
     var allSubs=['lfp','lqa','lifp','liqa'],subCols=allSubs.filter(function(k){return sorted.some(function(lb){return(lb[k]||0)>0;});});
-    var isMob=window.innerWidth<=768;
-    var subHdrs={lfp:isMob?'LFP':'Lane-FP',lqa:isMob?'LQA':'Lane-QA',lifp:isMob?'LiFP':'Lidar-FP',liqa:isMob?'LiQA':'Lidar-QA'};
-    var subClrs={lfp:'#1e8e3e',lqa:'#e37400',lifp:'#007b83',liqa:'#7b1fa2'};
+    var subHdrs={lfp:'Lane-FP',lqa:'Lane-QA',lifp:'Lidar-FP',liqa:'Lidar-QA'},subClrs={lfp:'#1e8e3e',lqa:'#e37400',lifp:'#007b83',liqa:'#7b1fa2'};
     var colW=subCols.length===1?'90px':subCols.length===2?'repeat(2,80px)':subCols.length===3?'repeat(3,70px)':'repeat(4,65px)';
     var gridCols='26px 1fr '+colW+' 70px';
     function cell(val,key){var isSort=key===sortKey;return'<span style="font-size:12px;font-weight:'+(isSort?'800':'700')+';color:'+(sortColors[key]||'var(--dark)')+';background:'+(isSort?sortBg[key]:'transparent')+';border-radius:6px;padding:2px 4px;'+(isSort?'outline:1.5px solid '+(sortColors[key]||'var(--blue)')+';':'')+' ">'+val+'</span>';}
@@ -2042,43 +2010,83 @@ function renderQtcPage(data){
 
  setTimeout(function(){
     function renderTop4(sh){
-      var el=gid('qtcTop4');if(!el)return;
-      var list=allQtcs.filter(function(q){return sh==='all'||q.shift===sh;});
-      var cats=[
-        {key:'lfp',label:'Lane FP',color:'#1e8e3e',bg:'#e8f5e9',border:'#c3e6cb'},
-        {key:'lqa',label:'Lane QA',color:'#e37400',bg:'#fff3cd',border:'#ffc107'},
-        {key:'lifp',label:'Lidar FP',color:'#007b83',bg:'#e0f7fa',border:'#80cbc4'},
-        {key:'liqa',label:'Lidar QA',color:'#7b1fa2',bg:'#f3e5f5',border:'#ce93d8'}
-      ];
-      var ranks=['🥇','🥈','🥉','4️⃣'];
-      var h='<div class="sec-hdr" style="margin-bottom:12px">Top 4 per Category'+(sh!=='all'?' — '+sh:'')+'</div>';
-      h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:4px">';
-      cats.forEach(function(cat){
-        var sorted=list.slice().filter(function(q){return(q[cat.key]||0)>0;}).sort(function(a,b){return(b[cat.key]||0)-(a[cat.key]||0);}).slice(0,4);
-        h+='<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);border:1.5px solid '+cat.border+'">';
-        h+='<div style="background:'+cat.color+';padding:11px 16px"><span style="color:white;font-size:14px;font-weight:800">'+cat.label+'</span></div>';
-        if(!sorted.length){h+='<div style="padding:18px;text-align:center;color:var(--gray);font-size:12px">No data</div>';}
-        else{sorted.forEach(function(q,i){
-          var isF=i===0;
-          h+='<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:'+(isF?cat.bg:'')+';border-bottom:1px solid #f5f5f5">';
-          h+='<span style="font-size:18px;flex-shrink:0">'+ranks[i]+'</span>';
-          h+='<span style="flex:1;font-size:13px;font-weight:'+(isF?'800':'700')+';color:var(--dark)">'+q.name+(sh==='all'?'<span class="badge '+shiftBadge(q.shift)+'" style="margin-left:6px;font-size:10px;vertical-align:middle">'+q.shift+'</span>':'')+'</span>';
-          h+='<span style="font-size:16px;font-weight:800;color:'+cat.color+'">'+q[cat.key]+'</span>';
-          h+='</div>';
-        });}
-        h+='</div>';
-      });
+  var el=gid('qtcTop4');if(!el)return;
+  var list=allQtcs.filter(function(q){return sh==='all'||q.shift===sh;});
+  var cats=[
+    {key:'lfp',label:'Lane FP',color:'#1e8e3e',bg:'#e8f5e9',border:'#c3e6cb'},
+    {key:'lqa',label:'Lane QA',color:'#e37400',bg:'#fff3cd',border:'#ffc107'},
+    {key:'lifp',label:'Lidar FP',color:'#007b83',bg:'#e0f7fa',border:'#80cbc4'},
+    {key:'liqa',label:'Lidar QA',color:'#7b1fa2',bg:'#f3e5f5',border:'#ce93d8'}
+  ];
+  var ranks=['🥇','🥈','🥉','4️⃣'];
+  var h='<div class="sec-hdr" style="margin-bottom:12px">Top 4 per Category'+(sh!=='all'?' — '+sh:'')+'</div>';
+  
+  // QTC Popup
+  h+='<div id="qtcMiniPopup" style="display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this)closeQtcMiniPopup()">';
+  h+='<div style="background:white;border-radius:16px;width:100%;max-width:380px;overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.35)">';
+  h+='<div id="qtcMiniPopupInner"></div></div></div>';
+  
+  h+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:4px">';
+  cats.forEach(function(cat){
+    var sorted=list.slice().filter(function(q){return(q[cat.key]||0)>0;}).sort(function(a,b){return(b[cat.key]||0)-(a[cat.key]||0);}).slice(0,4);
+    h+='<div style="background:white;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);border:1.5px solid '+cat.border+'">';
+    h+='<div style="background:'+cat.color+';padding:11px 16px"><span style="color:white;font-size:14px;font-weight:800">'+cat.label+'</span></div>';
+    if(!sorted.length){h+='<div style="padding:18px;text-align:center;color:var(--gray);font-size:12px">No data</div>';}
+    else{sorted.forEach(function(q,i){
+      var isF=i===0;
+      var qData=JSON.stringify({name:q.name,shift:q.shift,lfp:q.lfp,lqa:q.lqa,lifp:q.lifp,liqa:q.liqa,total:q.total}).replace(/"/g,'&quot;');
+      h+='<div onclick="openQtcMiniPopup(this)" data-qtcinfo="'+qData+'" style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:'+(isF?cat.bg:'')+';border-bottom:1px solid #f5f5f5;cursor:pointer;transition:background .15s" onmouseover="this.style.background=\''+cat.bg+'\'" onmouseout="this.style.background=\''+(isF?cat.bg:'')+'\'">';
+      h+='<span style="font-size:18px;flex-shrink:0">'+ranks[i]+'</span>';
+      h+='<span style="flex:1;font-size:13px;font-weight:'+(isF?'800':'700')+';color:var(--dark)">'+q.name+(sh==='all'?'<span class="badge '+shiftBadge(q.shift)+'" style="margin-left:6px;font-size:10px;vertical-align:middle">'+q.shift+'</span>':'')+'</span>';
+      h+='<span style="font-size:16px;font-weight:800;color:'+cat.color+'">'+q[cat.key]+'</span>';
+      h+='<span style="font-size:11px;color:rgba(0,0,0,.25)">›</span>';
       h+='</div>';
-      el.innerHTML=h;
-    }
-    renderQtcList();
-    renderTop4(activeShift);
-    document.querySelectorAll('.qtc-unit-btn').forEach(function(b){b.addEventListener('click',function(){var u=b.getAttribute('data-unit');if(u==='all'){activeUnits.clear();activeUnits.add('all');}else{activeUnits.delete('all');if(activeUnits.has(u)){activeUnits.delete(u);if(activeUnits.size===0)activeUnits.add('all');}else activeUnits.add(u);}updateUnitBtns();renderQtcList();});});
-    document.querySelectorAll('#qtcCard .qtc-tab').forEach(function(t){t.addEventListener('click',function(){activeShift=t.getAttribute('data-qtcsh');document.querySelectorAll('#qtcCard .qtc-tab').forEach(function(x){var a=x.getAttribute('data-qtcsh')===activeShift;x.style.borderBottomColor=a?'var(--blue)':'transparent';x.style.color=a?'var(--blue)':'var(--gray)';});renderQtcList();renderTop4(activeShift);});});
-    var pillsEl=gid('qtcSortPills');
-    if(pillsEl){pillsEl.addEventListener('click',function(e){var p=e.target.closest('.lab-sort-pill');if(!p)return;var key=p.getAttribute('data-qsortkey');if(!key)return;qtcSortKey=key;pillsEl.querySelectorAll('.lab-sort-pill').forEach(function(x){SORT_PILLS.forEach(function(sp){x.classList.remove(sp.ac);});if(x.getAttribute('data-qsortkey')===key){var sp=SORT_PILLS.filter(function(s){return s.key===key;})[0];if(sp)x.classList.add(sp.ac);}});renderQtcList();});}
-  },0);
+    });}
+    h+='</div>';
+  });
+  h+='</div>';
+  el.innerHTML=h;
 }
+
+window.openQtcMiniPopup=function(row){
+  var info=JSON.parse(row.getAttribute('data-qtcinfo').replace(/&quot;/g,'"'));
+  var pop=gid('qtcMiniPopup');if(!pop)return;
+  var shBadge='<span class="badge '+shiftBadge(info.shift)+'" style="font-size:11px;margin-left:6px">'+info.shift+'</span>';
+  var cats=[
+    {key:'lfp',label:'Lane FP',color:'#1e8e3e',bg:'#e8f5e9'},
+    {key:'lqa',label:'Lane QA',color:'#e37400',bg:'#fff3cd'},
+    {key:'lifp',label:'Lidar FP',color:'#007b83',bg:'#e0f7fa'},
+    {key:'liqa',label:'Lidar QA',color:'#7b1fa2',bg:'#f3e5f5'}
+  ];
+  var h='<div style="background:var(--blue);padding:14px 18px;display:flex;align-items:center;justify-content:space-between">';
+  h+='<div><div style="color:white;font-size:15px;font-weight:800">'+info.name+'</div>';
+  h+='<div style="margin-top:4px">'+shBadge+'</div></div>';
+  h+='<button onclick="closeQtcMiniPopup()" style="background:rgba(255,255,255,.2);border:none;border-radius:50%;width:28px;height:28px;cursor:pointer;color:white;font-size:14px;display:flex;align-items:center;justify-content:center">✕</button>';
+  h+='</div>';
+  h+='<div style="padding:14px 16px;display:grid;grid-template-columns:1fr 1fr;gap:10px">';
+  cats.forEach(function(cat){
+    var val=info[cat.key]||0;
+    h+='<div style="background:'+cat.bg+';border-radius:10px;padding:12px;text-align:center">';
+    h+='<div style="font-size:10px;font-weight:700;color:'+cat.color+';text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px">'+cat.label+'</div>';
+    h+='<div style="font-size:30px;font-weight:800;color:'+cat.color+';line-height:1">'+val+'</div>';
+    h+='</div>';
+  });
+  h+='</div>';
+  h+='<div style="padding:0 16px 14px">';
+  h+='<div style="background:var(--blue);border-radius:10px;padding:12px;text-align:center">';
+  h+='<div style="font-size:10px;font-weight:700;color:rgba(255,255,255,.7);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px">Total</div>';
+  h+='<div style="font-size:34px;font-weight:800;color:white;line-height:1">'+info.total+'</div>';
+  h+='</div></div>';
+  gid('qtcMiniPopupInner').innerHTML=h;
+  pop.style.display='flex';
+  document.body.style.overflow='hidden';
+};
+
+window.closeQtcMiniPopup=function(){
+  var pop=gid('qtcMiniPopup');
+  if(pop)pop.style.display='none';
+  document.body.style.overflow='';
+};
 </script>
 
 <script>
@@ -2286,7 +2294,7 @@ function _buildAttCard(sh,sd,dateISO,isDetails){
   +'<div onclick="(function(el){var b=el.nextElementSibling;b.style.display=b.style.display===\'none\'?\'block\':\'none\';})(this)" '
   +'style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;cursor:pointer">'
   +'<div style="display:flex;align-items:center;gap:10px">'
-  +'<span style="font-size:13px;font-weight:800;color:#f57f17"> Buffer</span>'
+  +'<span style="font-size:13px;font-weight:800;color:#f57f17">🔄 Buffer</span>'
   +'<span style="background:#1e8e3e;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px">P: '+sd.bufferStats.present.length+'</span>'
   +(sd.bufferStats.absent.length > 0 ? '<span style="background:#c5221f;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px">A: '+sd.bufferStats.absent.length+'</span>' : '')
   +'<span style="background:#f57f17;color:white;font-size:11px;font-weight:700;padding:2px 8px;border-radius:6px">Total: '+sd.bufferStats.total+'</span>'
@@ -2958,6 +2966,9 @@ window.onload=function(){
   window.addEventListener('resize',function(){if(!_isMobile()){_sidebar.classList.remove('open');_overlay.classList.remove('show');}});
 
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();closeDetail();closeChangePwd();}});
+
+  // Auto refresh
+  setInterval(function(){if(SESSION&&TOKEN&&gid('pgHome').style.display!=='none')loadStats();},120000);
 };
 </script>
 <script>
@@ -3122,7 +3133,7 @@ renderDetailsOfData = function () {
 
   var UNIT_ORD = ['NC Room 102', 'NC Room 106', 'NC Room 108', '4th Floor', '2nd Floor'];
   var SH_ORD   = ['Morning', 'Night', 'Over Night', 'Over Shift'];
-  var SH_ICON  = { Morning: '', Night: '', 'Over Night': '', 'Over Shift': '' };
+  var SH_ICON  = { Morning: '☀️', Night: '🌙', 'Over Night': '🌑', 'Over Shift': '🔄' };
 
   // ── بناء الهيكل الأساسي (نفس الأصلي) ──
   var shifts = {};
@@ -3525,7 +3536,7 @@ function renderOtDetails(data) {
   // تجميع البيانات وتصنيفها حسب الشفت
   var shifts = {};
   var SH_ORD = ['Morning', 'Night', 'Over Night', 'Over Shift'];
-  var SH_ICON = { 'Morning': '', 'Night': '', 'Over Night': '', 'Over Shift': '' };
+  var SH_ICON = { 'Morning': '☀️', 'Night': '🌙', 'Over Night': '🌑', 'Over Shift': '🔄' };
   
   data.forEach(function(r) {
     var sh = titleCase((r.otShift || 'Unknown').trim());
