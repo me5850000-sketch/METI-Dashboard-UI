@@ -2945,9 +2945,6 @@ window.onload=function(){
   window.addEventListener('resize',function(){if(!_isMobile()){_sidebar.classList.remove('open');_overlay.classList.remove('show');}});
 
   document.addEventListener('keydown',function(e){if(e.key==='Escape'){closeModal();closeDetail();closeChangePwd();}});
-
-  // Auto refresh
-  setInterval(function(){if(SESSION&&TOKEN&&gid('pgHome').style.display!=='none')loadStats();},120000);
 };
 </script>
 <script>
