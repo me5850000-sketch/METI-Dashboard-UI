@@ -3134,7 +3134,9 @@ renderDetailsOfData = function () {
   // ── بناء خريطة "مسبمتش": shift → unit → [employees] ──
   var notSubmittedMap = {};
   var totalNotSub = 0;
-  var attSrc = _attShift2Cache || _lastAttR;
+  var todayStr = SHARED.from || todayISO();
+var attCacheDate = _lastAttDate2 ? _lastAttDate2.split('|')[0] : '';
+var attSrc = (attCacheDate === todayStr) ? (_attShift2Cache || _lastAttR) : null;
 
   if (attSrc && attSrc.shifts) {
     Object.keys(attSrc.shifts).forEach(function (sh) {
