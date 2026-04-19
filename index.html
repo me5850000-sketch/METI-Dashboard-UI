@@ -67,7 +67,7 @@ body{background:var(--bg);min-height:100vh;font-size:14px;color:var(--dark)}
 .sb-user .su-email{color:rgba(255,255,255,.5);font-size:11px;margin-bottom:4px}
 .sb-user .su-shift{color:rgba(255,255,255,.7);font-size:11px;margin-bottom:6px;font-style:italic}
 .role-badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.5px}
-.rb-admin{background:#fbbc04;color:#000}.rb-sm{background:#e53935;color:#fff}.rb-svv{background:#8e24aa;color:#fff}
+.rb-admin{background:#fbbc04;color:#000}.rb-sm{background:#e53935;color:#fff}.rb-ssv{background:#8e24aa;color:#fff}
 .rb-sv{background:#34a853;color:#fff}.rb-qtc{background:#00bcd4;color:#fff}.rb-wla{background:#43a047;color:#fff}
 .logout-btn{display:flex;align-items:center;gap:8px;padding:8px 12px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:rgba(255,255,255,.75);font-size:13px;cursor:pointer;width:100%;transition:all .15s}
 .logout-btn:hover{background:rgba(255,255,255,.16);color:white}
@@ -131,7 +131,7 @@ tr.row-active td{background:#dce8fb!important;font-weight:700!important;color:va
 tbody tr.data-row{cursor:pointer}tbody tr.data-row:hover td{background:var(--blue-bg)!important}
 tbody tr.data-row.has-link:hover td{background:#e8f5e9!important}
 .badge{display:inline-block;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.4px}
-.b-admin{background:var(--orange-lt);color:#7f4f00}.b-sm{background:#ffebee;color:#b71c1c}.b-svv{background:#f3e5f5;color:#4a148c}.b-sv{background:var(--green-lt);color:#155724}.b-qtc{background:#e0f7fa;color:#006064}
+.b-admin{background:var(--orange-lt);color:#7f4f00}.b-sm{background:#ffebee;color:#b71c1c}.b-ssv{background:#f3e5f5;color:#4a148c}.b-sv{background:var(--green-lt);color:#155724}.b-qtc{background:#e0f7fa;color:#006064}
 .b-active{background:var(--green-lt);color:#155724}.b-inactive{background:var(--red-lt);color:var(--red)}
 .b-fp{background:#e8f5e9;color:#2e7d32}.b-qa{background:#e3f2fd;color:#0d47a1}
 .b-morning{background:#fff3e0;color:#e65100}.b-night{background:#e8eaf6;color:#283593}.b-overnight{background:#e8f5e9;color:#1b5e20}.b-overshift{background:#f3e5f5;color:#4a148c}
@@ -888,7 +888,7 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
     <div class="inp-wrap"><label>Name In Teams <span style="color:var(--gray);font-weight:400;text-transform:none;font-size:11px">(للـ QTC Stats)</span></label><input type="text" id="mTeamsName" placeholder="e.g. Hazem Nader (N)"></div>
     <div class="inp-wrap"><label>Role</label>
       <select id="mRole" class="sel-inp">
-        <option value="admin">Admin</option><option value="sm">SM</option><option value="svv">SVV</option>
+        <option value="admin">Admin</option><option value="sm">SM</option><option value="ssv">SSV</option>
         <option value="sv">SV</option><option value="qtc" selected>QTC</option><option value="wla">WLA</option>
       </select>
     </div>
@@ -968,7 +968,7 @@ var google = {
 
 <script>
 // ══ GLOBALS ══
-var ROLES_SEE_ALL=['admin','sm','svv','sv','wla'],ROLES_OWN=['qtc'],ROLES_MANAGE_USERS=['admin','sm','svv','sv'],ROLES_VIEW_DATA=['admin','sm','svv','sv','qtc','wla'],ROLES_SET_TARGET=['admin','sm','svv'];
+var ROLES_SEE_ALL=['admin','sm','ssv','sv','wla'],ROLES_OWN=['qtc'],ROLES_MANAGE_USERS=['admin','sm','ssv','sv'],ROLES_VIEW_DATA=['admin','sm','ssv','sv','qtc','wla'],ROLES_SET_TARGET=['admin','sm','ssv'];
 var F={labeler:'labeler_name',shift:'shift',unit:'unit',modality:'modality',pass:'pass',queue:'queue_name',objects:'object_count',date:'created_at',qc:'qtc_name',ubkey:'yubikey_email',link:'task_link',stage:'stage',pc:'pc_no'};
 var MOD_COLORS={all:{bg:'var(--blue)',border:'var(--blue)'},lane:{bg:'var(--green)',border:'var(--green)'},lidar:{bg:'var(--teal)',border:'var(--teal)'},lane_fp:{bg:'#2d5fa8',border:'#2d5fa8'},lane_qa:{bg:'var(--orange)',border:'var(--orange)'},lidar_fp:{bg:'#007b83',border:'#007b83'},lidar_qa:{bg:'var(--purple)',border:'var(--purple)'}};
 var SESSION=null,TOKEN=null;
@@ -1171,7 +1171,7 @@ if (addBtn) addBtn.style.display = hasRole(SESSION.role, ['admin']) ? 'flex' : '
   var rb=gid('sbRole');rb.textContent=SESSION.role.toUpperCase();rb.className='role-badge rb-'+SESSION.role;
       rb.textContent = SESSION.role.toUpperCase();
       rb.className = 'role-badge rb-' + SESSION.role;
- if(hasRole(SESSION.role,['admin','sm','svv','sv'])){
+ if(hasRole(SESSION.role,['admin','sm','ssv','sv'])){
   var navUsers = gid('nav-users');
   if(navUsers) navUsers.style.display = '';
 }
@@ -2667,7 +2667,7 @@ function openOtModal(r) {
 }
 // ══ USERS ══
 function loadUsers() {
-  if (!SESSION || !hasRole(SESSION.role, ['admin','sm','svv','sv'])) return;
+  if (!SESSION || !hasRole(SESSION.role, ['admin','sm','ssv','sv'])) return;
   shtml('usersArea','<div class="loading"><div class="spin"></div> Loading...</div>');
   google.script.run
     .withSuccessHandler(function(r) {
@@ -2681,7 +2681,7 @@ function loadUsers() {
 }
 
 function renderUsers(users, pending) {
-  var ROLE_ORD = ['admin','sm','svv','sv','qt','qtc','wla'];
+  var ROLE_ORD = ['admin','sm','ssv','sv','qt','qtc','wla'];
   var sorted = users.slice().sort(function(a,b) {
     var ai = ROLE_ORD.indexOf(a.role), bi = ROLE_ORD.indexOf(b.role);
     return ai !== bi ? ai - bi : (a.name||'').localeCompare(b.name||'');
@@ -3001,7 +3001,7 @@ function openApproveModal(rowId, encodedName) {
     '<select id="apRole" class="sel-inp">' +
     '<option value="qtc">QTC</option>' +
     '<option value="sv">SV</option>' +
-    '<option value="svv">SVV</option>' +
+    '<option value="ssv">SSV</option>' +
     '<option value="sm">SM</option>' +
     '<option value="wla">WLA</option>' +
     '<option value="qt">QT</option>' +
@@ -3716,15 +3716,15 @@ function openOtModal(r) {
 // ═══════════════════════════════════════════════════════════
 
 // ══ 1. ROLE ARRAYS ══
-ROLES_SEE_ALL      = ['admin','sm','svv','sv','wla'];
+ROLES_SEE_ALL      = ['admin','sm','ssv','sv','wla'];
 ROLES_OWN          = ['qtc','sl'];           // شايف شيفته بس
-ROLES_VIEW_DATA    = ['admin','sm','svv','sv','qtc','wla','sl'];
-ROLES_MANAGE_USERS = ['admin','sm','svv','sv'];
-ROLES_SET_TARGET   = ['admin','sm','svv'];
-var ROLES_ATT_ALL          = ['admin','sm','svv','sv','wla'];   // Attendance: شايف الكل
-var ROLES_ATT_DETAILS_ALL  = ['admin','sm','svv'];              // Details of Att: شايف الكل
-var ROLES_OT_ACCESS        = ['admin','sm','svv','sv'];         // OT page
-var ROLES_APPROVE_USERS    = ['admin','sm','svv','sv'];         
+ROLES_VIEW_DATA    = ['admin','sm','ssv','sv','qtc','wla','sl'];
+ROLES_MANAGE_USERS = ['admin','sm','ssv','sv'];
+ROLES_SET_TARGET   = ['admin','sm','ssv'];
+var ROLES_ATT_ALL          = ['admin','sm','ssv','sv','wla'];   // Attendance: شايف الكل
+var ROLES_ATT_DETAILS_ALL  = ['admin','sm','ssv'];              // Details of Att: شايف الكل
+var ROLES_OT_ACCESS        = ['admin','sm','ssv','sv'];         // OT page
+var ROLES_APPROVE_USERS    = ['admin','sm','ssv','sv'];         
 
 // ══ 2. CSS — SL badge ══
 (function(){
@@ -3863,12 +3863,12 @@ function _renderUsersPatch(users, pending){
   var role   = SESSION && SESSION.role;
   var myShift = SESSION && SESSION.shift;
   var isFullAdmin = hasRole(role, ['admin','sm']);
-  var isSvSvv    = hasRole(role, ['sv','svv']);
+  var isSvSsv    = hasRole(role, ['sv','ssv']);
 
   var filteredUsers   = isFullAdmin ? users   : users.filter(function(u){ return u.shift === myShift; });
   var filteredPending = isFullAdmin ? pending : pending.filter(function(p){ return p.shift === myShift; });
 
-  var ROLE_ORD = ['admin','sm','svv','sv','sl','qtc','wla'];
+  var ROLE_ORD = ['admin','sm','ssv','sv','sl','qtc','wla'];
   var sorted = filteredUsers.slice().sort(function(a,b){
     var ai=ROLE_ORD.indexOf(a.role),bi=ROLE_ORD.indexOf(b.role);
     return ai!==bi?ai-bi:(a.name||'').localeCompare(b.name||'');
@@ -3878,7 +3878,7 @@ function _renderUsersPatch(users, pending){
     ? ' <span style="background:#c5221f;color:white;font-size:10px;font-weight:800;padding:1px 7px;border-radius:10px;margin-left:4px">'+filteredPending.length+'</span>'
     : '';
 
-  var canAdd = hasRole(role, ['admin','sm','svv','sv']); 
+  var canAdd = hasRole(role, ['admin','sm','ssv','sv']); 
   var addBtnEl = gid('btnAddUser');
   if(addBtnEl) addBtnEl.style.display = canAdd ? 'flex' : 'none';
 
@@ -3896,12 +3896,12 @@ function _renderUsersPatch(users, pending){
     '<th>Role</th><th>Shift</th><th>Status</th><th>Actions</th>'+
     '</tr></thead><tbody>'+
     sorted.map(function(u){
-      var canEdit = isFullAdmin || (isSvSvv && u.shift === myShift);
+      var canEdit = isFullAdmin || (isSvSsv && u.shift === myShift);
       var canDel  = isFullAdmin;
       return '<tr>'+
         '<td class="left bold">'+titleCase(u.name||'-')+'</td>'+
         '<td class="left" style="font-size:12px;color:var(--gray)">'+(u.email||'-')+'</td>'+
-        '<td><span class="badge b-'+(u.role||'qtc')+'">'+(u.role==='svv'?'SSV':(u.role||'-').toUpperCase())+'</span></td>'+
+        '<td><span class="badge b-'+(u.role||'qtc')+'">'+(u.role==='ssv'?'SSV':(u.role||'-').toUpperCase())+'</span></td>'+
         '<td>'+(u.shift?'<span class="badge '+shiftBadge(u.shift)+'">'+u.shift+'</span>':'<span style="color:var(--gray);font-size:12px">All</span>')+'</td>'+
         '<td><span class="badge '+(u.active!==false?'b-active':'b-inactive')+'">'+(u.active!==false?'Active':'Inactive')+'</span></td>'+
         '<td>'+
@@ -3956,13 +3956,13 @@ openApproveModal = function(rowId, encodedName){
   
   // 👈 تطبيق هرم الصلاحيات 
   var allowedRoles = [];
-  if (role === 'admin') allowedRoles = ['admin', 'sm', 'svv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
-  else if (role === 'sm') allowedRoles = ['sm', 'svv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
-  else if (role === 'svv') allowedRoles = ['svv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
+  if (role === 'admin') allowedRoles = ['admin', 'sm', 'ssv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
+  else if (role === 'sm') allowedRoles = ['sm', 'ssv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
+  else if (role === 'ssv') allowedRoles = ['ssv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
   else if (role === 'sv') allowedRoles = ['sv', 'qt', 'wla', 'qtc', 'sl'];
   else allowedRoles = ['qt', 'wla', 'qtc', 'sl'];
 
-  var roleLabels = {'admin':'Admin', 'sm':'SM', 'svv':'SSV', 'sv':'SV', 'qt':'QT', 'wla':'WLA', 'qtc':'QTC', 'sl':'SL'};
+  var roleLabels = {'admin':'Admin', 'sm':'SM', 'ssv':'SSV', 'sv':'SV', 'qt':'QT', 'wla':'WLA', 'qtc':'QTC', 'sl':'SL'};
 
   var bd = document.createElement('div');
   bd.id = 'approveBd';
@@ -4004,13 +4004,13 @@ openModal = function(user){
   
   if(mRoleEl){
     var allowedRoles = [];
-    if (role === 'admin') allowedRoles = ['admin', 'sm', 'svv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
-    else if (role === 'sm') allowedRoles = ['sm', 'svv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
-    else if (role === 'svv') allowedRoles = ['svv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
+    if (role === 'admin') allowedRoles = ['admin', 'sm', 'ssv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
+    else if (role === 'sm') allowedRoles = ['sm', 'ssv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
+    else if (role === 'ssv') allowedRoles = ['ssv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
     else if (role === 'sv') allowedRoles = ['sv', 'qt', 'wla', 'qtc', 'sl'];
     else allowedRoles = ['qt', 'wla', 'qtc', 'sl'];
 
-    var roleLabels = {'admin':'Admin', 'sm':'SM', 'svv':'SSV', 'sv':'SV', 'qt':'QT', 'wla':'WLA', 'qtc':'QTC', 'sl':'SL'};
+    var roleLabels = {'admin':'Admin', 'sm':'SM', 'ssv':'SSV', 'sv':'SV', 'qt':'QT', 'wla':'WLA', 'qtc':'QTC', 'sl':'SL'};
     mRoleEl.innerHTML = allowedRoles.map(function(r){ return '<option value="'+r+'">'+roleLabels[r]+'</option>'; }).join('');
     if(user && allowedRoles.indexOf(user.role) !== -1) mRoleEl.value = user.role;
   }
