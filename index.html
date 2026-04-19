@@ -1446,29 +1446,34 @@ function initStatsListener(){
   });
 }
 
-function buildLabelers(rows){
-  var labelers={};
-  rows.forEach(function(r){
-    var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
-    var sh=nShift(r[F.shift]||'Unknown'),lb=titleCase(r[F.labeler]||'Unknown');
-    var un=(r[F.unit]||'').trim(),pc=(r[F.pc]||'').toString().trim();
-    var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1,isFP=pass==='FP',isQA=pass==='QA';
+// ══ BUILD SHIFTS FUNCTION ══
+function buildShifts(rows) {
+  var shifts = {};
+  var SH_ORD = ['Morning', 'Night', 'Over Night', 'Over Shift'];
+  
+  SH_ORD.forEach(function(sh) { shifts[sh] = { total:0, lfp:0, lqa:0, lifp:0, liqa:0, units:{} }; });
+  
+  rows.forEach(function(r) {
+    var sh = nShift(r[F.shift] || 'Unknown');
+    var un = (r[F.unit] || 'Unknown').trim();
+    var mod = (r[F.modality] || '').toLowerCase();
+    var pas = (r[F.pass] || '').toUpperCase();
+    var isL = mod.indexOf('lane') !== -1;
+    var isLi = mod.indexOf('lidar') !== -1;
     
-    var labKey = lb + '||' + pc; // 👈 مفتاح التفرقة الجديد
+    if (!shifts[sh]) shifts[sh] = { total:0, lfp:0, lqa:0, lifp:0, liqa:0, units:{} };
+    if (!shifts[sh].units[un]) shifts[sh].units[un] = { total:0, lfp:0, lqa:0, lifp:0, liqa:0 };
     
-    function bump(o){o.total++;if(isFP)o.fp++;if(isQA)o.qa++;}
+    shifts[sh].total++;
+    shifts[sh].units[un].total++;
     
-    if(!labelers[labKey])labelers[labKey]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0},shifts:{},units:{},pcs:{},_name:lb,_pc:pc};
-    if(!labelers[labKey].shifts[sh])labelers[labKey].shifts[sh]={total:0,lane:{fp:0,qa:0,total:0},lidar:{fp:0,qa:0,total:0}};
-    
-    labelers[labKey].total++;
-    labelers[labKey].shifts[sh].total++;
-    if(un)labelers[labKey].units[un]=(labelers[labKey].units[un]||0)+1;
-    if(pc&&pc!=='-')labelers[labKey].pcs[pc]=(labelers[labKey].pcs[pc]||0)+1;
-    if(isL){bump(labelers[labKey].lane);bump(labelers[labKey].shifts[sh].lane);}
-    if(isLi){bump(labelers[labKey].lidar);bump(labelers[labKey].shifts[sh].lidar);}
+    if (isL && pas === 'FP') { shifts[sh].lfp++; shifts[sh].units[un].lfp++; }
+    if (isL && pas === 'QA') { shifts[sh].lqa++; shifts[sh].units[un].lqa++; }
+    if (isLi && pas === 'FP') { shifts[sh].lifp++; shifts[sh].units[un].lifp++; }
+    if (isLi && pas === 'QA') { shifts[sh].liqa++; shifts[sh].units[un].liqa++; }
   });
-  return labelers;
+  
+  return shifts;
 }
 
 function getDrillVal(d,dtype){if(dtype==='total')return d.total;if(dtype==='lane_fp')return d.lane.fp;if(dtype==='lane_qa')return d.lane.qa;if(dtype==='lidar_fp')return d.lidar.fp;if(dtype==='lidar_qa')return d.lidar.qa;return 0;}
