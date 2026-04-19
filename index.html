@@ -1018,7 +1018,13 @@ var DP={
     if(fi.indexOf(id)!==-1){SHARED.from=DP.vals[id];SHARED.syncAll();}
 if(ti.indexOf(id)!==-1){SHARED.to=DP.vals[id];SHARED.syncAll();}
     if(id==='attDate'&&SESSION&&TOKEN){loadAttendance();return;}
-    if(id==='attDate2'&&SESSION&&TOKEN){loadAttDetails();return;}
+   if(id==='attDate2'&&SESSION&&TOKEN){
+  SHARED.from=DP.vals[id];
+  SHARED.to=DP.vals[id];
+  SHARED.syncAll();
+  loadAttDetails();
+  return;
+}
     if (id === 'otDate' && SESSION && TOKEN) { loadOtDetails(); return; }
   },
   open:function(id){DP.close();var iso=DP.getVal(id)||todayISO(),p=iso.split('-');DP.active=id;DP.view='days';DP.viewYear=parseInt(p[0]);DP.viewMonth=parseInt(p[1])-1;DP.render();var inp=gid(id);if(inp)inp.classList.add('open');},
@@ -2866,7 +2872,11 @@ window.onload=function(){
     SHARED.from=DP.getVal('gFrom');SHARED.to=DP.getVal('gTo');
     var ft=gid('gFromTime'),tt=gid('gToTime');
     SHARED.fromTime=ft?ft.value:'00:00';SHARED.toTime=tt?tt.value:'23:59';
-    SHARED.syncAll();SHARED.reloadActive();
+    SHARED.syncAll();
+    DP.setVal('attDate2', SHARED.from, false);
+    DP.setVal('attDate', SHARED.from, false);
+    _lastAttDate=''; _lastAttDate2='';
+    SHARED.reloadActive();
   });
   if(btnGClear) btnGClear.addEventListener('click',function(){
     applyShiftDefaults(SESSION&&SESSION.shift);SHARED.reloadActive();
