@@ -578,7 +578,7 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
   ⚠️ يجب تعيين <strong>APPS_SCRIPT_URL</strong> أولاً — اقرأ التعليمات في أعلى الكود
 </div>
 <!-- شاشة الانتظار -->
-<div id="waitingScreen" style="display:none;position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0d2b6b 0%,#1c4587 50%,#2d5fa8 100%);align-items:center;justify-content:center;">
+<div id="waitingScreen" style="display:none;position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0d2b6b 0%,#1c4587 50%,#2d5fa8 100%);align-items:center;justify-content:center;min-height:100vh;width:100vw;">
     <div class="login-box" style="text-align:center">
       <div class="login-logo">
         <div class="logo-badge">
@@ -1139,7 +1139,7 @@ function doLogin() {
             } else {
                if (res.pending) {
   gid('loginScreen').style.display = 'none';
-  gid('waitingScreen').style.cssText = 'display:block;position:fixed;inset:0;z-index:9999;';
+  gid('waitingScreen').style.cssText = 'display:flex;position:fixed;inset:0;z-index:9999;background:linear-gradient(135deg,#0d2b6b 0%,#1c4587 50%,#2d5fa8 100%);align-items:center;justify-content:center;';
 } else {
   showLoginErr(res.msg || 'Invalid credentials');
 }
