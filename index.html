@@ -1187,7 +1187,7 @@ function doLogout() {
 
 function showDash(){// Add User بيظهر للـ Admin بس
 var addBtn = gid('btnAddUser');
-if (addBtn) addBtn.style.display = hasRole(SESSION.role, ['admin']) ? 'flex' : 'none';
+if (addBtn) addBtn.style.display = hasRole(SESSION.role, ['admin','sm','ssv','sv']) ? 'flex' : 'none';
   hide('loginScreen');gid('dashScreen').style.display='block';
   gid('sbName').textContent=titleCase(SESSION.name);
   gid('sbEmail').textContent=SESSION.email||'';
@@ -3765,7 +3765,7 @@ ROLES_VIEW_DATA    = ['admin','sm','ssv','sv','qtc','wla','sl'];
 ROLES_MANAGE_USERS = ['admin','sm','ssv','sv'];
 ROLES_SET_TARGET   = ['admin','sm','ssv'];
 var ROLES_ATT_ALL          = ['admin','sm','ssv','sv','wla'];   // Attendance: شايف الكل
-var ROLES_ATT_DETAILS_ALL  = ['admin','sm','ssv'];              // Details of Att: شايف الكل
+var ROLES_ATT_DETAILS_ALL  = ['admin','sm','ssv','sv'];              // Details of Att: شايف الكل
 var ROLES_OT_ACCESS        = ['admin','sm','ssv','sv'];         // OT page
 var ROLES_APPROVE_USERS    = ['admin','sm','ssv','sv'];         
 
@@ -3921,7 +3921,7 @@ function _renderUsersPatch(users, pending){
     ? ' <span style="background:#c5221f;color:white;font-size:10px;font-weight:800;padding:1px 7px;border-radius:10px;margin-left:4px">'+filteredPending.length+'</span>'
     : '';
 
-  var canAdd = isFullAdmin; 
+  var canAdd = isFullAdmin || hasRole(role, ['sv']); 
   var addBtnEl = gid('btnAddUser');
   if(addBtnEl) addBtnEl.style.display = canAdd ? 'flex' : 'none';
 
