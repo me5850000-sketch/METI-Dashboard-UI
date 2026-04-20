@@ -2992,8 +2992,8 @@ function doRegister() {
 
   gid('regErr').style.display = 'none';
 
-  if (!name || name.split(' ').filter(Boolean).length < 2)
-    return showRegErr('Please enter your full name In English (two words)');
+  if (!name)
+    return showRegErr('Please enter your full name');
 if (!/^[a-zA-Z\s]+$/.test(name))
     return showRegErr('Full name must be in English only');
 // ✅ أضف السطرين دول هنا
