@@ -3796,11 +3796,12 @@ showDash = function(){
   }
 
   // ── Attendance: SV, SSV, SM, Admin فقط ──
-if(page === 'attendance' && !hasRole(role, ['admin','sm','ssv','sv'])) return;
+ var navAtt = gid('nav-attendance');
+  if(navAtt) navAtt.style.display = hasRole(role, ['admin','sm','ssv','sv','wla']) ? '' : 'none';
 
   // ── Details of Attendance: ظاهر للكل ──
   var navAttD = gid('nav-attdetails');
-  if(navAttD) navAttD.style.display = '';
+if(navAttD) navAttD.style.display = hasRole(role, ['admin','sm','ssv','sv','wla']) ? '' : 'none';
 
   // ── Details of OT: SV, SSV, SM فقط ──
   var navOt = gid('nav-otdetails');
@@ -3830,9 +3831,10 @@ if(page === 'attendance' && !hasRole(role, ['admin','sm','ssv','sv'])) return;
 var _origNavTo = navTo;
 navTo = function(page){
   var role = SESSION && SESSION.role;
-  if(page === 'otdetails' && !hasRole(role, ROLES_OT_ACCESS)) return;
-  if(page === 'attendance' && !hasRole(role, ['admin','sm','ssv','sv'])) return;
-  if(page === 'users'     && !hasRole(role, ROLES_MANAGE_USERS)) return;
+  if(page === 'attendance' && !hasRole(role, ['admin','sm','ssv','sv','wla'])) return;
+  if(page === 'attdetails' && !hasRole(role, ['admin','sm','ssv','sv','wla'])) return;
+  if(page === 'otdetails'  && !hasRole(role, ['admin','sm','ssv','sv'])) return;
+  if(page === 'users'      && !hasRole(role, ROLES_MANAGE_USERS)) return;
   if((page === 'data' || page === 'detailsofdata') && !hasRole(role, ROLES_VIEW_DATA)) return;
   _origNavTo(page);
 };
