@@ -3848,16 +3848,6 @@ loadAttendance = function(){
     shtml('attendanceArea','<div class="empty" style="padding:40px">⛔ Access Denied</div>');
     return;
   }
-
-  _origLoadAtt();
-};
-    _attShift = SESSION.shift;
-    var attBtns = gid('attShiftBtns');
-    if(attBtns) attBtns.style.display = 'none';
-  } else {
-    var attBtns2 = gid('attShiftBtns');
-    if(attBtns2) attBtns2.style.display = '';
-  }
   _origLoadAtt();
 };
 
