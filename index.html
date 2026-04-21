@@ -3795,9 +3795,9 @@ showDash = function(){
     mRoleEl.insertBefore(opt, mRoleEl.querySelector('option[value="qtc"]'));
   }
 
-  // ── Attendance: ظاهر للكل ──
-  var navAtt = gid('nav-attendance');
-  if(navAtt) navAtt.style.display = '';
+  // ── Attendance: SV, SSV, SM, Admin فقط ──
+var navAtt = gid('nav-attendance');
+if(navAtt) navAtt.style.display = hasRole(role, ['admin','sm','ssv','sv']) ? '' : 'none';
 
   // ── Details of Attendance: ظاهر للكل ──
   var navAttD = gid('nav-attdetails');
@@ -3832,6 +3832,7 @@ var _origNavTo = navTo;
 navTo = function(page){
   var role = SESSION && SESSION.role;
   if(page === 'otdetails' && !hasRole(role, ROLES_OT_ACCESS)) return;
+  if(page === 'attendance' && !hasRole(role, ['admin','sm','ssv','sv'])) return;
   if(page === 'users'     && !hasRole(role, ROLES_MANAGE_USERS)) return;
   if((page === 'data' || page === 'detailsofdata') && !hasRole(role, ROLES_VIEW_DATA)) return;
   _origNavTo(page);
