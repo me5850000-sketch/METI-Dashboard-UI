@@ -3827,19 +3827,13 @@ showDash = function(){
     mRoleEl.insertBefore(opt, mRoleEl.querySelector('option[value="qtc"]'));
   }
 
-  // ── Attendance: إخفاء من QTC, SL, QT ──
+          // ── Attendance + Details of Attendance: إخفاء من QTC, SL, QT ──
+var _hideFromRoles = ['qtc', 'sl', 'qt'];
 var navAtt = gid('nav-attendance');
-if(navAtt) {
-  var hideAttFor = ['qtc', 'sl', 'qt'];
-  navAtt.style.display = hideAttFor.indexOf(role) !== -1 ? 'none' : '';
-}
+if(navAtt) navAtt.style.display = _hideFromRoles.indexOf(role) !== -1 ? 'none' : '';
 
-// ── Details of Attendance: إخفاء من QTC, SL, QT ──
 var navAttD = gid('nav-attdetails');
-if(navAttD) {
-  var hideAttDFor = ['qtc', 'sl', 'qt'];
-  navAttD.style.display = hideAttDFor.indexOf(role) !== -1 ? 'none' : '';
-}
+if(navAttD) navAttD.style.display = _hideFromRoles.indexOf(role) !== -1 ? 'none' : '';
 
   // ── Details of OT: SV, SSV, SM فقط ──
   var navOt = gid('nav-otdetails');
@@ -3869,6 +3863,8 @@ if(navAttD) {
 var _origNavTo = navTo;
 navTo = function(page){
   var role = SESSION && SESSION.role;
+  var hideFromRoles = ['qtc', 'sl', 'qt'];
+  if((page === 'attendance' || page === 'attdetails') && hideFromRoles.indexOf(role) !== -1) return;
   if(page === 'otdetails' && !hasRole(role, ROLES_OT_ACCESS)) return;
   if(page === 'users'     && !hasRole(role, ROLES_MANAGE_USERS)) return;
   if((page === 'data' || page === 'detailsofdata') && !hasRole(role, ROLES_VIEW_DATA)) return;
