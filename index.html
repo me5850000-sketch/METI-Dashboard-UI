@@ -3795,13 +3795,13 @@ showDash = function(){
     mRoleEl.insertBefore(opt, mRoleEl.querySelector('option[value="qtc"]'));
   }
 
-  // ── Attendance: SV, SSV, SM, Admin فقط ──
- var navAtt = gid('nav-attendance');
-  if(navAtt) navAtt.style.display = hasRole(role, ['admin','sm','ssv','sv','wla']) ? '' : 'none';
+  // ── Attendance: ظاهر للكل ──
+  var navAtt = gid('nav-attendance');
+  if(navAtt) navAtt.style.display = '';
 
   // ── Details of Attendance: ظاهر للكل ──
   var navAttD = gid('nav-attdetails');
-if(navAttD) navAttD.style.display = hasRole(role, ['admin','sm','ssv','sv','wla']) ? '' : 'none';
+  if(navAttD) navAttD.style.display = '';
 
   // ── Details of OT: SV, SSV, SM فقط ──
   var navOt = gid('nav-otdetails');
@@ -3831,10 +3831,8 @@ if(navAttD) navAttD.style.display = hasRole(role, ['admin','sm','ssv','sv','wla'
 var _origNavTo = navTo;
 navTo = function(page){
   var role = SESSION && SESSION.role;
-  if(page === 'attendance' && !hasRole(role, ['admin','sm','ssv','sv','wla'])) return;
-  if(page === 'attdetails' && !hasRole(role, ['admin','sm','ssv','sv','wla'])) return;
-  if(page === 'otdetails'  && !hasRole(role, ['admin','sm','ssv','sv'])) return;
-  if(page === 'users'      && !hasRole(role, ROLES_MANAGE_USERS)) return;
+  if(page === 'otdetails' && !hasRole(role, ROLES_OT_ACCESS)) return;
+  if(page === 'users'     && !hasRole(role, ROLES_MANAGE_USERS)) return;
   if((page === 'data' || page === 'detailsofdata') && !hasRole(role, ROLES_VIEW_DATA)) return;
   _origNavTo(page);
 };
@@ -3844,10 +3842,13 @@ var _origLoadAtt = loadAttendance;
 loadAttendance = function(){
   var role = SESSION && SESSION.role;
 
-  // ⛔ منع الـ QTC والـ WLA والـ SL من الوصول خالص
-  if(!hasRole(role, ['admin','sm','ssv','sv','wla'])){
-    shtml('attendanceArea','<div class="empty" style="padding:40px">⛔ Access Denied</div>');
-    return;
+  if(!hasRole(role, ROLES_ATT_ALL) && SESSION && SESSION.shift){
+    _attShift = SESSION.shift;
+    var attBtns = gid('attShiftBtns');
+    if(attBtns) attBtns.style.display = 'none';
+  } else {
+    var attBtns2 = gid('attShiftBtns');
+    if(attBtns2) attBtns2.style.display = '';
   }
   _origLoadAtt();
 };
