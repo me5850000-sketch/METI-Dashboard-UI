@@ -3795,13 +3795,19 @@ showDash = function(){
     mRoleEl.insertBefore(opt, mRoleEl.querySelector('option[value="qtc"]'));
   }
 
-  // ── Attendance: ظاهر للكل ──
-  var navAtt = gid('nav-attendance');
-  if(navAtt) navAtt.style.display = '';
+  // ── Attendance: إخفاء من QTC, SL, QT ──
+var navAtt = gid('nav-attendance');
+if(navAtt) {
+  var hideAttFor = ['qtc', 'sl', 'qt'];
+  navAtt.style.display = hideAttFor.indexOf(role) !== -1 ? 'none' : '';
+}
 
-  // ── Details of Attendance: ظاهر للكل ──
-  var navAttD = gid('nav-attdetails');
-  if(navAttD) navAttD.style.display = '';
+// ── Details of Attendance: إخفاء من QTC, SL, QT ──
+var navAttD = gid('nav-attdetails');
+if(navAttD) {
+  var hideAttDFor = ['qtc', 'sl', 'qt'];
+  navAttD.style.display = hideAttDFor.indexOf(role) !== -1 ? 'none' : '';
+}
 
   // ── Details of OT: SV, SSV, SM فقط ──
   var navOt = gid('nav-otdetails');
