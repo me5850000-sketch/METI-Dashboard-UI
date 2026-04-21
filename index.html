@@ -3843,7 +3843,14 @@ var _origLoadAtt = loadAttendance;
 loadAttendance = function(){
   var role = SESSION && SESSION.role;
 
-  if(!hasRole(role, ROLES_ATT_ALL) && SESSION && SESSION.shift){
+  // ⛔ منع الـ QTC والـ WLA والـ SL من الوصول خالص
+  if(!hasRole(role, ['admin','sm','ssv','sv'])){
+    shtml('attendanceArea','<div class="empty" style="padding:40px">⛔ Access Denied</div>');
+    return;
+  }
+
+  _origLoadAtt();
+};
     _attShift = SESSION.shift;
     var attBtns = gid('attShiftBtns');
     if(attBtns) attBtns.style.display = 'none';
