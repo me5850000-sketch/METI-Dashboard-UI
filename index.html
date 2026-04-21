@@ -1405,7 +1405,39 @@ function renderStats(data, user){
     renderDrill(buildShifts(data));
   }
 }
+// في سكريبت الـ HOME STATS
+var _statsListenerWired = false; // flag عشان ما ننادي initStatsListener أكتر من مرة
 
+function loadStats(){
+  if(TOKEN)google.script.run.withSuccessHandler(function(r){if(r&&!r.err&&r.targets)TARGETS=r.targets;}).withFailureHandler(function(){}).getTargets(TOKEN);
+  var from=getFilterISO(true),to=getFilterISO(false);
+  shtml('statsArea','<div class="loading"><div class="spin"></div> Loading stats...</div>');
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(r.err){shtml('statsArea','<div class="empty">Error: '+r.err+'</div>');return;}
+      cachedStats=r.data;cachedUser=r.user;activeSFilter=null;activeRFilter=null;
+      
+      // ✅ تحسين للـ QTC: فلتر البيانات أولاً قبل الـ rendering
+      var role = SESSION && SESSION.role;
+      var dataToRender = r.data;
+      if(role === 'qtc' && SESSION && SESSION.shift) {
+        dataToRender = r.data.filter(function(row) {
+          var sh = nShift(row[F.shift] || '');
+          return sh === SESSION.shift || sh === 'Over Shift';
+        });
+      }
+      
+      renderStats(dataToRender, r.user);
+      
+      // ✅ تنادي listener مرة واحدة فقط
+      if (!_statsListenerWired) {
+        initStatsListener();
+        _statsListenerWired = true;
+      }
+    })
+    .withFailureHandler(function(e){shtml('statsArea','<div class="empty">'+e.message+'</div>');})
+    .getStats(TOKEN,from,to);
+}
 function initStatsListener(){
   var sa = gid('statsArea');
   if(!sa) return;
@@ -4256,7 +4288,15 @@ function doSilentReload() {
 }
 
 function updateCardsOnly(data) {
-  // تحديث أرقام الكروت الأربعة بدون أي تغيير للـ view
+  // ✅ تحسين: فلتر البيانات للـ QTC قبل الحساب
+  var role = SESSION && SESSION.role;
+  if(role === 'qtc' && SESSION && SESSION.shift) {
+    data = data.filter(function(row) {
+      var sh = nShift(row[F.shift] || '');
+      return sh === SESSION.shift || sh === 'Over Shift';
+    });
+  }
+  
   var lf=0,lq=0,lif=0,liq=0;
   data.forEach(function(r){
     var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
