@@ -716,10 +716,10 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
         <div class="nav-item" id="nav-qtc" data-page="qtc">Top QTC</div>
         <div class="nav-item" id="nav-qtcstats" data-page="qtcstats">QTC Stats</div>
         <div class="nav-section admin-only" style="display:none">Admin</div>
-        <div class="nav-item" id="nav-attendance" data-page="attendance">Attendance</div>
-        <div class="nav-item" id="nav-attdetails" data-page="attdetails">Details of Attendance</div>
-        <div class="nav-item" id="nav-otdetails" data-page="otdetails">Details of OT</div>
-        <div class="nav-item" id="nav-users" data-page="users" style="display:none">Users</div>
+<div class="nav-item" id="nav-attendance" data-page="attendance" style="display:none">Attendance</div>
+<div class="nav-item" id="nav-attdetails" data-page="attdetails" style="display:none">Details of Attendance</div>
+<div class="nav-item" id="nav-otdetails" data-page="otdetails" style="display:none">Details of OT</div>
+<div class="nav-item" id="nav-users" data-page="users" style="display:none">Users</div>
       </nav>
       <div class="sb-footer">
         <div class="sb-user">
@@ -1200,11 +1200,8 @@ if (addBtn) addBtn.style.display = hasRole(SESSION.role, ['admin','sm','ssv','sv
   var navUsers = gid('nav-users');
   if(navUsers) navUsers.style.display = '';
 }
-if(hasRole(SESSION.role,['admin'])){
-  document.querySelectorAll('.admin-only').forEach(function(el){el.style.display='';});
-}
   if(!hasRole(SESSION.role,ROLES_VIEW_DATA)){var nd=gid('nav-data');if(nd)nd.style.display='none';}
-  if(userSeeOwnOnly()){gid('shiftBannerHomeText').textContent=SESSION.shift;gid('shiftBannerDataText').textContent=SESSION.shift;gid('shiftBannerHome').style.display='flex';gid('shiftBannerData').style.display='flex';}
+  if(userSeeOwnOnly()){gid('shiftBannerHomeText').textContent=SESSION.shift;gid('shiftBannerData').style.display='flex';}
   
   // Show global filter initially
   var gf = gid('globalFilterBar');
