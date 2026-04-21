@@ -1095,11 +1095,7 @@ function buildTimeSelects(){
 function getFilterISO(isFrom){
   var iso = isFrom ? SHARED.from : SHARED.to;
   var tv = isFrom ? SHARED.fromTime : SHARED.toTime;
-  
-  // ✅ Validate ISO format
-  if(!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return null;
-  if(!tv || !/^\d{2}:\d{2}$/.test(tv)) return null;
-  
+  if(!iso) return null;
   return iso+'T'+tv+':'+(tv==='23:59'?'59':'00');
 }
 
@@ -1174,10 +1170,7 @@ function doLogout() {
   SESSION = null;
   TOKEN = null;
   cachedStats = null;
-dataAll = [];           // ✅ مسح البيانات
-  activeModFilters.clear();
-  activeDataUnits.clear();
-  activeDataShifts.clear();
+
   document.getElementById('dashScreen').style.display = 'none';
  document.getElementById('loginScreen').style.display = 'block';
   
@@ -1259,15 +1252,17 @@ function navTo(page){
 <script>
 // ══ HOME STATS ══
 function loadStats(){
-  if(!TOKEN){ shtml('statsArea','<div class="empty">Not authenticated.</div>'); return; }
-  
-  // Call getTargets independently - no blocking
-  google.script.run.withSuccessHandler(function(r){if(r&&!r.err&&r.targets)TARGETS=r.targets;}).withFailureHandler(function(){}).getTargets(TOKEN);
-  
-  // Call getStats independently - guaranteed to run
+  if(TOKEN)google.script.run.withSuccessHandler(function(r){if(r&&!r.err&&r.targets)TARGETS=r.targets;}).withFailureHandler(function(){}).getTargets(TOKEN);
   var from=getFilterISO(true),to=getFilterISO(false);
   shtml('statsArea','<div class="loading"><div class="spin"></div> Loading stats...</div>');
-  google.script.run.withSuccessHandler(function(r){...}).getStats(TOKEN,from,to);
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(r.err){shtml('statsArea','<div class="empty">Error: '+r.err+'</div>');return;}
+      cachedStats=r.data;cachedUser=r.user;activeSFilter=null;activeRFilter=null;
+      renderStats(r.data,r.user);
+    })
+    .withFailureHandler(function(e){shtml('statsArea','<div class="empty">'+e.message+'</div>');})
+    .getStats(TOKEN,from,to);
 }
 
 function applyFilters(data){
@@ -2886,15 +2881,7 @@ window.onload=function(){
 
   // Session restore
   var st=sessionStorage.getItem('dk_tok'),su=sessionStorage.getItem('dk_usr');
-if(st&&su){
-  var _restored=tryParse(su);
-  if(_restored&&st){
-    TOKEN=st;SESSION=_restored;
-    showDash();applyShiftDefaults(SESSION.shift);loadStats();
-  }
-}else{
-  showLoginScreen();
-}
+  if(st&&su){TOKEN=st;SESSION=tryParse(su);if(SESSION){showDash();applyShiftDefaults(SESSION.shift);loadStats();}}
 
   buildTimeSelects();
   SHARED.from=todayISO();SHARED.to=todayISO();
