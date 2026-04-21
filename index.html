@@ -1252,17 +1252,36 @@ function navTo(page){
 <script>
 // ══ HOME STATS ══
 function loadStats(){
-  if(TOKEN)google.script.run.withSuccessHandler(function(r){if(r&&!r.err&&r.targets)TARGETS=r.targets;}).withFailureHandler(function(){}).getTargets(TOKEN);
-  var from=getFilterISO(true),to=getFilterISO(false);
+  if(TOKEN){
+    google.script.run
+      .withSuccessHandler(function(r){ 
+        if(r && !r.err && r.targets) TARGETS = r.targets; 
+      })
+      .withFailureHandler(function(e){ 
+        console.warn('getTargets failed (non-critical):', e); 
+      })
+      .getTargets(TOKEN);
+  }
+  
+  var from = getFilterISO(true), to = getFilterISO(false);
   shtml('statsArea','<div class="loading"><div class="spin"></div> Loading stats...</div>');
+  
+  if(!TOKEN){
+    shtml('statsArea','<div class="empty">Session expired. Please login again.</div>');
+    return;
+  }
+  
   google.script.run
     .withSuccessHandler(function(r){
       if(r.err){shtml('statsArea','<div class="empty">Error: '+r.err+'</div>');return;}
-      cachedStats=r.data;cachedUser=r.user;activeSFilter=null;activeRFilter=null;
-      renderStats(r.data,r.user);
+      cachedStats = r.data; cachedUser = r.user;
+      activeSFilter = null; activeRFilter = null;
+      renderStats(r.data, r.user);
     })
-    .withFailureHandler(function(e){shtml('statsArea','<div class="empty">'+e.message+'</div>');})
-    .getStats(TOKEN,from,to);
+    .withFailureHandler(function(e){
+      shtml('statsArea','<div class="empty">'+e.message+'</div>');
+    })
+    .getStats(TOKEN, from, to);
 }
 
 function applyFilters(data){
@@ -2595,6 +2614,7 @@ window._openAttPopupWithData=function(p,statusLabel,statusBg){
 
 <script>
   // ══ OT DETAILS PAGE ══
+// ══ OT DETAILS PAGE ══
 function loadOtDetails() {
   var dateISO = DP.getVal('otDate') || todayISO();
   if (!DP.getVal('otDate')) DP.setVal('otDate', dateISO, false);
@@ -2880,8 +2900,28 @@ window.onload=function(){
   if(localStorage.getItem('meti_dark')==='1'){document.body.classList.add('dark');var btn=gid('darkToggle');if(btn)btn.innerHTML='☀️';}
 
   // Session restore
-  var st=sessionStorage.getItem('dk_tok'),su=sessionStorage.getItem('dk_usr');
-  if(st&&su){TOKEN=st;SESSION=tryParse(su);if(SESSION){showDash();applyShiftDefaults(SESSION.shift);loadStats();}}
+  var st=sessionStorage.getItem('dk_tok'),su=sessionStorage.getItem('dk_usr');if(st && su){
+  var parsedSession = tryParse(su);
+  if(parsedSession && st){
+    TOKEN = st;
+    SESSION = parsedSession;
+    try {
+      hide('loginScreen');
+      gid('dashScreen').style.display = 'block';
+      showDash();
+      applyShiftDefaults(SESSION.shift);
+      setTimeout(function(){ loadStats(); }, 100);
+    } catch(e) {
+      console.error('Session restore error:', e);
+      sessionStorage.clear();
+      TOKEN = null; SESSION = null;
+      gid('dashScreen').style.display = 'none';
+      gid('loginScreen').style.display = 'block';
+    }
+  } else {
+    sessionStorage.clear();
+  }
+}
 
   buildTimeSelects();
   SHARED.from=todayISO();SHARED.to=todayISO();
@@ -3475,6 +3515,7 @@ function loadOtDetails() {
   
   google.script.run
     .withSuccessHandler(function(r) {
+      // ✅ إزالة btn.innerHTML و btn.disabled اللي كانت تسبب ReferenceError
       if (r.err) { 
         shtml('otDetailsArea', '<div class="empty">' + r.err + '</div>'); 
         return; 
@@ -4415,6 +4456,41 @@ document.addEventListener('change', function(e){
 // إيقاف الـ auto reload لو الـ session منتهي
 var _origDoLogout = doLogout;
 doLogout = function(){ stopAutoReload(); _origDoLogout(); };
+  window.addEventListener('pageshow', function(event) {
+  // لو الصفحة اتفتحت من الـ cache (bfcache)
+  if (event.persisted) {
+    var st = sessionStorage.getItem('dk_tok');
+    var su = sessionStorage.getItem('dk_usr');
+    if(st && su && !SESSION) {
+      TOKEN = st;
+      SESSION = tryParse(su);
+      if(SESSION) {
+        hide('loginScreen');
+        gid('dashScreen').style.display = 'block';
+        showDash();
+        applyShiftDefaults(SESSION.shift);
+        setTimeout(function(){ loadStats(); }, 100);
+      }
+    }
+  }
+});
+
+// ✅ FIX: الـ Patch الخاص بـ OT يجب أن يكون بعد تعريف renderOtDetails
+// إعادة تعريف الـ Patch بشكل صحيح
+(function(){
+  var _orig = renderOtDetails;
+  renderOtDetails = function(data){
+    var role = SESSION && SESSION.role;
+    if(data && !hasRole(role, ROLES_OT_ALL) && SESSION && SESSION.shift){
+      var myShift = SESSION.shift;
+      data = data.filter(function(r){
+        var sh = (r.otShift || r.shift || '').trim();
+        return sh === myShift || sh === 'Over Shift';
+      });
+    }
+    _orig(data);
+  };
+})();
 </script>
 </body>
 </html>
