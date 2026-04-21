@@ -3755,24 +3755,44 @@ function openOtModal(r) {
 }
 </script> <script>
 // ═══════════════════════════════════════════════════════════
-// METI DASHBOARD — ROLE PERMISSIONS PATCH
+// METI DASHBOARD — ROLE PERMISSIONS PATCH v2
+// الصلاحيات الجديدة:
+// Home         → الجميع (Weekly Target + كل الشيفتات → SV,SSV,SM,WLA,Admin,QT فقط)
+// Data/Details → الجميع (كل الشيفتات → SV,SSV,SM,WLA,Admin,QT فقط)
+// Top Labelers → الجميع (كل الشيفتات → SV,SSV,SM,WLA,Admin,QT فقط)
+// Top QTC      → الجميع بدون قيود
+// QTC Stats    → الجميع
+// Attendance   → SV,SSV,SM,WLA,Admin فقط (مخفية للباقين)
+// Att Details  → الجميع (كل الشيفتات → SV,SSV,SM,Admin فقط)
+// OT Details   → الجميع (كل الشيفتات → SV,SSV,SM,Admin فقط)
+// Users        → SV,SSV,SM,Admin فقط
 // ═══════════════════════════════════════════════════════════
 
 // ══ 1. ROLE ARRAYS ══
-ROLES_SEE_ALL      = ['admin','sm','ssv','sv','wla'];
-ROLES_OWN          = ['qtc','sl'];           // شايف شيفته بس
-ROLES_VIEW_DATA    = ['admin','sm','ssv','sv','qtc','wla','sl'];
-ROLES_MANAGE_USERS = ['admin','sm','ssv','sv'];
-ROLES_SET_TARGET   = ['admin','sm','ssv'];
-var ROLES_ATT_ALL          = ['admin','sm','ssv','sv','wla'];   // Attendance: شايف الكل
-var ROLES_ATT_DETAILS_ALL  = ['admin','sm','ssv','sv'];              // Details of Att: شايف الكل
-var ROLES_OT_ACCESS        = ['admin','sm','ssv','sv'];         // OT page
-var ROLES_APPROVE_USERS    = ['admin','sm','ssv','sv'];         
+ROLES_SEE_ALL         = ['admin','sm','ssv','sv','wla'];
+ROLES_OWN             = ['qtc','sl','qt'];
+ROLES_VIEW_DATA       = ['admin','sm','ssv','sv','qtc','wla','sl','qt'];
+ROLES_MANAGE_USERS    = ['admin','sm','ssv','sv'];
+ROLES_SET_TARGET      = ['admin','sm','ssv'];
 
-// ══ 2. CSS — SL badge ══
+// من يرى كل الشيفتات في صفحات البيانات والـ Labelers
+var ROLES_SEE_ALL_SHIFTS  = ['admin','sm','ssv','sv','wla','qt'];
+// من يرى صفحة Attendance (تختفي تماماً للباقين)
+var ROLES_ATT_VIEW        = ['admin','sm','ssv','sv','wla'];
+// من يرى كل شيفتات Att Details / OT
+var ROLES_ATT_DETAILS_ALL = ['admin','sm','ssv','sv'];
+var ROLES_OT_ALL          = ['admin','sm','ssv','sv'];
+// صلاحية Users
+var ROLES_APPROVE_USERS   = ['admin','sm','ssv','sv'];
+
+// ══ 2. CSS — SL / QT badges ══
 (function(){
   var st = document.createElement('style');
-  st.textContent = '.rb-sl{background:#ff7043;color:#fff} .b-sl{background:#fbe9e7;color:#bf360c}';
+  st.textContent =
+    '.rb-sl{background:#ff7043;color:#fff}' +
+    '.b-sl{background:#fbe9e7;color:#bf360c}' +
+    '.rb-qt{background:#0288d1;color:#fff}' +
+    '.b-qt{background:#e1f5fe;color:#01579b}';
   document.head.appendChild(st);
 })();
 
@@ -3783,101 +3803,198 @@ showDash = function(){
 
   var role = SESSION && SESSION.role;
 
-  // SL badge style
+  // -- Role badge fix for SL / QT --
   var rb = gid('sbRole');
-  if(rb && role === 'sl'){ rb.textContent = 'SL'; rb.className = 'role-badge rb-sl'; }
-
-  // إضافة SL في modal select لو مش موجود
-  var mRoleEl = gid('mRole');
-  if(mRoleEl && !mRoleEl.querySelector('option[value="sl"]')){
-    var opt = document.createElement('option');
-    opt.value = 'sl'; opt.textContent = 'SL';
-    mRoleEl.insertBefore(opt, mRoleEl.querySelector('option[value="qtc"]'));
+  if(rb){
+    if(role === 'sl'){ rb.textContent = 'SL'; rb.className = 'role-badge rb-sl'; }
+    if(role === 'qt'){ rb.textContent = 'QT'; rb.className = 'role-badge rb-qt'; }
   }
 
-  // ── Attendance: ظاهر للكل ──
-  var navAtt = gid('nav-attendance');
-  if(navAtt) navAtt.style.display = '';
+  // -- إضافة SL & QT في modal select لو مش موجودين --
+  var mRoleEl = gid('mRole');
+  if(mRoleEl){
+    ['sl','qt'].forEach(function(r){
+      if(!mRoleEl.querySelector('option[value="'+r+'"]')){
+        var opt = document.createElement('option');
+        opt.value = r;
+        opt.textContent = r.toUpperCase();
+        var qtcOpt = mRoleEl.querySelector('option[value="qtc"]');
+        if(qtcOpt) mRoleEl.insertBefore(opt, qtcOpt);
+        else mRoleEl.appendChild(opt);
+      }
+    });
+  }
 
-  // ── Details of Attendance: ظاهر للكل ──
-  var navAttD = gid('nav-attdetails');
-  if(navAttD) navAttD.style.display = '';
+  // ─────────────────────────────────────────────
+  // Sidebar nav visibility
+  // ─────────────────────────────────────────────
 
-  // ── Details of OT: SV, SSV, SM فقط ──
-  var navOt = gid('nav-otdetails');
-  if(navOt) navOt.style.display = hasRole(role, ROLES_OT_ACCESS) ? '' : 'none';
+  // Home → الجميع
+  var navHome = gid('nav-home');
+  if(navHome) navHome.style.display = '';
 
-  // ── Users: SV, SSV, SM فقط ──
-  var navU = gid('nav-users');
-  if(navU) navU.style.display = hasRole(role, ROLES_MANAGE_USERS) ? '' : 'none';
+  // Data → من في ROLES_VIEW_DATA
+  var navData = gid('nav-data');
+  if(navData) navData.style.display = hasRole(role, ROLES_VIEW_DATA) ? '' : 'none';
 
-  // ── Data: إخفاء لو مش في ROLES_VIEW_DATA ──
-  var navD = gid('nav-data');
-  if(navD) navD.style.display = hasRole(role, ROLES_VIEW_DATA) ? '' : 'none';
+  // Details of Data → نفس Data
   var navDod = gid('nav-detailsofdata');
   if(navDod) navDod.style.display = hasRole(role, ROLES_VIEW_DATA) ? '' : 'none';
 
-  // ── Admin section label ──
-  document.querySelectorAll('.admin-only').forEach(function(el){ el.style.display = ''; });
+  // Top Labelers → الجميع
+  var navLab = gid('nav-labelers');
+  if(navLab) navLab.style.display = '';
 
-  // ── Shift banners ──
-  if(hasRole(role, ROLES_OWN) && SESSION.shift){
+  // Top QTC → الجميع
+  var navQtc = gid('nav-qtc');
+  if(navQtc) navQtc.style.display = '';
+
+  // QTC Stats → الجميع
+  var navQtcS = gid('nav-qtcstats');
+  if(navQtcS) navQtcS.style.display = '';
+
+  // Attendance → ROLES_ATT_VIEW فقط (تختفي للباقين)
+  var navAtt = gid('nav-attendance');
+  if(navAtt) navAtt.style.display = hasRole(role, ROLES_ATT_VIEW) ? '' : 'none';
+
+  // Details of Attendance → الجميع (الفلترة بتتحكم في المحتوى)
+  var navAttD = gid('nav-attdetails');
+  if(navAttD) navAttD.style.display = '';
+
+  // Details of OT → الجميع (الفلترة بتتحكم في المحتوى)
+  var navOt = gid('nav-otdetails');
+  if(navOt) navOt.style.display = '';
+
+  // Users → ROLES_MANAGE_USERS فقط
+  var navU = gid('nav-users');
+  if(navU) navU.style.display = hasRole(role, ROLES_MANAGE_USERS) ? '' : 'none';
+
+  // Admin section label → ظاهر لكل من عنده صلاحية admin pages
+  document.querySelectorAll('.admin-only').forEach(function(el){
+    el.style.display = hasRole(role, ['admin','sm','ssv','sv','wla']) ? '' : 'none';
+  });
+
+  // ─────────────────────────────────────────────
+  // Bottom Nav visibility
+  // ─────────────────────────────────────────────
+  var bnHome = gid('bn-home');     if(bnHome) bnHome.style.display = '';
+  var bnData = gid('bn-data');     if(bnData) bnData.style.display = hasRole(role, ROLES_VIEW_DATA) ? '' : 'none';
+  var bnLab  = gid('bn-labelers'); if(bnLab)  bnLab.style.display  = '';
+  var bnQtc  = gid('bn-qtc');      if(bnQtc)  bnQtc.style.display  = '';
+  // bn-menu (hamburger) → دايماً ظاهر
+  var bnMenu = gid('bn-menu');     if(bnMenu) bnMenu.style.display  = '';
+
+  // ─────────────────────────────────────────────
+  // Shift banner
+  // ─────────────────────────────────────────────
+  if(!hasRole(role, ROLES_SEE_ALL_SHIFTS) && SESSION && SESSION.shift){
     var sb1 = gid('shiftBannerHome');
     if(sb1){ gid('shiftBannerHomeText').textContent = SESSION.shift; sb1.style.display = 'flex'; }
   }
+
+  // ─────────────────────────────────────────────
+  // Add User button
+  // ─────────────────────────────────────────────
+  var addBtn = gid('btnAddUser');
+  if(addBtn) addBtn.style.display = hasRole(role, ROLES_MANAGE_USERS) ? 'flex' : 'none';
 };
 
-// ══ 4. navTo PATCH — block OT for unauthorized ══
+// ══ 4. navTo PATCH — block unauthorized pages ══
 var _origNavTo = navTo;
 navTo = function(page){
   var role = SESSION && SESSION.role;
-  if(page === 'otdetails' && !hasRole(role, ROLES_OT_ACCESS)) return;
-  if(page === 'users'     && !hasRole(role, ROLES_MANAGE_USERS)) return;
+  // Attendance → ROLES_ATT_VIEW فقط
+  if(page === 'attendance' && !hasRole(role, ROLES_ATT_VIEW)) return;
+  // Users → ROLES_MANAGE_USERS فقط
+  if(page === 'users' && !hasRole(role, ROLES_MANAGE_USERS)) return;
+  // Data / Details of Data → ROLES_VIEW_DATA فقط
   if((page === 'data' || page === 'detailsofdata') && !hasRole(role, ROLES_VIEW_DATA)) return;
   _origNavTo(page);
 };
 
-// ══ 5. Attendance — Shift filtering by role ══
-var _origLoadAtt = loadAttendance;
-loadAttendance = function(){
+// ══ 5. Home — Weekly Target مخفي للـ QTC/SL ══
+var _origRenderStats = renderStats;
+renderStats = function(data, user){
+  _origRenderStats(data, user);
   var role = SESSION && SESSION.role;
-
-  if(!hasRole(role, ROLES_ATT_ALL) && SESSION && SESSION.shift){
-    _attShift = SESSION.shift;
-    var attBtns = gid('attShiftBtns');
-    if(attBtns) attBtns.style.display = 'none';
-  } else {
-    var attBtns2 = gid('attShiftBtns');
-    if(attBtns2) attBtns2.style.display = '';
+  // لو مش في الـ list، اخفي قسم Weekly Target
+  if(!hasRole(role, ROLES_SEE_ALL_SHIFTS)){
+    var targetOuter = gid('homeTargetOuter');
+    if(targetOuter) targetOuter.style.display = 'none';
+    // كمان السطر اللي فوقيه (sec-hdr)
+    var allHdrs = document.querySelectorAll('#statsArea .sec-hdr');
+    allHdrs.forEach(function(h){ if(h.textContent.indexOf('Weekly Target') !== -1) h.style.display = 'none'; });
   }
-  _origLoadAtt();
 };
 
-// ══ 6. Details of Attendance — Shift filtering by role ══
-var _origLoadAttDetails = loadAttDetails;
-loadAttDetails = function(){
-  var role = SESSION && SESSION.role;
+// ══ 6. Home / Data / Labelers — فلترة الشيفت حسب الدور ══
 
-  if(!hasRole(role, ROLES_ATT_DETAILS_ALL) && SESSION && SESSION.shift){
-    _attShift2 = SESSION.shift;
-    var attBtns2 = gid('attShiftBtns2');
-    if(attBtns2) attBtns2.style.display = 'none';
-  } else {
-    var attBtns2b = gid('attShiftBtns2');
-    if(attBtns2b) attBtns2b.style.display = '';
-  }
-  _origLoadAttDetails();
+// getStats original بيبعت TOKEN و from و to — ما بنلمسوش
+// بس لما الداتا ترجع، الـ QTC/SL/Qt يشوفوا شيفتهم بس
+
+// override loadStats لإخفاء target لغير المخوّلين
+var _origLoadStats = loadStats;
+loadStats = function(){
+  _origLoadStats();
 };
 
-// ══ 7. Details of Data — QTC & SL شايفين شيفتهم + Over Shift ══
+// ══ 7. Data Page — فلترة حسب الشيفت للـ QTC/SL ══
+var _origLoadData = loadData;
+loadData = function(){
+  var from = getFilterISO(true), to = getFilterISO(false);
+  shtml('dataArea','<div class="loading"><div class="spin"></div> Loading data...</div>');
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(r.err){ shtml('dataArea','<div class="empty">'+r.err+'</div>'); return; }
+      r.data.sort(function(a,b){ return new Date(b[F.date]||0)-new Date(a[F.date]||0); });
+      // فلترة حسب الشيفت لو الدور يحتاج ذلك
+      var role = SESSION && SESSION.role;
+      if(!hasRole(role, ROLES_SEE_ALL_SHIFTS) && SESSION && SESSION.shift){
+        var myShift = SESSION.shift;
+        r.data = r.data.filter(function(row){
+          var sh = nShift(row[F.shift]||'');
+          return sh === myShift || sh === 'Over Shift';
+        });
+      }
+      dataAll = r.data; dataPage = 1; renderDataFiltered();
+      if(gid('pgDetailsOfData') && gid('pgDetailsOfData').style.display !== 'none') renderDetailsOfData();
+    })
+    .withFailureHandler(function(e){ shtml('dataArea','<div class="empty">'+e.message+'</div>'); })
+    .getStats(TOKEN, from, to);
+};
+
+// ══ 8. Top Labelers — فلترة حسب الشيفت ══
+var _origLoadLabelers = loadLabelers;
+loadLabelers = function(){
+  var from = getFilterISO(true), to = getFilterISO(false);
+  shtml('labelersArea','<div class="loading"><div class="spin"></div> Loading Labeler Leaderboard...</div>');
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(r.err){ shtml('labelersArea','<div class="empty">'+r.err+'</div>'); return; }
+      var role = SESSION && SESSION.role;
+      var data = r.data;
+      if(!hasRole(role, ROLES_SEE_ALL_SHIFTS) && SESSION && SESSION.shift){
+        var myShift = SESSION.shift;
+        data = data.filter(function(row){
+          var sh = nShift(row[F.shift]||'');
+          return sh === myShift || sh === 'Over Shift';
+        });
+      }
+      renderLabelersPage(data);
+    })
+    .withFailureHandler(function(e){ shtml('labelersArea','<div class="empty">'+e.message+'</div>'); })
+    .getStats(TOKEN, from, to);
+};
+
+// ══ 9. Details of Data — فلترة حسب الشيفت ══
 var _origRenderDod = renderDetailsOfData;
 renderDetailsOfData = function(){
   var role = SESSION && SESSION.role;
-  if(hasRole(role, ROLES_OWN) && SESSION && SESSION.shift){
+  if(!hasRole(role, ROLES_SEE_ALL_SHIFTS) && SESSION && SESSION.shift){
     var myShift = SESSION.shift;
     var _origDataAll = dataAll;
     dataAll = _origDataAll.filter(function(r){
-      var sh = nShift(r[F.shift] || '');
+      var sh = nShift(r[F.shift]||'');
       return sh === myShift || sh === 'Over Shift';
     });
     _origRenderDod();
@@ -3887,7 +4004,57 @@ renderDetailsOfData = function(){
   }
 };
 
-// ══ 9. Users Page — SV / SSV شايفين شيفتهم بس ══
+// ══ 10. Attendance — شايف شيفته بس لو مش في ROLES_ATT_VIEW ══
+// (أصلاً الصفحة مخفية لهم، لكن كحماية إضافية)
+var _origLoadAtt = loadAttendance;
+loadAttendance = function(){
+  var role = SESSION && SESSION.role;
+  if(!hasRole(role, ROLES_ATT_VIEW)) return; // حماية إضافية
+  var attBtns = gid('attShiftBtns');
+  if(attBtns) attBtns.style.display = hasRole(role, ROLES_ATT_DETAILS_ALL) ? '' : 'none';
+  if(!hasRole(role, ROLES_ATT_DETAILS_ALL) && SESSION && SESSION.shift){
+    _attShift = SESSION.shift;
+  }
+  _origLoadAtt();
+};
+
+// ══ 11. Details of Attendance — فلترة حسب الشيفت ══
+var _origLoadAttDetails = loadAttDetails;
+loadAttDetails = function(){
+  var role = SESSION && SESSION.role;
+  var attBtns2 = gid('attShiftBtns2');
+  if(!hasRole(role, ROLES_ATT_DETAILS_ALL) && SESSION && SESSION.shift){
+    _attShift2 = SESSION.shift;
+    if(attBtns2) attBtns2.style.display = 'none';
+  } else {
+    if(attBtns2) attBtns2.style.display = '';
+  }
+  _origLoadAttDetails();
+};
+
+// ══ 12. OT Details — فلترة حسب الشيفت ══
+var _origLoadOtDetails = loadOtDetails;
+loadOtDetails = function(){
+  var role = SESSION && SESSION.role;
+  // OT: نحمّل كل البيانات، لكن لو مش admin/sm/ssv/sv → نفلتر في الـ render
+  _origLoadOtDetails();
+};
+
+// patch renderOtDetails لفلترة حسب الشيفت لغير المخوّلين
+var _origRenderOtDetails = renderOtDetails;
+renderOtDetails = function(data){
+  var role = SESSION && SESSION.role;
+  if(!hasRole(role, ROLES_OT_ALL) && SESSION && SESSION.shift){
+    var myShift = SESSION.shift;
+    data = (data||[]).filter(function(r){
+      var sh = (r.otShift || r.shift || '').trim();
+      return sh === myShift || sh === 'Over Shift';
+    });
+  }
+  _origRenderOtDetails(data);
+};
+
+// ══ 13. Users Page ══
 var _origLoadUsers = loadUsers;
 loadUsers = function(){
   var role = SESSION && SESSION.role;
@@ -3903,30 +4070,30 @@ loadUsers = function(){
 };
 
 function _renderUsersPatch(users, pending){
-  var role   = SESSION && SESSION.role;
+  var role    = SESSION && SESSION.role;
   var myShift = SESSION && SESSION.shift;
   var isFullAdmin = hasRole(role, ['admin','sm']);
-  var isSvSvv    = hasRole(role, ['sv','ssv']);
+  var isSvSsvLevel = hasRole(role, ['sv','ssv']);
 
+  // SV/SSV يشوفوا بس الـ users اللي في شيفتهم
   var filteredUsers   = isFullAdmin ? users   : users.filter(function(u){ return u.shift === myShift; });
   var filteredPending = isFullAdmin ? pending : pending.filter(function(p){ return p.shift === myShift; });
 
-  var ROLE_ORD = ['admin','sm','ssv','sv','sl','qtc','wla'];
+  var ROLE_ORD = ['admin','sm','ssv','sv','sl','qt','qtc','wla'];
   var sorted = filteredUsers.slice().sort(function(a,b){
-    var ai=ROLE_ORD.indexOf(a.role),bi=ROLE_ORD.indexOf(b.role);
-    return ai!==bi?ai-bi:(a.name||'').localeCompare(b.name||'');
+    var ai=ROLE_ORD.indexOf(a.role), bi=ROLE_ORD.indexOf(b.role);
+    return ai!==bi ? ai-bi : (a.name||'').localeCompare(b.name||'');
   });
 
   var pendingBadge = filteredPending.length
     ? ' <span style="background:#c5221f;color:white;font-size:10px;font-weight:800;padding:1px 7px;border-radius:10px;margin-left:4px">'+filteredPending.length+'</span>'
     : '';
 
-  var canAdd = hasRole(role, ['admin','sm','ssv','sv']); 
   var addBtnEl = gid('btnAddUser');
-  if(addBtnEl) addBtnEl.style.display = canAdd ? 'flex' : 'none';
+  if(addBtnEl) addBtnEl.style.display = 'flex';
 
   var html =
-    '<div style="display:flex;gap:0;border-bottom:2px solid var(--blue-lt);margin-bottom:16px">' +
+    '<div style="display:flex;gap:0;border-bottom:2px solid var(--blue-lt);margin-bottom:16px">'+
     '<div class="qtc-tab active" id="uTabActive" onclick="switchUserTab(\'active\')" '+
     'style="border-bottom:2px solid var(--blue);color:var(--blue);margin-bottom:-2px">Active Users</div>'+
     '<div class="qtc-tab" id="uTabPending" onclick="switchUserTab(\'pending\')" '+
@@ -3939,12 +4106,12 @@ function _renderUsersPatch(users, pending){
     '<th>Role</th><th>Shift</th><th>Status</th><th>Actions</th>'+
     '</tr></thead><tbody>'+
     sorted.map(function(u){
-      var canEdit = isFullAdmin || (isSvSvv && u.shift === myShift);
+      var canEdit = isFullAdmin || (isSvSsvLevel && u.shift === myShift);
       var canDel  = isFullAdmin;
       return '<tr>'+
         '<td class="left bold">'+titleCase(u.name||'-')+'</td>'+
         '<td class="left" style="font-size:12px;color:var(--gray)">'+(u.email||'-')+'</td>'+
-        '<td><span class="badge b-'+(u.role||'qtc')+'">'+(u.role==='ssv'?'SSV':(u.role||'-').toUpperCase())+'</span></td>'+
+        '<td><span class="badge b-'+(u.role||'qtc')+'">'+((u.role||'-')==='ssv'?'SSV':(u.role||'-').toUpperCase())+'</span></td>'+
         '<td>'+(u.shift?'<span class="badge '+shiftBadge(u.shift)+'">'+u.shift+'</span>':'<span style="color:var(--gray);font-size:12px">All</span>')+'</td>'+
         '<td><span class="badge '+(u.active!==false?'b-active':'b-inactive')+'">'+(u.active!==false?'Active':'Inactive')+'</span></td>'+
         '<td>'+
@@ -3955,27 +4122,25 @@ function _renderUsersPatch(users, pending){
     '</tbody></table></div></div>'+
 
     '<div id="uPanelPending" style="display:none">'+
-    (filteredPending.length===0
+    (filteredPending.length === 0
       ? '<div class="empty">No pending requests 🎉</div>'
       : '<div class="tbl-card"><table><thead><tr>'+
         '<th class="left">Name</th><th class="left">Email</th><th>Shift</th><th>Actions</th>'+
         '</tr></thead><tbody>'+
         filteredPending.map(function(p){
-          var canApprove = hasRole(role, ROLES_APPROVE_USERS); 
-          
+          var canApprove = hasRole(role, ROLES_APPROVE_USERS);
           return '<tr>'+
             '<td class="left bold">'+titleCase(p.name||'-')+'</td>'+
             '<td class="left" style="font-size:12px;color:var(--gray)">'+(p.email||'-')+'</td>'+
             '<td>'+(p.shift?'<span class="badge '+shiftBadge(p.shift)+'">'+p.shift+'</span>':'—')+'</td>'+
             '<td style="display:flex;gap:6px;align-items:center">'+
-            
-            (canApprove ?  
-              '<button class="fbtn fbtn-primary" style="padding:6px 14px;font-size:12px" '+
-              'onclick="openApproveModal('+p.id+',\''+encodeURIComponent(p.name)+'\')">✓ Approve</button>'+
-              '<button class="icon-btn ib-del" '+
-              'onclick="declineUser('+p.id+',\''+encodeURIComponent(p.name)+'\')">✕ Decline</button>'
-            : '<span style="font-size:11px;color:var(--gray);background:var(--gray-lt);padding:4px 8px;border-radius:6px">No Permission</span>' ) +
-            
+            (canApprove
+              ? '<button class="fbtn fbtn-primary" style="padding:6px 14px;font-size:12px" '+
+                'onclick="openApproveModal('+p.id+',\''+encodeURIComponent(p.name)+'\')">✓ Approve</button>'+
+                '<button class="icon-btn ib-del" '+
+                'onclick="declineUser('+p.id+',\''+encodeURIComponent(p.name)+'\')">✕ Decline</button>'
+              : '<span style="font-size:11px;color:var(--gray);background:var(--gray-lt);padding:4px 8px;border-radius:6px">No Permission</span>'
+            )+
             '</td></tr>';
         }).join('')+
         '</tbody></table></div>'
@@ -3985,31 +4150,25 @@ function _renderUsersPatch(users, pending){
   shtml('usersArea', html);
 }
 
-// ══ 10. حماية دوال الـ Approve والـ Decline وترتيب الرتب ══
+// ══ 14. openApproveModal — Role Hierarchy ══
 var _origOpenApproveModal = openApproveModal;
 openApproveModal = function(rowId, encodedName){
   var role = SESSION && SESSION.role;
-  if (!hasRole(role, ROLES_APPROVE_USERS)) {
-    toast("You don't have permission to approve requests", "err");
-    return; 
-  }
-  
+  if(!hasRole(role, ROLES_APPROVE_USERS)){ toast("No permission to approve", "err"); return; }
   _approveRowId = rowId;
   var name = decodeURIComponent(encodedName);
-  
-  // 👈 تطبيق هرم الصلاحيات 
-  var allowedRoles = [];
-  if (role === 'admin') allowedRoles = ['admin', 'sm', 'ssv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
-  else if (role === 'sm') allowedRoles = ['sm', 'ssv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
-  else if (role === 'ssv') allowedRoles = ['ssv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
-  else if (role === 'sv') allowedRoles = ['sv', 'qt', 'wla', 'qtc', 'sl'];
-  else allowedRoles = ['qt', 'wla', 'qtc', 'sl'];
 
-  var roleLabels = {'admin':'Admin', 'sm':'SM', 'ssv':'SSV', 'sv':'SV', 'qt':'QT', 'wla':'WLA', 'qtc':'QTC', 'sl':'SL'};
+  // هرم الصلاحيات — كل رتبة تقدر تضيف رتب أقل منها بس
+  var allowedRoles;
+  if(role === 'admin')     allowedRoles = ['admin','sm','ssv','sv','sl','qt','wla','qtc'];
+  else if(role === 'sm')   allowedRoles = ['sm','ssv','sv','sl','qt','wla','qtc'];
+  else if(role === 'ssv')  allowedRoles = ['ssv','sv','sl','qt','wla','qtc'];
+  else if(role === 'sv')   allowedRoles = ['sv','sl','qt','wla','qtc'];
+  else                     allowedRoles = ['qtc','sl','qt','wla'];
 
+  var roleLabels = {admin:'Admin',sm:'SM',ssv:'SSV',sv:'SV',sl:'SL',qt:'QT',wla:'WLA',qtc:'QTC'};
   var bd = document.createElement('div');
-  bd.id = 'approveBd';
-  bd.className = 'modal-backdrop show';
+  bd.id = 'approveBd'; bd.className = 'modal-backdrop show';
   bd.innerHTML =
     '<div class="modal" style="width:420px">'+
     '<div class="modal-hdr"><h3>Approve: '+titleCase(name)+'</h3>'+
@@ -4028,64 +4187,52 @@ openApproveModal = function(rowId, encodedName){
   document.body.appendChild(bd);
 };
 
-var _origDeclineUser = declineUser;
-declineUser = function(rowId, encodedName) {
-  var role = SESSION && SESSION.role;
-  if (!hasRole(role, ROLES_APPROVE_USERS)) {
-    toast("You don't have permission to decline requests", "err");
-    return;
-  }
-  _origDeclineUser(rowId, encodedName);
-};
-
-// ══ 11. Edit User Modal — نفس هرم الصلاحيات ══
+// ══ 15. openModal (Edit User) — Role Hierarchy ══
 var _origOpenModal = openModal;
 openModal = function(user){
   _origOpenModal(user);
   var role = SESSION && SESSION.role;
   var mRoleEl = gid('mRole');
-  
   if(mRoleEl){
-    var allowedRoles = [];
-    if (role === 'admin') allowedRoles = ['admin', 'sm', 'ssv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
-    else if (role === 'sm') allowedRoles = ['sm', 'ssv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
-    else if (role === 'ssv') allowedRoles = ['ssv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
-    else if (role === 'sv') allowedRoles = ['sv', 'qt', 'wla', 'qtc', 'sl'];
-    else allowedRoles = ['qt', 'wla', 'qtc', 'sl'];
-
-    var roleLabels = {'admin':'Admin', 'sm':'SM', 'ssv':'SSV', 'sv':'SV', 'qt':'QT', 'wla':'WLA', 'qtc':'QTC', 'sl':'SL'};
+    var allowedRoles;
+    if(role === 'admin')     allowedRoles = ['admin','sm','ssv','sv','sl','qt','wla','qtc'];
+    else if(role === 'sm')   allowedRoles = ['sm','ssv','sv','sl','qt','wla','qtc'];
+    else if(role === 'ssv')  allowedRoles = ['ssv','sv','sl','qt','wla','qtc'];
+    else if(role === 'sv')   allowedRoles = ['sv','sl','qt','wla','qtc'];
+    else                     allowedRoles = ['qtc','sl','qt','wla'];
+    var roleLabels = {admin:'Admin',sm:'SM',ssv:'SSV',sv:'SV',sl:'SL',qt:'QT',wla:'WLA',qtc:'QTC'};
     mRoleEl.innerHTML = allowedRoles.map(function(r){ return '<option value="'+r+'">'+roleLabels[r]+'</option>'; }).join('');
     if(user && allowedRoles.indexOf(user.role) !== -1) mRoleEl.value = user.role;
   }
-
+  // SV/SSV: إخفاء تغيير الـ email والـ password
   if(!hasRole(role, ['admin','sm']) && user){
     var emailRow = gid('emailRow');
     if(emailRow) emailRow.style.display = 'none';
-    var pwdInp = gid('mPwd');
-    if(pwdInp && pwdInp.closest('.inp-wrap')) pwdInp.closest('.inp-wrap').style.display = 'none';
-    var activeRow = gid('activeRow');
-    if(activeRow) activeRow.style.display = 'block';
+    var pwdWrap = gid('mPwd');
+    if(pwdWrap && pwdWrap.closest('.inp-wrap')) pwdWrap.closest('.inp-wrap').style.display = 'none';
   }
 };
 
-// ══ 12. Bottom Nav — إخفاء OT من الموبايل لو مش في الـ list ══
-(function(){
-  var bnOt = document.querySelector('#bottomNav [data-page="otdetails"]');
-  if(bnOt){ bnOt.style.display = 'none'; }
-})();
+// ══ 16. declineUser — Permission Check ══
+var _origDeclineUser = declineUser;
+declineUser = function(rowId, encodedName){
+  var role = SESSION && SESSION.role;
+  if(!hasRole(role, ROLES_APPROVE_USERS)){ toast("No permission to decline", "err"); return; }
+  _origDeclineUser(rowId, encodedName);
+};
 
-// ══ FIX: Tab active underline ══
+// ══ 17. switchUserTab ══
 switchUserTab = function(tab){
   var isA = tab === 'active';
   var pA = gid('uPanelActive'), pP = gid('uPanelPending');
   if(pA) pA.style.display = isA ? 'block' : 'none';
-  if(pP) pP.style.display = isA ? 'none' : 'block';
+  if(pP) pP.style.display = isA ? 'none'  : 'block';
   var tA = gid('uTabActive'), tP = gid('uTabPending');
   if(tA){ tA.style.borderBottom = isA ? '2px solid var(--blue)' : '2px solid transparent'; tA.style.color = isA ? 'var(--blue)' : 'var(--gray)'; }
   if(tP){ tP.style.borderBottom = !isA ? '2px solid var(--blue)' : '2px solid transparent'; tP.style.color = !isA ? 'var(--blue)' : 'var(--gray)'; }
 };
-// ══ END OF PATCH ══
-console.log('✅ METI Roles Patch Loaded (With Approve Permissions & Hierarchy)');
+
+console.log('✅ METI Permissions Patch v2 Loaded');
  function exportNotSubmitted(people, unit, shift) {
   var btn = event.currentTarget || event.target;
   var origText = btn.innerHTML;
