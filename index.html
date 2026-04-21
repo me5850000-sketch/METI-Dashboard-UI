@@ -3795,13 +3795,14 @@ showDash = function(){
     mRoleEl.insertBefore(opt, mRoleEl.querySelector('option[value="qtc"]'));
   }
 
-  // ── Attendance: ظاهر للكل ──
-  var navAtt = gid('nav-attendance');
-  if(navAtt) navAtt.style.display = '';
+  // ── Attendance: SV وأعلى فقط ──
+var ROLES_ATT_PAGE = ['admin','sm','ssv','sv'];
+var navAtt = gid('nav-attendance');
+if(navAtt) navAtt.style.display = hasRole(role, ROLES_ATT_PAGE) ? '' : 'none';
 
-  // ── Details of Attendance: ظاهر للكل ──
-  var navAttD = gid('nav-attdetails');
-  if(navAttD) navAttD.style.display = '';
+// ── Details of Attendance: SV وأعلى فقط ──
+var navAttD = gid('nav-attdetails');
+if(navAttD) navAttD.style.display = hasRole(role, ROLES_ATT_PAGE) ? '' : 'none';
 
   // ── Details of OT: SV, SSV, SM فقط ──
   var navOt = gid('nav-otdetails');
@@ -3832,6 +3833,7 @@ var _origNavTo = navTo;
 navTo = function(page){
   var role = SESSION && SESSION.role;
   if(page === 'otdetails' && !hasRole(role, ROLES_OT_ACCESS)) return;
+  if((page === 'attendance' || page === 'attdetails') && !hasRole(role, ['admin','sm','ssv','wla','sv'])) return;
   if(page === 'users'     && !hasRole(role, ROLES_MANAGE_USERS)) return;
   if((page === 'data' || page === 'detailsofdata') && !hasRole(role, ROLES_VIEW_DATA)) return;
   _origNavTo(page);
