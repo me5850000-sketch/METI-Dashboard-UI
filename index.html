@@ -1136,6 +1136,7 @@ function doLogin() {
                 show('dashScreen');
                 showDash();  
                 loadStats(); 
+              navTo('home');
             } else {
                if (res.pending) {
   gid('loginScreen').style.display = 'none';
@@ -2886,7 +2887,7 @@ window.onload=function(){
   SHARED.syncAll();
 
   var st=sessionStorage.getItem('dk_tok'),su=sessionStorage.getItem('dk_usr');
-  if(st&&su){TOKEN=st;SESSION=tryParse(su);if(SESSION){showDash();applyShiftDefaults(SESSION.shift);loadStats();}}
+  if(st&&su){TOKEN=st;SESSION=tryParse(su);if(SESSION){showDash();applyShiftDefaults(SESSION.shift);loadStats();navTo('home');}
 
   // Date pickers
   var ad=gid('attDate');if(ad)ad.addEventListener('click',function(){DP.open('attDate');});
