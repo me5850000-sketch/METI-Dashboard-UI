@@ -3909,11 +3909,6 @@ navTo = function(page){
   _origNavTo(page);
 };
 
-// ══ 5. Home — Weekly Target مخفي للـ QTC/SL ══
-var _origRenderStats = renderStats;
-renderStats = function(data, user){
-  _origRenderStats(data, user);
-  var role = SESSION && SESSION.role;
   // لو مش في الـ list، اخفي قسم Weekly Target
   if(!hasRole(role, ROLES_SEE_ALL_SHIFTS)){
     var targetOuter = gid('homeTargetOuter');
@@ -3924,34 +3919,48 @@ renderStats = function(data, user){
   }
 };
 
-// ══ 6. Home / Data / Labelers — فلترة الشيفت حسب الدور ══
+// ══ 6. Home — فلترة الشيفت حسب الدور + Guard Clause ══
 var _origLoadStats = loadStats;
-loadStats = function(){
+loadStats = function() {
   var from = getFilterISO(true), to = getFilterISO(false);
-  shtml('statsArea','<div class="loading"><div class="spin"></div> Loading stats...</div>');
+  shtml('statsArea', '<div class="loading"><div class="spin"></div> Loading stats...</div>');
+  if(TOKEN) google.script.run
+    .withSuccessHandler(function(r){ if(r&&!r.err&&r.targets) TARGETS=r.targets; })
+    .withFailureHandler(function(){})
+    .getTargets(TOKEN);
   google.script.run
-    .withSuccessHandler(function(r){
-      if(r.err){ shtml('statsArea','<div class="empty">Error: '+r.err+'</div>'); return; }
-      var role = SESSION && SESSION.role;
+    .withSuccessHandler(function(r) {
+      if (!r || r.err) {
+        shtml('statsArea', '<div class="empty">Error: ' + (r && r.err ? r.err : 'Unknown error') + '</div>');
+        return;
+      }
       var data = r.data || [];
       // فلترة حسب الشيفت للرتب المحدودة
-      if(!hasRole(role, ROLES_SEE_ALL_SHIFTS) && SESSION && SESSION.shift){
+      if (SESSION && SESSION.shift && !hasRole(SESSION.role, ROLES_SEE_ALL_SHIFTS)) {
         var myShift = SESSION.shift;
-        data = data.filter(function(row){
-          var sh = nShift(row[F.shift]||'');
+        data = data.filter(function(row) {
+          var sh = nShift(row[F.shift] || '');
           return sh === myShift || sh === 'Over Shift';
         });
+      }
+      // Guard Clause — لو مفيش بيانات، اعرض رسالة واوقف
+      if (!data || data.length === 0) {
+        shtml('statsArea', '<div class="empty" style="padding:60px 20px;text-align:center">'
+          + '<div style="font-size:40px;margin-bottom:12px">📭</div>'
+          + '<div style="font-size:16px;font-weight:700;color:var(--blue);margin-bottom:8px">No Records Found</div>'
+          + '<div style="font-size:13px;color:var(--gray)">No data available for the selected time range.</div>'
+          + '</div>');
+        return;
       }
       cachedStats = data; cachedUser = r.user;
       activeSFilter = null; activeRFilter = null;
       renderStats(data, r.user);
     })
-    .withFailureHandler(function(e){
-      shtml('statsArea','<div class="empty">'+e.message+'</div>');
+    .withFailureHandler(function(e) {
+      shtml('statsArea', '<div class="empty">Connection error: ' + e.message + '</div>');
     })
     .getStats(TOKEN, from, to);
 };
-
 // ══ 7. Data Page — فلترة حسب الشيفت للـ QTC/SL ══
 var _origLoadData = loadData;
 loadData = function(){
