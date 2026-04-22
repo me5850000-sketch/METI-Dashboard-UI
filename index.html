@@ -1383,7 +1383,7 @@ function renderStats(data, user){
 
   html+='</div>';
 
-  var isQtcRole=SESSION&&SESSION.role==='qtc';
+  var isQtcRole = SESSION && !hasRole(SESSION.role, ROLES_SEE_ALL_SHIFTS);
   if(!isQtcRole)html+='<div class="sec-hdr" style="margin-top:8px">Weekly Target</div><div id="homeTargetOuter"><div id="homeTargetArea"><div class="loading"><div class="spin"></div> Loading...</div></div></div>';
   html+='<div class="sec-hdr" style="margin-top:20px">Best QTC in Day</div><div id="bestQtcArea"></div>';
   shtml('statsArea',html);
@@ -3925,14 +3925,31 @@ renderStats = function(data, user){
 };
 
 // ══ 6. Home / Data / Labelers — فلترة الشيفت حسب الدور ══
-
-// getStats original بيبعت TOKEN و from و to — ما بنلمسوش
-// بس لما الداتا ترجع، الـ QTC/SL/Qt يشوفوا شيفتهم بس
-
-// override loadStats لإخفاء target لغير المخوّلين
 var _origLoadStats = loadStats;
 loadStats = function(){
-  _origLoadStats();
+  var from = getFilterISO(true), to = getFilterISO(false);
+  shtml('statsArea','<div class="loading"><div class="spin"></div> Loading stats...</div>');
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(r.err){ shtml('statsArea','<div class="empty">Error: '+r.err+'</div>'); return; }
+      var role = SESSION && SESSION.role;
+      var data = r.data || [];
+      // فلترة حسب الشيفت للرتب المحدودة
+      if(!hasRole(role, ROLES_SEE_ALL_SHIFTS) && SESSION && SESSION.shift){
+        var myShift = SESSION.shift;
+        data = data.filter(function(row){
+          var sh = nShift(row[F.shift]||'');
+          return sh === myShift || sh === 'Over Shift';
+        });
+      }
+      cachedStats = data; cachedUser = r.user;
+      activeSFilter = null; activeRFilter = null;
+      renderStats(data, r.user);
+    })
+    .withFailureHandler(function(e){
+      shtml('statsArea','<div class="empty">'+e.message+'</div>');
+    })
+    .getStats(TOKEN, from, to);
 };
 
 // ══ 7. Data Page — فلترة حسب الشيفت للـ QTC/SL ══
