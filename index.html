@@ -4093,7 +4093,7 @@ function _renderUsersPatch(users, pending){
   var filteredUsers   = isFullAdmin ? users   : users.filter(function(u){ return u.shift === myShift; });
   var filteredPending = isFullAdmin ? pending : pending.filter(function(p){ return p.shift === myShift; });
 
-  var ROLE_ORD = ['admin','sm','ssv','sv','sl','qt','qtc','wla'];
+  var ROLE_ORD = ['admin', 'sm', 'ssv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
   var sorted = filteredUsers.slice().sort(function(a,b){
     var ai=ROLE_ORD.indexOf(a.role), bi=ROLE_ORD.indexOf(b.role);
     return ai!==bi ? ai-bi : (a.name||'').localeCompare(b.name||'');
