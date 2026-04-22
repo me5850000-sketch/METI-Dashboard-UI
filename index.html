@@ -1136,7 +1136,6 @@ function doLogin() {
                 show('dashScreen');
                 showDash();  
                 loadStats(); 
-              navTo('home');
             } else {
                if (res.pending) {
   gid('loginScreen').style.display = 'none';
@@ -2881,13 +2880,12 @@ window.onload=function(){
   if(localStorage.getItem('meti_dark')==='1'){document.body.classList.add('dark');var btn=gid('darkToggle');if(btn)btn.innerHTML='☀️';}
 
   // Session restore
- buildTimeSelects();
-  SHARED.from=todayISO();SHARED.to=todayISO();
-  SHARED.fromTime='00:00';SHARED.toTime='23:59';
-  SHARED.syncAll();
-
   var st=sessionStorage.getItem('dk_tok'),su=sessionStorage.getItem('dk_usr');
-  if(st&&su){TOKEN=st;SESSION=tryParse(su);if(SESSION){showDash();applyShiftDefaults(SESSION.shift);loadStats();navTo('home');}
+  if(st&&su){TOKEN=st;SESSION=tryParse(su);if(SESSION){showDash();applyShiftDefaults(SESSION.shift);loadStats();}}
+
+  buildTimeSelects();
+  SHARED.from=todayISO();SHARED.to=todayISO();
+  SHARED.syncAll();
 
   // Date pickers
   var ad=gid('attDate');if(ad)ad.addEventListener('click',function(){DP.open('attDate');});
