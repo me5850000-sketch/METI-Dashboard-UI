@@ -223,7 +223,7 @@ tbody tr.data-row.has-link:hover td{background:#e8f5e9!important}
 .hamburger:hover{border-color:var(--blue)}.hamburger:hover span{background:var(--blue)}
 .att-msg-preview{overflow:hidden;max-height:0;transition:max-height .35s cubic-bezier(.4,0,.2,1),opacity .25s ease;opacity:0}
 .att-msg-preview.open{max-height:500px;opacity:1}
-.att-msg-pre{font-family:var(--mono);font-size:13px;line-height:1.8;color:var(--dark);background:#f8f9ff;border:1.5px solid var(--blue-lt);border-radius:10px;padding:14px 18px;margin:0 20px 16px;white-space:pre-wrap;word-break:break-word}
+.att-msg-pre{font-family:var(--mono);font-size:13px;line-height:1.8;color:var(--dark);background:#f8f9ff;border:1.5px solid var(--blue-lt);border-radius:10px;padding:14px 18px;margin:0 20px 16px;white-space:pre-wrap;word-break:break-word;max-height:300px;overflow-y:auto;}
 .att-toggle-btn{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:7px;color:white;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s;white-space:nowrap}
 .att-toggle-btn:hover{background:rgba(255,255,255,.28)}.att-toggle-btn .arr{font-size:10px;display:inline-block;transition:transform .3s ease}.att-toggle-btn.open .arr{transform:rotate(180deg)}
 .att-copy-inline{display:inline-flex;align-items:center;gap:5px;padding:6px 12px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);border-radius:7px;color:white;font-size:12px;font-weight:700;cursor:pointer;transition:background .15s}.att-copy-inline:hover{background:rgba(255,255,255,.28)}
@@ -2271,7 +2271,7 @@ function _genMsg(sh, sdata, dateISO) {
       return valA - valB;
       
     }).forEach(function(k) {
-      lines.push(k + ' = ' + grp[k]);
+      lines.push('* ' + k + ' = ' + grp[k]);
     });
   } else {
     lines.push('Compensation = 0');
