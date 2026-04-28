@@ -4260,16 +4260,7 @@ console.log('✅ METI Permissions Patch v2 Loaded');
     link.click();
     document.body.removeChild(link);
 
-    // 6. إرجاع الزرار لحالته
-    toast('Downloaded Successfully! ✅', 'ok');
-    btn.innerHTML = origText;
-    btn.disabled = false;
 
-  } catch (e) {
-    toast('Export Failed', 'err');
-    btn.innerHTML = origText;
-    btn.disabled = false;
-    console.error(e);
   }
 }
 
