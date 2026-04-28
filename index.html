@@ -2614,34 +2614,6 @@ window._openAttPopupWithData=function(p,statusLabel,statusBg){
 </script>
 
 <script>
-  // ══ OT DETAILS PAGE ══
-function loadOtDetails() {
-  var dateISO = DP.getVal('otDate') || todayISO();
-  if (!DP.getVal('otDate')) DP.setVal('otDate', dateISO, false);
-
-  shtml('otDetailsArea', '<div class="loading"><div class="spin"></div> Loading OT Details...</div>');
-  
-  google.script.run
-    .withSuccessHandler(function(r) {
-      btn.innerHTML = origText;
-      btn.disabled = false;
-      if (r.err) {
-        if (newWin) newWin.close();
-        toast(r.err, 'err');
-        return;
-      }
-      if (newWin) newWin.location.href = r.url;
-      else window.open(r.url, '_blank');
-      toast('Sheet created ✅', 'ok');
-    })
-    .withFailureHandler(function(e) {
-      btn.innerHTML = origText;
-      btn.disabled = false;
-      if (newWin) newWin.close();
-      toast('Error: ' + e.message, 'err');
-    })
-    .createNotSubmittedSheet(TOKEN, rows, unit, shift);
-}
   var overCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('over') !== -1; }).length;
   var compCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('comp') !== -1; }).length;
 
