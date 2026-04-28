@@ -4025,13 +4025,14 @@ loadAttendance = function(){
   var role = SESSION && SESSION.role;
   if(!hasRole(role, ROLES_ATT_VIEW)) return; // حماية إضافية
   var attBtns = gid('attShiftBtns');
-  if(attBtns) attBtns.style.display = hasRole(role, ROLES_ATT_DETAILS_ALL) ? '' : 'none';
-  if(!hasRole(role, ROLES_ATT_DETAILS_ALL) && SESSION && SESSION.shift){
+ var ROLES_ATT_ALL_SHIFTS = ['admin','sm','ssv','sv','wla'];
+  if(attBtns) attBtns.style.display = hasRole(role, ROLES_ATT_ALL_SHIFTS) ? '' : 'none';
+  if(!hasRole(role, ROLES_ATT_ALL_SHIFTS) && SESSION && SESSION.shift){
     _attShift = SESSION.shift;
   }
+
   _origLoadAtt();
 };
-
 // ══ 11. Details of Attendance — فلترة حسب الشيفت ══
 var _origLoadAttDetails = loadAttDetails;
 loadAttDetails = function(){
