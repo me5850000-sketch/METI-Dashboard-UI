@@ -1980,8 +1980,28 @@ if(isLi){bump(labelers[labKey].lidar);bump(labelers[labKey].shifts[sh].lidar);}
 function loadQtc(){
   var from=getFilterISO(true),to=getFilterISO(false);
   shtml('qtcArea','<div class="loading"><div class="spin"></div> Loading...</div>');
-  var fn=(SESSION&&SESSION.role==='qtc')?'getQtcStats':'getStats';
-  google.script.run.withSuccessHandler(function(r){if(r.err){shtml('qtcArea','<div class="empty">'+r.err+'</div>');return;}renderQtcPage(r.data);}).withFailureHandler(function(e){shtml('qtcArea','<div class="empty">'+e.message+'</div>');})[fn](TOKEN,from,to);
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(r.err){shtml('qtcArea','<div class="empty">'+r.err+'</div>');return;}
+      
+      var role = SESSION && SESSION.role;
+      var data = r.data || [];
+      
+      // ✅ فلترة الـ QTC لشيفتهم فقط
+      if(role === 'qtc' && SESSION.shift){
+        var myShift = SESSION.shift.trim().toLowerCase();
+        data = data.filter(function(row){
+          var sh = nShift(row[F.shift]||'').toLowerCase();
+          return sh === myShift || sh === 'over shift';
+        });
+      }
+      
+      renderQtcPage(data);
+    })
+    .withFailureHandler(function(e){
+      shtml('qtcArea','<div class="empty">'+e.message+'</div>');
+    })
+    .getStats(TOKEN, from, to);
 }
 
 function parseQtcShift(name){var m=name.match(/\(([^)]+)\)\s*$/);if(!m)return 'Unknown';var code=m[1].trim().toUpperCase();if(code==='M')return 'Morning';if(code==='N')return 'Night';if(code==='ON')return 'Over Night';return code;}
@@ -2622,21 +2642,6 @@ function loadOtDetails() {
     })
     .createNotSubmittedSheet(TOKEN, rows, unit, shift);
 }
-
-function renderOtDetails(data) {
-  var area = gid('otDetailsArea');
-  if (!area) return;
-  
-  // بنجيب التاريخ الحالي عشان نثبته في المربع وميفضاش
-  var dateISO = DP.getVal('otDate') || todayISO();
-  var displayDate = DP.fmtDisplay(dateISO); 
-
-  if (!data || !data.length) {
-    area.innerHTML = '<div class="filter-bar"><label style="margin-right:10px">Date</label><div class="dp-wrap" id="dpWrap-otDate"><input type="text" class="dp-input" id="otDate" readonly value="'+displayDate+'"><span class="dp-icon">📅</span></div></div><div class="empty">No OT records found for this date.</div>';
-    gid('otDate').addEventListener('click', function(){ DP.open('otDate'); });
-    return;
-  }
-
   var overCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('over') !== -1; }).length;
   var compCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('comp') !== -1; }).length;
 
