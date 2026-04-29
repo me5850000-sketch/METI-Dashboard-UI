@@ -1915,6 +1915,14 @@ if(isLi){bump(labelers[labKey].lidar);bump(labelers[labKey].shifts[sh].lidar);}
     var sorted=allLabs.slice().sort(function(a,b){
   var diff=(b[sortKey]||0)-(a[sortKey]||0);
   if(diff!==0)return diff;
+  
+  // ✅ كوندشن خاص: Radwa Hassan الأولى لو كانت في نفس الرقم
+  var aIsRadwa = (a.name||'').toLowerCase().includes('radwa');
+  var bIsRadwa = (b.name||'').toLowerCase().includes('radwa');
+  if(aIsRadwa && !bIsRadwa) return -1;  // Radwa الأولى
+  if(!aIsRadwa && bIsRadwa) return 1;   // الآخر بعدها
+  
+  // باقي التعادلات: ترتيب أبجدي عادي
   return(a.name||'').localeCompare(b.name||'');
 });
     var maxV=sorted.length?Math.max(sorted[0][sortKey]||0,1):1;
