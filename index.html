@@ -976,8 +976,7 @@ var google = {
       login: function(id, pwd) { this.execute('login', [id, pwd]); },
       logout: function(t) { this.execute('logout', [t]); },registerUser: function(p) { this.execute('registerUser', [p]); },
       approveUser: function(t, id, action, rd) { this.execute('approveUser', [t, id, action, rd]); },
-      getStats: function(t, f, to) { this.execute('getStats', [t, f, to, 1, 1000]); },
-      getQuickStats: function(t, f, to) { this.execute('getQuickStats', [t, f, to]); },
+      getStats: function(t, f, to) { this.execute('getStats', [t, f, to]); },
       getQtcStats: function(t, f, to) { this.execute('getQtcStats', [t, f, to]); },
       getQtcUsers: function(t) { this.execute('getQtcUsers', [t]); },
       getOtDetails: function(t, d) { this.execute('getOtDetails', [t, d]); },
@@ -1231,10 +1230,7 @@ function navTo(page){
   });
   gid('topTitle').textContent=PAGES[page].title;
   gid('topSub').textContent=PAGES[page].sub;
-  if(page==='data'){
-  if(!dataAll || !dataAll.length) loadData();
-  else renderDataFiltered();
-}
+  if(page==='data')loadData();
   if(page==='detailsofdata'){
   dodPage=1;
   if(!dataAll||!dataAll.length){
@@ -1256,50 +1252,17 @@ function navTo(page){
 <script>
 // ══ HOME STATS ══
 function loadStats(){
-  if(TOKEN) google.script.run
-    .withSuccessHandler(function(r){ if(r&&!r.err&&r.targets) TARGETS=r.targets; })
-    .withFailureHandler(function(){})
-    .getTargets(TOKEN);
-
-  var from = getFilterISO(true), to = getFilterISO(false);
-
-  // خطوة 1: عرض الأرقام السريعة الأول
+  if(TOKEN)google.script.run.withSuccessHandler(function(r){if(r&&!r.err&&r.targets)TARGETS=r.targets;}).withFailureHandler(function(){}).getTargets(TOKEN);
+  var from=getFilterISO(true),to=getFilterISO(false);
   shtml('statsArea','<div class="loading"><div class="spin"></div> Loading stats...</div>');
-
   google.script.run
-    .withSuccessHandler(function(r) {
-      if (r.err) { shtml('statsArea','<div class="empty">Error: '+r.err+'</div>'); return; }
-      
-      // عرض الكروت فوراً
-      var s = r.stats;
-      var quickHtml = '<div class="cards" id="cardsRow">'
-        + mkCard('Lane FP', s.lane_fp, 'green', 'lane_fp')
-        + mkCard('Lane QA', s.lane_qa, 'orange', 'lane_qa')
-        + mkCard('Lidar FP', s.lidar_fp, 'teal', 'lidar_fp')
-        + mkCard('Lidar QA', s.lidar_qa, 'purple', 'lidar_qa')
-        + '</div>'
-        + '<div id="drillSection"></div>'
-        + '<div class="loading" id="detailsLoading" style="padding:30px">'
-        + '<div class="spin"></div> Loading details...</div>';
-      shtml('statsArea', quickHtml);
-
-      // خطوة 2: جيب التفاصيل في الخلفية
-      setTimeout(function() {
-        google.script.run
-          .withSuccessHandler(function(r2) {
-            if (r2.err || !r2.data) return;
-            cachedStats = r2.data; cachedUser = r2.user;
-            activeSFilter = null; activeRFilter = null;
-            renderStats(r2.data, r2.user);
-          })
-          .withFailureHandler(function(){})
-          .getStats(TOKEN, from, to, 1, 1000);
-      }, 200);
+    .withSuccessHandler(function(r){
+      if(r.err){shtml('statsArea','<div class="empty">Error: '+r.err+'</div>');return;}
+      cachedStats=r.data;cachedUser=r.user;activeSFilter=null;activeRFilter=null;
+      renderStats(r.data,r.user);
     })
-    .withFailureHandler(function(e) {
-      shtml('statsArea','<div class="empty">'+e.message+'</div>');
-    })
-    .getQuickStats(TOKEN, from, to);
+    .withFailureHandler(function(e){shtml('statsArea','<div class="empty">'+e.message+'</div>');})
+    .getStats(TOKEN,from,to);
 }
 
 function applyFilters(data){
