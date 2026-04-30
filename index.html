@@ -1230,7 +1230,10 @@ function navTo(page){
   });
   gid('topTitle').textContent=PAGES[page].title;
   gid('topSub').textContent=PAGES[page].sub;
-  if(page==='data')loadData();
+  if(page==='data'){
+  if(!dataAll || !dataAll.length) loadData();
+  else renderDataFiltered();
+}
   if(page==='detailsofdata'){
   dodPage=1;
   if(!dataAll||!dataAll.length){
