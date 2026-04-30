@@ -1686,7 +1686,6 @@ var html='<div class="tbl-card"><table><thead><tr><th>#</th>'+_cfpTh('labeler','
   
   if(!da._clickWired) {
     da.addEventListener('click',function(e){
-      if(e.target.closest('.cfp-btn'))return;
       var row=e.target.closest('tr.data-row');if(!row)return;
       var idx=parseInt(row.getAttribute('data-ridx'));
       var rec=getFilteredData()[idx];if(rec)openDetail(rec);
