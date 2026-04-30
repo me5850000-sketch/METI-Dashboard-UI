@@ -1399,11 +1399,64 @@ var isQtcRole = SESSION && !hasRole(SESSION.role, _seaShifts);
   setTimeout(function(){renderBestQtc(data);},0);
 
   if(activeDrillCard){
-    gid('statsArea').querySelectorAll('.card').forEach(function(c){if(c.getAttribute('data-dtype')===activeDrillCard)c.classList.add('card-active');});
-    renderDrill(buildShifts(data));
-  }
+   var allCards = document.querySelectorAll('.card');
+allCards.forEach(function(c){
+  var isActive = c.getAttribute('data-dtype')===activeDrillCard;
+  c.classList.toggle('card-active', isActive);
+});
 }
-
+function updateTableOnly(data) {
+  // تحديث جداول الشفتات والوحدات فقط
+  var shifts={}, units={};
+  var SH_ORD=['Morning','Night','Over Night','Over Shift'];
+  var ROOM_ORD=['NC Room 102','NC Room 106','NC Room 108','4th Floor','2nd Floor'];
+  
+  data.forEach(function(r){
+    if(activeSFilter && nShift(r[F.shift]||'') !== activeSFilter) return;
+    if(activeRFilter && (r[F.unit]||'').trim() !== activeRFilter) return;
+    
+    var sh=nShift(r[F.shift]||'Unknown'),un=(r[F.unit]||'Unknown').trim();
+    var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
+    var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;
+    
+    if(!shifts[sh]) shifts[sh]={lfp:0,lqa:0,lifp:0,liqa:0,total:0};
+    shifts[sh].total++;
+    if(isL&&pass==='FP')shifts[sh].lfp++;if(isL&&pass==='QA')shifts[sh].lqa++;
+    if(isLi&&pass==='FP')shifts[sh].lifp++;if(isLi&&pass==='QA')shifts[sh].liqa++;
+    
+    if(!units[un]) units[un]={lfp:0,lqa:0,lifp:0,liqa:0,total:0};
+    units[un].total++;
+    if(isL&&pass==='FP')units[un].lfp++;if(isL&&pass==='QA')units[un].lqa++;
+    if(isLi&&pass==='FP')units[un].lifp++;if(isLi&&pass==='QA')units[un].liqa++;
+  });
+  
+  // تحديث الجدول الأول فقط (By Shift)
+  var shTbody = document.querySelector('table:first-of-type tbody');
+  if(!shTbody) return;
+  
+  var SH_ORD2=SH_ORD.filter(function(s){return!!shifts[s];});
+  shTbody.querySelectorAll('tr:not(.total-row)').forEach(function(tr){ tr.remove(); });
+  
+  var shT={lfp:0,lqa:0,lifp:0,liqa:0,t:0};
+  SH_ORD2.forEach(function(s){
+    var d=shifts[s],ia=activeSFilter===s;
+    var tr=document.createElement('tr');
+    tr.className='clickable'+(ia?' row-active':'');
+    tr.setAttribute('data-ftype','sft');
+    tr.setAttribute('data-fval',s);
+    tr.style.cursor='pointer';
+    tr.innerHTML='<td class="left"><span class="badge '+shiftBadge(s)+'">'+s+'</span></td>'
+      +'<td>'+d.lfp+'</td><td>'+d.lqa+'</td><td>'+d.lifp+'</td><td>'+d.liqa+'</td>'
+      +'<td class="bold">'+d.total+' <span style="font-size:10px;color:'+(ia?'var(--blue)':'#ccc')+'">'+(ia?'▲':'▼')+'</span></td>';
+    shTbody.appendChild(tr);
+    shT.lfp+=d.lfp;shT.lqa+=d.lqa;shT.lifp+=d.lifp;shT.liqa+=d.liqa;shT.t+=d.total;
+  });
+  
+  var totalTr=document.createElement('tr');
+  totalTr.className='total-row';
+  totalTr.innerHTML='<td class="left bold">TOTAL</td><td>'+shT.lfp+'</td><td>'+shT.lqa+'</td><td>'+shT.lifp+'</td><td>'+shT.liqa+'</td><td class="bold">'+shT.t+'</td>';
+  shTbody.appendChild(totalTr);
+}
 function initStatsListener(){
   var sa = gid('statsArea');
   if(!sa) return;
@@ -1411,12 +1464,16 @@ function initStatsListener(){
   sa.setAttribute('data-wired', 'true');
   
   sa.addEventListener('click', function(e){
-    // 1. الضغط على زرار إغلاق تفاصيل الكارت (Drill close)
-    var closeBtn = e.target.closest('.drill-close');
-    if(closeBtn){
+    var row = e.target.closest('tr.clickable');
+    if(row){
+      var ft = row.getAttribute('data-ftype'), fv = row.getAttribute('data-fval');
+      if(ft === 'sft') activeSFilter = (activeSFilter === fv ? null : fv);
+      else activeRFilter = (activeRFilter === fv ? null : fv);
       activeDrillCard = null; activeDrillShift = null;
-      var ds = sa.querySelector('#drillSection'); if(ds) ds.innerHTML = '';
-      sa.querySelectorAll('.card').forEach(function(c){c.classList.remove('card-active');});
+      
+      // بدل renderStats الكاملة، استخدم التحديث الخفيف
+      updateCardsOnly(cachedStats);
+      updateTableOnly(cachedStats);  // دالة جديدة
       return;
     }
 
@@ -2912,7 +2969,22 @@ loadStats();}}
   // Data filter (adv)
  // Data filter (adv)
   // Mod buttons
-  document.querySelectorAll('.mod-btn[data-mod]').forEach(function(b){b.addEventListener('click',function(){var mod=b.getAttribute('data-mod');if(mod==='all'){activeModFilters.clear();activeModFilters.add('all');}else{activeModFilters.delete('all');if(activeModFilters.has(mod)){activeModFilters.delete(mod);if(activeModFilters.size===0)activeModFilters.add('all');}else activeModFilters.add(mod);}dataPage=1;updateModBtns();renderDataFiltered();});});
+  var dataFilterTimeout;
+
+document.querySelectorAll('.mod-btn[data-mod]').forEach(function(b){
+  b.addEventListener('click',function(){
+    var mod=b.getAttribute('data-mod');
+    if(mod==='all'){activeModFilters.clear();activeModFilters.add('all');}
+    else{activeModFilters.delete('all');if(activeModFilters.has(mod)){activeModFilters.delete(mod);if(activeModFilters.size===0)activeModFilters.add('all');}else activeModFilters.add(mod);}
+    
+    clearTimeout(dataFilterTimeout);
+    updateModBtns();
+    dataFilterTimeout = setTimeout(function(){
+      dataPage=1;
+      renderDataFiltered();
+    }, 300); // تأخير 300ms للـ rendering
+  });
+});
   updateModBtns();
 
   // Shift buttons (data)
