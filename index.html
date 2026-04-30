@@ -4065,14 +4065,26 @@ renderOtDetails = function(data){
 var _origLoadUsers = loadUsers;
 loadUsers = function(){
   var role = SESSION && SESSION.role;
-  if(!hasRole(role, ROLES_MANAGE_USERS)) return;
-  shtml('usersArea','<div class="loading"><div class="spin"></div> Loading...</div>');
+  // التأكد من أن الرتبة مسموح لها بدخول الصفحة
+  if(!hasRole(role, ['admin','sm','ssv','sv'])) {
+    shtml('usersArea','<div class="empty">Access Denied</div>');
+    return;
+  }
+  
+  shtml('usersArea','<div class="loading"><div class="spin"></div> Loading Users List...</div>');
+  
   google.script.run
     .withSuccessHandler(function(r){
-      if(r.err){ shtml('usersArea','<div class="empty">'+r.err+'</div>'); return; }
-      _renderUsersPatch(r.users||[], r.pending||[]);
+      if(r.err){ 
+        shtml('usersArea','<div class="empty">'+r.err+'</div>'); 
+        return; 
+      }
+      // استدعاء وظيفة الرسم مع التأكد من وجود البيانات
+      _renderUsersPatch(r.users || [], r.pending || []);
     })
-    .withFailureHandler(function(e){ shtml('usersArea','<div class="empty">'+e.message+'</div>'); })
+    .withFailureHandler(function(e){ 
+      shtml('usersArea','<div class="empty">Connection Error: '+e.message+'</div>'); 
+    })
     .getUsers(TOKEN);
 };
 
