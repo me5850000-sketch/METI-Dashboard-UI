@@ -1912,19 +1912,7 @@ if(isLi){bump(labelers[labKey].lidar);bump(labelers[labKey].shifts[sh].lidar);}
     var wrap=activeTab.querySelector('.lab-list-wrap');if(!wrap)return;
     var allLabs=tryParse(decodeURIComponent(activeTab.getAttribute('data-labs')||'[]'))||[];
     if(!allLabs.length){wrap.innerHTML='<div class="empty" style="padding:24px">No data</div>';return;}
-    var sorted=allLabs.slice().sort(function(a,b){
-  var diff=(b[sortKey]||0)-(a[sortKey]||0);
-  if(diff!==0)return diff;
-  
-  // ✅ كوندشن خاص: Radwa Hassan الأولى لو كانت في نفس الرقم
-  var aIsRadwa = (a.name||'').toLowerCase().includes('radwa');
-  var bIsRadwa = (b.name||'').toLowerCase().includes('radwa');
-  if(aIsRadwa && !bIsRadwa) return -1;  // Radwa الأولى
-  if(!aIsRadwa && bIsRadwa) return 1;   // الآخر بعدها
-  
-  // باقي التعادلات: ترتيب أبجدي عادي
-  return(a.name||'').localeCompare(b.name||'');
-});
+    var sorted=allLabs.slice().sort(function(a,b){return(b[sortKey]||0)-(a[sortKey]||0);});
     var maxV=sorted.length?Math.max(sorted[0][sortKey]||0,1):1;
     var allSubs=['lfp','lqa','lifp','liqa'],subCols=allSubs.filter(function(k){return sorted.some(function(lb){return(lb[k]||0)>0;});});
     var isMob=window.innerWidth<=768;
@@ -4065,26 +4053,14 @@ renderOtDetails = function(data){
 var _origLoadUsers = loadUsers;
 loadUsers = function(){
   var role = SESSION && SESSION.role;
-  // التأكد من أن الرتبة مسموح لها بدخول الصفحة
-  if(!hasRole(role, ['admin','sm','ssv','sv'])) {
-    shtml('usersArea','<div class="empty">Access Denied</div>');
-    return;
-  }
-  
-  shtml('usersArea','<div class="loading"><div class="spin"></div> Loading Users List...</div>');
-  
+  if(!hasRole(role, ROLES_MANAGE_USERS)) return;
+  shtml('usersArea','<div class="loading"><div class="spin"></div> Loading...</div>');
   google.script.run
     .withSuccessHandler(function(r){
-      if(r.err){ 
-        shtml('usersArea','<div class="empty">'+r.err+'</div>'); 
-        return; 
-      }
-      // استدعاء وظيفة الرسم مع التأكد من وجود البيانات
-      _renderUsersPatch(r.users || [], r.pending || []);
+      if(r.err){ shtml('usersArea','<div class="empty">'+r.err+'</div>'); return; }
+      _renderUsersPatch(r.users||[], r.pending||[]);
     })
-    .withFailureHandler(function(e){ 
-      shtml('usersArea','<div class="empty">Connection Error: '+e.message+'</div>'); 
-    })
+    .withFailureHandler(function(e){ shtml('usersArea','<div class="empty">'+e.message+'</div>'); })
     .getUsers(TOKEN);
 };
 
