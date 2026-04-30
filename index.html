@@ -1383,8 +1383,7 @@ function renderStats(data, user){
 
   html+='</div>';
 
-  var _seaShifts = (typeof ROLES_SEE_ALL_SHIFTS !== 'undefined') ? ROLES_SEE_ALL_SHIFTS : ['admin','sm','ssv','sv','wla','qt'];
-var isQtcRole = SESSION && !hasRole(SESSION.role, _seaShifts);
+  var isQtcRole = SESSION && !hasRole(SESSION.role, ROLES_SEE_ALL_SHIFTS);
   if(!isQtcRole)html+='<div class="sec-hdr" style="margin-top:8px">Weekly Target</div><div id="homeTargetOuter"><div id="homeTargetArea"><div class="loading"><div class="spin"></div> Loading...</div></div></div>';
   html+='<div class="sec-hdr" style="margin-top:20px">Best QTC in Day</div><div id="bestQtcArea"></div>';
   shtml('statsArea',html);
@@ -1981,28 +1980,8 @@ if(isLi){bump(labelers[labKey].lidar);bump(labelers[labKey].shifts[sh].lidar);}
 function loadQtc(){
   var from=getFilterISO(true),to=getFilterISO(false);
   shtml('qtcArea','<div class="loading"><div class="spin"></div> Loading...</div>');
-  google.script.run
-    .withSuccessHandler(function(r){
-      if(r.err){shtml('qtcArea','<div class="empty">'+r.err+'</div>');return;}
-      
-      var role = SESSION && SESSION.role;
-      var data = r.data || [];
-      
-      // ✅ فلترة الـ QTC لشيفتهم فقط
-      if(role === 'qtc' && SESSION.shift){
-        var myShift = SESSION.shift.trim().toLowerCase();
-        data = data.filter(function(row){
-          var sh = nShift(row[F.shift]||'').toLowerCase();
-          return sh === myShift || sh === 'over shift';
-        });
-      }
-      
-      renderQtcPage(data);
-    })
-    .withFailureHandler(function(e){
-      shtml('qtcArea','<div class="empty">'+e.message+'</div>');
-    })
-    .getStats(TOKEN, from, to);
+  var fn=(SESSION&&SESSION.role==='qtc')?'getQtcStats':'getStats';
+  google.script.run.withSuccessHandler(function(r){if(r.err){shtml('qtcArea','<div class="empty">'+r.err+'</div>');return;}renderQtcPage(r.data);}).withFailureHandler(function(e){shtml('qtcArea','<div class="empty">'+e.message+'</div>');})[fn](TOKEN,from,to);
 }
 
 function parseQtcShift(name){var m=name.match(/\(([^)]+)\)\s*$/);if(!m)return 'Unknown';var code=m[1].trim().toUpperCase();if(code==='M')return 'Morning';if(code==='N')return 'Night';if(code==='ON')return 'Over Night';return code;}
@@ -2615,6 +2594,49 @@ window._openAttPopupWithData=function(p,statusLabel,statusBg){
 </script>
 
 <script>
+  // ══ OT DETAILS PAGE ══
+function loadOtDetails() {
+  var dateISO = DP.getVal('otDate') || todayISO();
+  if (!DP.getVal('otDate')) DP.setVal('otDate', dateISO, false);
+
+  shtml('otDetailsArea', '<div class="loading"><div class="spin"></div> Loading OT Details...</div>');
+  
+  google.script.run
+    .withSuccessHandler(function(r) {
+      btn.innerHTML = origText;
+      btn.disabled = false;
+      if (r.err) {
+        if (newWin) newWin.close();
+        toast(r.err, 'err');
+        return;
+      }
+      if (newWin) newWin.location.href = r.url;
+      else window.open(r.url, '_blank');
+      toast('Sheet created ✅', 'ok');
+    })
+    .withFailureHandler(function(e) {
+      btn.innerHTML = origText;
+      btn.disabled = false;
+      if (newWin) newWin.close();
+      toast('Error: ' + e.message, 'err');
+    })
+    .createNotSubmittedSheet(TOKEN, rows, unit, shift);
+}
+
+function renderOtDetails(data) {
+  var area = gid('otDetailsArea');
+  if (!area) return;
+  
+  // بنجيب التاريخ الحالي عشان نثبته في المربع وميفضاش
+  var dateISO = DP.getVal('otDate') || todayISO();
+  var displayDate = DP.fmtDisplay(dateISO); 
+
+  if (!data || !data.length) {
+    area.innerHTML = '<div class="filter-bar"><label style="margin-right:10px">Date</label><div class="dp-wrap" id="dpWrap-otDate"><input type="text" class="dp-input" id="otDate" readonly value="'+displayDate+'"><span class="dp-icon">📅</span></div></div><div class="empty">No OT records found for this date.</div>';
+    gid('otDate').addEventListener('click', function(){ DP.open('otDate'); });
+    return;
+  }
+
   var overCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('over') !== -1; }).length;
   var compCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('comp') !== -1; }).length;
 
@@ -2859,9 +2881,7 @@ window.onload=function(){
 
   // Session restore
   var st=sessionStorage.getItem('dk_tok'),su=sessionStorage.getItem('dk_usr');
-  if(st&&su){TOKEN=st;SESSION=tryParse(su);if(SESSION){showDash(); applyShiftDefaults(SESSION.shift); 
-var gfb = gid('globalFilterBar'); if(gfb) gfb.style.display = 'flex';
-loadStats();}}
+  if(st&&su){TOKEN=st;SESSION=tryParse(su);if(SESSION){showDash();applyShiftDefaults(SESSION.shift);loadStats();}}
 
   buildTimeSelects();
   SHARED.from=todayISO();SHARED.to=todayISO();
