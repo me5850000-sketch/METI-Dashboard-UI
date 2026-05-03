@@ -3750,7 +3750,8 @@ function openOtModal(r) {
   shtml('detailBody', html);
   gid('detailBd').classList.add('show');
 }
-</script> <script>
+</script>
+<script>
 // ═══════════════════════════════════════════════════════════
 // METI DASHBOARD — ROLE PERMISSIONS PATCH v2
 // الصلاحيات الجديدة:
@@ -4433,6 +4434,204 @@ document.addEventListener('change', function(e){
 // إيقاف الـ auto reload لو الـ session منتهي
 var _origDoLogout = doLogout;
 doLogout = function(){ stopAutoReload(); _origDoLogout(); };
+</script>
+<script>
+  // ═══════════════════════════════════════════════════════
+// PATCH — Details of Attendance: Empty (E) + Room Counts
+// أضف هذا الكود قبل </body> مباشرةً في ملف الـ HTML
+// ═══════════════════════════════════════════════════════
+
+(function(){
+
+// ── احفظ الدالة الأصلية لو احتجنا ──
+var _origRenderAttDetailsPage = renderAttDetailsPage;
+
+renderAttDetailsPage = function(r, dateISO) {
+  var shifts = r.shifts || {};
+  var SHIFT_ORD = ['Morning', 'Night', 'Over Night'];
+  var ROOM_ORD  = ['Room 102','Room 106','Room 108','Floor 2','2th Floor','Floor 4','4th Floor'];
+
+  var visible = _attShift2 === 'All'
+    ? SHIFT_ORD.filter(function(s){ return shifts[s]; })
+    : [_attShift2].filter(function(s){ return shifts[s]; });
+
+  if (!visible.length) {
+    shtml('attDetailsArea','<div class="empty">No data for this date.</div>');
+    return;
+  }
+
+  // ── Popup (مرة واحدة) ──
+  if (!gid('attDetailPopup')) {
+    var pop = document.createElement('div');
+    pop.id = 'attDetailPopup';
+    pop.style.cssText = 'display:none;position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.45);align-items:center;justify-content:center;padding:16px';
+    pop.innerHTML = '<div id="attDetailPopupBox" style="background:white;border-radius:16px;width:100%;max-width:420px;max-height:88vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.35)"><div id="attDetailPopupInner"></div></div>';
+    pop.addEventListener('click', function(e){ if(e.target === pop) window.closeAttPopup(); });
+    document.body.appendChild(pop);
+  }
+
+  var html = '';
+
+  visible.forEach(function(sh) {
+    var sd      = shifts[sh];
+    var present = sd.present || [];
+    var absent  = sd.absent  || [];
+    var empty   = sd.empty   || [];   // ✅ إضافة Empty
+    var total   = sd.total   || 0;
+
+    var prod = 0, train = 0;
+    present.forEach(function(p){ if (p.type === 'T') train++; else prod++; });
+
+    var shBg     = sh === 'Morning' ? '#fff3e0' : sh === 'Night' ? '#e8eaf6' : '#e8f5e9';
+    var shColor  = sh === 'Morning' ? '#e65100' : sh === 'Night' ? '#283593' : '#1b5e20';
+    var shBorder = sh === 'Morning' ? '#ffcc80' : sh === 'Night' ? '#9fa8da' : '#a5d6a7';
+    var shId     = 'sh_' + sh.replace(/\s/g, '_');
+
+    // ── دمج الكل: present + absent + empty ──
+    var allPeople = [].concat(
+      present.map(function(p){ return Object.assign({}, p, {_status:'present'}); }),
+      absent.map(function(p){  return Object.assign({}, p, {_status:'absent'}); }),
+      empty.map(function(p){   return Object.assign({}, p, {_status:'empty'}); })   // ✅
+    );
+
+    allPeople.sort(function(a, b){
+      var ar = parseInt(a.row) || parseInt((a.pc||'').replace(/\D/g,'')) || 9999;
+      var br = parseInt(b.row) || parseInt((b.pc||'').replace(/\D/g,'')) || 9999;
+      return ar - br;
+    });
+
+    // ── تجميع حسب Unit ──
+    var units = {}, unitOrder = [];
+    allPeople.forEach(function(p){
+      var u = (p.location || 'Unknown').trim();
+      if (!units[u]) { units[u] = []; unitOrder.push(u); }
+      units[u].push(p);
+    });
+    var unitNames = ROOM_ORD.filter(function(u){ return units[u]; });
+    unitOrder.forEach(function(u){ if(unitNames.indexOf(u) === -1 && u !== 'Unknown') unitNames.push(u); });
+
+    html += '<div style="background:white;border-radius:14px;border:1px solid var(--border);margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow)">';
+
+    // Shift header
+    html += '<div onclick="(function(el){var b=gid(\''+shId+'\');var open=b.style.maxHeight&&b.style.maxHeight!==\'0px\';b.style.maxHeight=open?\'0px\':\'99999px\';b.style.opacity=open?\'0\':\'1\';el.querySelector(\'.sh-ch\').style.transform=open?\'rotate(0)\':\'rotate(180deg)\'})(this)" style="background:var(--blue);padding:13px 20px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;gap:10px;flex-wrap:wrap">';
+    html += '<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">';
+    html += '<span style="background:'+shBg+';color:'+shColor+';font-size:12px;font-weight:700;padding:4px 14px;border-radius:20px;border:1px solid '+shBorder+'">'+sh+'</span>';
+    html += '<span style="color:white;font-size:14px;font-weight:700">'+total+' Employee</span>';
+    html += '<span style="background:rgba(255,255,255,.12);color:#a5d6a7;font-size:12px;font-weight:700;padding:3px 10px;border-radius:7px">&#10003; '+present.length+'</span>';
+    html += '<span style="background:rgba(255,255,255,.12);color:#ef9a9a;font-size:12px;font-weight:700;padding:3px 10px;border-radius:7px">&#10005; '+absent.length+'</span>';
+    html += '<span style="background:rgba(255,255,255,.12);color:#90caf9;font-size:12px;font-weight:700;padding:3px 10px;border-radius:7px">P:'+prod+'</span>';
+    html += '<span style="background:rgba(255,255,255,.12);color:#ce93d8;font-size:12px;font-weight:700;padding:3px 10px;border-radius:7px">T:'+train+'</span>';
+    if (empty.length > 0)
+      html += '<span style="background:rgba(255,255,255,.12);color:#cfd8dc;font-size:12px;font-weight:700;padding:3px 10px;border-radius:7px">E:'+empty.length+'</span>'; // ✅
+    html += '</div>';
+    html += '<div class="sh-ch" style="color:rgba(255,255,255,.7);font-size:12px;transition:transform .25s">&#9660;</div>';
+    html += '</div>';
+
+    html += '<div id="'+shId+'" style="max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .3s ease;opacity:0">';
+    html += '<div style="padding:10px;background:#f8f9ff;display:flex;flex-direction:column;gap:6px">';
+
+    unitNames.forEach(function(uname){
+      var uPeople  = units[uname];
+      var upresent = uPeople.filter(function(p){ return p._status === 'present'; }).length;
+      var uabsent  = uPeople.filter(function(p){ return p._status === 'absent';  }).length;
+      var uempty   = uPeople.filter(function(p){ return p._status === 'empty';   }).length; // ✅
+      var uid      = 'u_'+sh.replace(/\s/g,'_')+'_'+uname.replace(/\W/g,'_');
+
+      html += '<div style="background:white;border-radius:10px;border:1px solid var(--border);overflow:hidden">';
+
+      // Unit header — الأرقام الصحيحة ✅
+      html += '<div onclick="(function(el){var b=gid(\''+uid+'\');var open=b.style.maxHeight&&b.style.maxHeight!==\'0px\';b.style.maxHeight=open?\'0px\':\'99999px\';b.style.opacity=open?\'0\':\'1\';el.querySelector(\'.u-ch\').style.transform=open?\'rotate(0)\':\'rotate(180deg)\'})(this)" style="padding:10px 16px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;background:var(--blue-bg)">';
+      html += '<div style="display:flex;align-items:center;gap:10px">';
+      html += '<span style="font-size:14px;font-weight:700;color:var(--blue)">&#128205; '+uname+'</span>';
+      html += '<span style="font-size:11px;color:var(--gray)">'+uPeople.length+' emp</span>';
+      html += '<span style="font-size:11px;font-weight:700;background:#e8f5e9;color:#1e8e3e;padding:2px 8px;border-radius:5px">'+upresent+' P</span>';
+      if (uabsent > 0) html += '<span style="font-size:11px;font-weight:700;background:#fce8e6;color:#c5221f;padding:2px 8px;border-radius:5px">'+uabsent+' A</span>';
+      if (uempty  > 0) html += '<span style="font-size:11px;font-weight:700;background:#f1f3f4;color:#5f6368;padding:2px 8px;border-radius:5px">'+uempty+' E</span>'; // ✅
+      html += '</div>';
+      html += '<div class="u-ch" style="color:var(--blue);font-size:12px;transition:transform .25s">&#9660;</div>';
+      html += '</div>';
+
+      // Employee rows
+      html += '<div id="'+uid+'" style="max-height:0;overflow:hidden;transition:max-height .4s ease,opacity .3s ease;opacity:0">';
+      html += '<div style="padding:8px;display:flex;flex-direction:column;gap:3px">';
+
+      uPeople.forEach(function(p){
+        var rawSt   = (p.type || p.status || '').toString().trim().toUpperCase();
+        var isAbsent = p._status === 'absent';
+        var isEmpty  = p._status === 'empty';  // ✅
+
+        // ── لون البادج ──
+        var statusLabel = isAbsent ? '0' : (isEmpty ? 'E' : (rawSt || 'P'));
+        var statusBg    = isAbsent ? '#c5221f'
+          : isEmpty                         ? '#9aa0a6'          // رمادي للـ Empty ✅
+          : rawSt === 'T' || rawSt.match(/^T\d$/) ? '#f57f17'
+          : rawSt === 'PT'                  ? '#1565c0'
+          : rawSt === 'TP'                  ? '#5e35b1'
+          : '#1e8e3e';
+
+        // ── لون الصف ──
+        var rowBg    = isAbsent ? '#fff0f0'
+          : isEmpty ? '#fafafa'              // رمادي فاتح للـ Empty ✅
+          : rawSt === 'T' || rawSt.match(/^T\d$/) ? '#fff8e1'
+          : rawSt === 'PT' || rawSt === 'TP' ? '#f5f0ff'
+          : '#f8fdf9';
+
+        var darkRowBg = isAbsent ? '#3d1a1a'
+          : isEmpty ? '#252840'
+          : rawSt === 'T' || rawSt.match(/^T\d$/) ? '#3d2800'
+          : rawSt === 'PT' || rawSt === 'TP' ? '#2d1f3d'
+          : '#1b2e1b';
+
+        var rowBorder = isAbsent ? 'rgba(197,34,31,.25)'
+          : isEmpty ? 'rgba(154,160,166,.15)'
+          : rawSt === 'T' || rawSt.match(/^T\d$/) ? 'rgba(245,127,23,.2)'
+          : rawSt === 'PT' || rawSt === 'TP' ? 'rgba(94,53,177,.2)'
+          : 'rgba(30,142,62,.15)';
+
+        var safeN     = (p.name   || '').replace(/'/g,"&#39;").replace(/"/g,'&quot;');
+        var safePC    = (p.pc     || '').replace(/'/g,"&#39;");
+        var safeLoc   = (p.location || '').replace(/'/g,"&#39;");
+        var safeEmail = (p.email  || '').replace(/'/g,"&#39;");
+        var safePhone = (p.phone  || '').replace(/'/g,"&#39;");
+        var safeYubi  = (p.yubikey|| '').replace(/'/g,"&#39;");
+
+        // ── Empty: cursor default + no popup ──
+        var rowAttrs = isEmpty
+          ? 'style="background:'+rowBg+';border:1px solid '+rowBorder+';border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px;opacity:.7"'
+          : 'class="att-person-row att-person-row-item" '
+            + 'data-name="'+safeN+'" data-pc="'+safePC+'" data-loc="'+safeLoc+'" '
+            + 'data-shift="'+sh+'" data-email="'+safeEmail+'" data-phone="'+safePhone+'" '
+            + 'data-yubikey="'+safeYubi+'" data-status="'+statusLabel+'" data-statusbg="'+statusBg+'" '
+            + 'style="background:'+rowBg+';border:1px solid '+rowBorder+';border-radius:8px;padding:9px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:background .12s" '
+            + 'onmouseover="this.style.background=document.body.classList.contains(\'dark\')?\'#1a2040\':\'var(--blue-bg)\'" '
+            + 'onmouseout="this.style.background=document.body.classList.contains(\'dark\')?\''+darkRowBg+'\':\''+rowBg+'\'"';
+
+        html += '<div '+rowAttrs+'>';
+        if (p.pc) html += '<span style="font-size:10px;font-weight:700;background:white;color:'+(isEmpty?'#9aa0a6':'var(--blue)')+';padding:2px 7px;border-radius:5px;border:1px solid var(--blue-lt);flex-shrink:0">'+p.pc+'</span>';
+        html += '<span style="flex:1;font-size:13px;font-weight:700;color:'+(isAbsent?'#c5221f':isEmpty?'#9aa0a6':'var(--dark)')+'">'+titleCase(p.name||'-')+'</span>';
+        html += '<span style="background:'+statusBg+';color:white;font-size:11px;font-weight:800;padding:3px 12px;border-radius:6px;flex-shrink:0;min-width:36px;text-align:center">'+statusLabel+'</span>';
+        if (!isEmpty) html += '<span style="color:var(--gray);font-size:11px;flex-shrink:0">&#9654;</span>';
+        html += '</div>';
+      });
+
+      html += '</div></div></div>'; // end employees + unit body + unit block
+    });
+
+    html += '</div></div></div>'; // end shift body + shift block
+  });
+
+  shtml('attDetailsArea', html);
+
+  // Click handler — Empty rows skip popup ✅
+  gid('attDetailsArea').addEventListener('click', function(e){
+    var row = e.target.closest('.att-person-row');
+    if (!row) return;
+    window.openAttPopupFromRow(row);
+  });
+};
+
+console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
+})();
 </script>
 </body>
 </html>
