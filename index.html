@@ -3495,11 +3495,7 @@ function renderOtDetails(data) {
 
   var html = '<div class="filter-bar"><label style="margin-right:10px">Date</label>'
     + '<div class="dp-wrap" id="dpWrap-otDate"><input type="text" class="dp-input" id="otDate" readonly value="'+displayDate+'"><span class="dp-icon">📅</span></div>'
-    + '<div id="otStateBtns" style="display:flex;gap:6px;margin-left:12px">'
-    + '<button class="mod-btn active" data-otstate="all" style="background:var(--blue);color:white;border-color:var(--blue)">All States</button>'
-    + '<button class="mod-btn" data-otstate="over">Overtime</button>'
-    + '<button class="mod-btn" data-otstate="comp">Compensation</button>'
-    + '</div></div>';
+    + '</div>';
 
   // الكروت الـ 3 (ضفنا ليهم data-dtype عشان نعرف مين اللي انداس عليه)
   html += '<div class="cards" id="otCardsRow" style="grid-template-columns: repeat(3, 1fr); margin-bottom:15px">'
@@ -3663,7 +3659,7 @@ function renderOtDetails(data) {
   });
   
  function applyOtFilters() {
-    var activeState = area.querySelector('#otStateBtns .active').getAttribute('data-otstate');
+    var activeState = 'all';
     
     // هنلف على كل جدول (لأن كل شيفت ليه جدول منفصل)
     area.querySelectorAll('table').forEach(function(table) {
