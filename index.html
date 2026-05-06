@@ -2038,7 +2038,7 @@ function renderQtcPage(data){
     wrap.innerHTML=h;
   }
 
-  var html='<div id="qtcTop4" style="margin-bottom:18px"></div><div class="tbl-card" id="qtcCard"><div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--blue-lt);padding:0 12px 0 0;flex-wrap:wrap;gap:8px"><div style="display:flex;gap:0"><div class="qtc-tab active" data-qtcsh="all" style="padding:10px 16px;cursor:pointer;font-size:13px;font-weight:700;border-bottom:2px solid var(--blue);color:var(--blue);margin-bottom:-2px">All</div>';
+  var html='<div id="qtcTop4" style="margin-bottom:18px"></div><div class="tbl-card" id="qtcCard"><div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--blue-lt);padding:0 12px 0 0;flex-wrap:wrap;gap:8px;position:sticky;top:120px;z-index:100;background:white;border-radius:12px 12px 0 0;"><div style="display:flex;gap:0"><div class="qtc-tab active" data-qtcsh="all" style="padding:10px 16px;cursor:pointer;font-size:13px;font-weight:700;border-bottom:2px solid var(--blue);color:var(--blue);margin-bottom:-2px">All</div>';
   availShifts.forEach(function(sh){html+='<div class="qtc-tab" data-qtcsh="'+sh+'" style="padding:10px 16px;cursor:pointer;font-size:13px;font-weight:700;border-bottom:2px solid transparent;color:var(--gray);margin-bottom:-2px"><span class="badge '+shiftBadge(sh)+'" style="margin-right:4px;font-size:10px">'+sh+'</span></div>';});
   html+='</div><div class="lab-sort-pills" id="qtcSortPills" style="padding:8px 0">';
   SORT_PILLS.forEach(function(p){html+='<button class="lab-sort-pill'+(p.key==='total'?' active-total':'')+'" data-qsortkey="'+p.key+'">'+p.label+'</button>';});
