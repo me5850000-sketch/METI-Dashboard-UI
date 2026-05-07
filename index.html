@@ -804,9 +804,6 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
               </div>
             </div>
           </div>
-
-          <div id="dataArea"><div class="loading"><div class="spin"></div> Loading data...</div></div>
-        </div>
 <div id="pgDetailsOfData" style="display:none">
   <div id="dodArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
 </div>
@@ -1551,20 +1548,6 @@ function renderWeekTarget(){var el=gid('homeTargetArea');if(!el)return;var weeks
 </script>
 
 <script>
-// ══ DATA PAGE ══
-function loadData(){
-  var from=getFilterISO(true),to=getFilterISO(false);
-  shtml('dataArea','<div class="loading"><div class="spin"></div> Loading data...</div>');
-  google.script.run
-    .withSuccessHandler(function(r){
-      if(r.err){shtml('dataArea','<div class="empty">'+r.err+'</div>');return;}
-      r.data.sort(function(a,b){return new Date(b[F.date]||0)-new Date(a[F.date]||0);});
-     dataAll=r.data;dataPage=1;renderDataFiltered();
-if(gid('pgDetailsOfData')&&gid('pgDetailsOfData').style.display!=='none')renderDetailsOfData();
-    })
-    .withFailureHandler(function(e){shtml('dataArea','<div class="empty">'+e.message+'</div>');})
-    .getStats(TOKEN,from,to);
-}
 
 function toggleDataShift(s){if(s==='all'){activeDataShifts.clear();activeDataShifts.add('all');}else{activeDataShifts.delete('all');if(activeDataShifts.has(s)){activeDataShifts.delete(s);if(activeDataShifts.size===0)activeDataShifts.add('all');}else activeDataShifts.add(s);}dataPage=1;renderDataFiltered();}
 function toggleDataUnit(u){if(u==='all'){activeDataUnits.clear();activeDataUnits.add('all');}else{activeDataUnits.delete('all');if(activeDataUnits.has(u)){activeDataUnits.delete(u);if(activeDataUnits.size===0)activeDataUnits.add('all');}else activeDataUnits.add(u);}dataPage=1;renderDataFiltered();}
