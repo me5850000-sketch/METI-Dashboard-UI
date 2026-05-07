@@ -831,7 +831,7 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
             </div>
           </div>
 
-          <div id="dataArea"><div class="loading"><div class="spin"></div> Loading data...</div></div>
+          <div id="dataArea"><div class="loading"><div class="spin"></div></div></div>
         </div>
 <div id="pgDetailsOfData" style="display:none">
   <div id="dodArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
@@ -1583,7 +1583,7 @@ function renderWeekTarget(){var el=gid('homeTargetArea');if(!el)return;var weeks
 // ══ DATA PAGE ══
 function loadData(){
   var from=getFilterISO(true),to=getFilterISO(false);
-  shtml('dataArea','<div class="loading"><div class="spin"></div> Loading data...</div>');
+  shtml('dataArea','<div class="loading"><div class="spin"></div></div>');
   google.script.run
     .withSuccessHandler(function(r){
       if(r.err){shtml('dataArea','<div class="empty">'+r.err+'</div>');return;}
