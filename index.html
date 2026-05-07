@@ -710,7 +710,6 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
       <nav class="sb-nav">
         <div class="nav-section">Main</div>
         <div class="nav-item active" id="nav-home" data-page="home">Home</div>
-        <div class="nav-item" id="nav-data" data-page="data">Data</div>
         <div class="nav-item" id="nav-detailsofdata" data-page="detailsofdata">Details of Data</div>
         <div class="nav-item" id="nav-labelers" data-page="labelers">Top Labelers</div>
         <div class="nav-item" id="nav-qtc" data-page="qtc">Top QTC</div>
@@ -791,22 +790,7 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
           <div id="statsArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
         </div>
 
-        <div id="pgData" style="display:none">
-          <div id="dataStatsBar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:12px;padding:10px 14px;background:white;border:1px solid var(--border);border-radius:10px;box-shadow:var(--shadow);font-size:12px;font-weight:700;display:none;"></div>
-
-          <div style="display:flex; gap:10px; margin-bottom:12px; flex-wrap:wrap;">
-            <div style="flex:1; min-width:250px; display:flex; background:white; border:1px solid var(--border); border-radius:8px; overflow:hidden; box-shadow:var(--shadow)">
-              <select id="searchField" style="border:none; background:#f8f9ff; padding:8px 12px; font-size:13px; font-weight:700; color:var(--blue); outline:none; border-right:1px solid var(--border); cursor:pointer;">
-                <option value="labeler">Labeler</option><option value="queue">Queue</option><option value="unit">Unit</option>
-                <option value="qtc">QTC</option><option value="ubkey">Yubikey</option><option value="taskid">Task ID</option>
-              </select>
-              <input type="text" id="searchInput" placeholder="Search data..." autocomplete="off" style="flex:1; border:none; padding:8px 12px; font-size:13px; outline:none; color:var(--dark);">
-              <button id="searchClearBtn" style="background:none; border:none; padding:0 12px; color:var(--gray); cursor:pointer; display:none;">✕</button>
-            </div>
-            <button onclick="document.getElementById('advFilters').classList.toggle('show')" style="background:var(--blue); color:white; border:none; padding:8px 16px; border-radius:8px; font-size:13px; font-weight:700; cursor:pointer; box-shadow:var(--shadow); display:flex; align-items:center; gap:6px;">
-              👇 If You Want More Filter Press Here
-            </button>
-          </div>
+        
 
           <div id="advFilters" class="adv-filters-wrap">
             <div class="filter-bar" style="margin-bottom:12px;">
@@ -895,7 +879,6 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
 
     <nav class="bottom-nav" id="bottomNav">
       <button class="bn-item active" id="bn-home" data-page="home"><span class="bn-icon">🏠</span><span>Home</span></button>
-      <button class="bn-item" id="bn-data" data-page="data"><span class="bn-icon">📊</span><span>Data</span></button>
       <button class="bn-item" id="bn-labelers" data-page="labelers"><span class="bn-icon">🏆</span><span>Top</span></button>
       <button class="bn-item" id="bn-qtc" data-page="qtc"><span class="bn-icon">⭐</span><span>QTC</span></button>
       <button class="bn-item" id="bn-menu" data-action="menu"><span class="bn-icon">☰</span><span>Menu</span></button>
@@ -1211,14 +1194,13 @@ if (addBtn) addBtn.style.display = hasRole(SESSION.role, ['admin','sm','ssv','sv
 
 <script>
 // ══ NAVIGATION ══
-var PAGES={home:{pg:'pgHome',title:'Home',sub:'Overview & Statistics'},data:{pg:'pgData',title:'Data',sub:'All Records'},detailsofdata:{pg:'pgDetailsOfData',title:'Details of Data',sub:'Raw Data — Every Task'},labelers:{pg:'pgLabelers',title:'Top Labelers',sub:'Leaderboard by Shift'},qtc:{pg:'pgQtc',title:'Top QTC',sub:'QTC Performance'},qtcstats:{pg:'pgQtcStats',title:'QTC Stats',sub:'Individual QTC Performance'},attendance:{pg:'pgAttendance',title:'Attendance',sub:'Daily Attendance Summary'},attdetails:{pg:'pgAttDetails',title:'Details of Attendance',sub:'Full Names — Present & Absent'},otdetails: { pg: 'pgOtDetails', title: 'Details of OT', sub: 'Overtime Records' },users:{pg:'pgUsers',title:'Users',sub:'Manage Dashboard Users'}};
+var PAGES={home:{pg:'pgHome',title:'Home',sub:'Overview & Statistics'},detailsofdata:{pg:'pgDetailsOfData',title:'Details of Data',sub:'Raw Data — Every Task'},labelers:{pg:'pgLabelers',title:'Top Labelers',sub:'Leaderboard by Shift'},qtc:{pg:'pgQtc',title:'Top QTC',sub:'QTC Performance'},qtcstats:{pg:'pgQtcStats',title:'QTC Stats',sub:'Individual QTC Performance'},attendance:{pg:'pgAttendance',title:'Attendance',sub:'Daily Attendance Summary'},attdetails:{pg:'pgAttDetails',title:'Details of Attendance',sub:'Full Names — Present & Absent'},otdetails: { pg: 'pgOtDetails', title: 'Details of OT', sub: 'Overtime Records' },users:{pg:'pgUsers',title:'Users',sub:'Manage Dashboard Users'}};
 
 function navTo(page){
-  if(page==='data'&&SESSION&&!hasRole(SESSION.role,ROLES_VIEW_DATA))return;
   if(page==='users'&&SESSION&&!hasRole(SESSION.role,ROLES_MANAGE_USERS))return;
   
   // Toggle Global Filter Bar visibility
-  var pagesWithGlobalFilter = ['home', 'data', 'detailsofdata', 'labelers', 'qtc', 'qtcstats'];
+  var pagesWithGlobalFilter = ['home', 'detailsofdata', 'labelers', 'qtc', 'qtcstats'];
   var gf = gid('globalFilterBar');
   if(gf) gf.style.display = pagesWithGlobalFilter.includes(page) ? 'flex' : 'none';
 
