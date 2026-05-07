@@ -1183,8 +1183,6 @@ if (addBtn) addBtn.style.display = hasRole(SESSION.role, ['admin','sm','ssv','sv
   var navUsers = gid('nav-users');
   if(navUsers) navUsers.style.display = '';
 }
-  if(!hasRole(SESSION.role,ROLES_VIEW_DATA)){var nd=gid('nav-data');if(nd)nd.style.display='none';}
-  if(userSeeOwnOnly()){gid('shiftBannerHomeText').textContent=SESSION.shift;gid('shiftBannerData').style.display='flex';}
   
   // Show global filter initially
   var gf = gid('globalFilterBar');
@@ -3789,10 +3787,6 @@ showDash = function(){
   var navHome = gid('nav-home');
   if(navHome) navHome.style.display = '';
 
-  // Data → من في ROLES_VIEW_DATA
-  var navData = gid('nav-data');
-  if(navData) navData.style.display = hasRole(role, ROLES_VIEW_DATA) ? '' : 'none';
-
   // Details of Data → نفس Data
   var navDod = gid('nav-detailsofdata');
   if(navDod) navDod.style.display = hasRole(role, ROLES_VIEW_DATA) ? '' : 'none';
@@ -3908,31 +3902,6 @@ loadStats = function(){
     .withFailureHandler(function(e){
       shtml('statsArea','<div class="empty">'+e.message+'</div>');
     })
-    .getStats(TOKEN, from, to);
-};
-
-// ══ 7. Data Page — فلترة حسب الشيفت للـ QTC/SL ══
-var _origLoadData = loadData;
-loadData = function(){
-  var from = getFilterISO(true), to = getFilterISO(false);
-  shtml('dataArea','<div class="loading"><div class="spin"></div> Loading data...</div>');
-  google.script.run
-    .withSuccessHandler(function(r){
-      if(r.err){ shtml('dataArea','<div class="empty">'+r.err+'</div>'); return; }
-      r.data.sort(function(a,b){ return new Date(b[F.date]||0)-new Date(a[F.date]||0); });
-      // فلترة حسب الشيفت لو الدور يحتاج ذلك
-      var role = SESSION && SESSION.role;
-      if(!hasRole(role, ROLES_SEE_ALL_SHIFTS) && SESSION && SESSION.shift){
-        var myShift = SESSION.shift;
-        r.data = r.data.filter(function(row){
-          var sh = nShift(row[F.shift]||'');
-          return sh === myShift || sh === 'Over Shift';
-        });
-      }
-      dataAll = r.data; dataPage = 1; renderDataFiltered();
-      if(gid('pgDetailsOfData') && gid('pgDetailsOfData').style.display !== 'none') renderDetailsOfData();
-    })
-    .withFailureHandler(function(e){ shtml('dataArea','<div class="empty">'+e.message+'</div>'); })
     .getStats(TOKEN, from, to);
 };
 
