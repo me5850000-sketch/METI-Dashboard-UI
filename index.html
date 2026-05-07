@@ -3898,7 +3898,7 @@ loadStats = function(){
 var _origLoadData = loadData;
 loadData = function(){
   var from = getFilterISO(true), to = getFilterISO(false);
-  shtml('dataArea','<div class="loading"><div class="spin"></div> Loading data...</div>');
+  shtml('dataArea','<div class="loading"><div class="spin"></div></div>');
   google.script.run
     .withSuccessHandler(function(r){
       if(r.err){ shtml('dataArea','<div class="empty">'+r.err+'</div>'); return; }
