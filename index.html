@@ -440,6 +440,17 @@ body.dark #pgAttendance .mod-btn[style*="background:var(--blue)"]{background:#1c
   .topbar{padding:10px 14px!important;gap:8px}.tb-left .tb-title{font-size:16px!important}
   .tb-left .tb-sub,#topClock{display:none}
   .content{padding:12px!important}
+  /* Hide Queue + Objects on mobile */
+  #pgData table th:nth-child(11),
+  #pgData table td:nth-child(11),
+  #pgData table th:nth-child(12),
+  #pgData table td:nth-child(12){ display:none!important; }
+  #pgData table{ min-width:unset!important; }
+  #pgData th{ font-size:9px!important; padding:7px 4px!important; }
+  #pgData td{ font-size:10px!important; padding:6px 4px!important; }
+  #pgData .badge{ font-size:9px!important; padding:2px 4px!important; }
+  #pgData table td:nth-child(9),
+  #pgData table td:nth-child(10){ font-size:9px!important; max-width:60px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   /* التعديلات الجديدة لشريط الفلتر الموحد على الموبايل */
   .global-filter-bar { padding: 14px!important; top: 54px; }
   .global-filter-bar > div { flex-direction:row!important; flex-wrap:wrap!important; gap:8px!important; }
@@ -804,6 +815,9 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
               </div>
             </div>
           </div>
+
+          <div id="dataArea"><div class="loading"><div class="spin"></div> Loading data...</div></div>
+        </div>
 <div id="pgDetailsOfData" style="display:none">
   <div id="dodArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
 </div>
@@ -1169,6 +1183,8 @@ if (addBtn) addBtn.style.display = hasRole(SESSION.role, ['admin','sm','ssv','sv
   var navUsers = gid('nav-users');
   if(navUsers) navUsers.style.display = '';
 }
+  if(!hasRole(SESSION.role,ROLES_VIEW_DATA)){var nd=gid('nav-data');if(nd)nd.style.display='none';}
+  if(userSeeOwnOnly()){gid('shiftBannerHomeText').textContent=SESSION.shift;gid('shiftBannerData').style.display='flex';}
   
   // Show global filter initially
   var gf = gid('globalFilterBar');
@@ -1548,6 +1564,20 @@ function renderWeekTarget(){var el=gid('homeTargetArea');if(!el)return;var weeks
 </script>
 
 <script>
+// ══ DATA PAGE ══
+function loadData(){
+  var from=getFilterISO(true),to=getFilterISO(false);
+  shtml('dataArea','<div class="loading"><div class="spin"></div> Loading data...</div>');
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(r.err){shtml('dataArea','<div class="empty">'+r.err+'</div>');return;}
+      r.data.sort(function(a,b){return new Date(b[F.date]||0)-new Date(a[F.date]||0);});
+     dataAll=r.data;dataPage=1;renderDataFiltered();
+if(gid('pgDetailsOfData')&&gid('pgDetailsOfData').style.display!=='none')renderDetailsOfData();
+    })
+    .withFailureHandler(function(e){shtml('dataArea','<div class="empty">'+e.message+'</div>');})
+    .getStats(TOKEN,from,to);
+}
 
 function toggleDataShift(s){if(s==='all'){activeDataShifts.clear();activeDataShifts.add('all');}else{activeDataShifts.delete('all');if(activeDataShifts.has(s)){activeDataShifts.delete(s);if(activeDataShifts.size===0)activeDataShifts.add('all');}else activeDataShifts.add(s);}dataPage=1;renderDataFiltered();}
 function toggleDataUnit(u){if(u==='all'){activeDataUnits.clear();activeDataUnits.add('all');}else{activeDataUnits.delete('all');if(activeDataUnits.has(u)){activeDataUnits.delete(u);if(activeDataUnits.size===0)activeDataUnits.add('all');}else activeDataUnits.add(u);}dataPage=1;renderDataFiltered();}
@@ -3759,6 +3789,10 @@ showDash = function(){
   var navHome = gid('nav-home');
   if(navHome) navHome.style.display = '';
 
+  // Data → من في ROLES_VIEW_DATA
+  var navData = gid('nav-data');
+  if(navData) navData.style.display = hasRole(role, ROLES_VIEW_DATA) ? '' : 'none';
+
   // Details of Data → نفس Data
   var navDod = gid('nav-detailsofdata');
   if(navDod) navDod.style.display = hasRole(role, ROLES_VIEW_DATA) ? '' : 'none';
@@ -3874,6 +3908,31 @@ loadStats = function(){
     .withFailureHandler(function(e){
       shtml('statsArea','<div class="empty">'+e.message+'</div>');
     })
+    .getStats(TOKEN, from, to);
+};
+
+// ══ 7. Data Page — فلترة حسب الشيفت للـ QTC/SL ══
+var _origLoadData = loadData;
+loadData = function(){
+  var from = getFilterISO(true), to = getFilterISO(false);
+  shtml('dataArea','<div class="loading"><div class="spin"></div> Loading data...</div>');
+  google.script.run
+    .withSuccessHandler(function(r){
+      if(r.err){ shtml('dataArea','<div class="empty">'+r.err+'</div>'); return; }
+      r.data.sort(function(a,b){ return new Date(b[F.date]||0)-new Date(a[F.date]||0); });
+      // فلترة حسب الشيفت لو الدور يحتاج ذلك
+      var role = SESSION && SESSION.role;
+      if(!hasRole(role, ROLES_SEE_ALL_SHIFTS) && SESSION && SESSION.shift){
+        var myShift = SESSION.shift;
+        r.data = r.data.filter(function(row){
+          var sh = nShift(row[F.shift]||'');
+          return sh === myShift || sh === 'Over Shift';
+        });
+      }
+      dataAll = r.data; dataPage = 1; renderDataFiltered();
+      if(gid('pgDetailsOfData') && gid('pgDetailsOfData').style.display !== 'none') renderDetailsOfData();
+    })
+    .withFailureHandler(function(e){ shtml('dataArea','<div class="empty">'+e.message+'</div>'); })
     .getStats(TOKEN, from, to);
 };
 
