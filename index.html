@@ -710,7 +710,6 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
       <nav class="sb-nav">
         <div class="nav-section">Main</div>
         <div class="nav-item active" id="nav-home" data-page="home">Home</div>
-        <div class="nav-item" id="nav-data" data-page="data">Data</div>
         <div class="nav-item" id="nav-detailsofdata" data-page="detailsofdata">Details of Data</div>
         <div class="nav-item" id="nav-labelers" data-page="labelers">Top Labelers</div>
         <div class="nav-item" id="nav-qtc" data-page="qtc">Top QTC</div>
@@ -895,7 +894,6 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
 
     <nav class="bottom-nav" id="bottomNav">
       <button class="bn-item active" id="bn-home" data-page="home"><span class="bn-icon">🏠</span><span>Home</span></button>
-      <button class="bn-item" id="bn-data" data-page="data"><span class="bn-icon">📊</span><span>Data</span></button>
       <button class="bn-item" id="bn-labelers" data-page="labelers"><span class="bn-icon">🏆</span><span>Top</span></button>
       <button class="bn-item" id="bn-qtc" data-page="qtc"><span class="bn-icon">⭐</span><span>QTC</span></button>
       <button class="bn-item" id="bn-menu" data-action="menu"><span class="bn-icon">☰</span><span>Menu</span></button>
@@ -1211,14 +1209,14 @@ if (addBtn) addBtn.style.display = hasRole(SESSION.role, ['admin','sm','ssv','sv
 
 <script>
 // ══ NAVIGATION ══
-var PAGES={home:{pg:'pgHome',title:'Home',sub:'Overview & Statistics'},data:{pg:'pgData',title:'Data',sub:'All Records'},detailsofdata:{pg:'pgDetailsOfData',title:'Details of Data',sub:'Raw Data — Every Task'},labelers:{pg:'pgLabelers',title:'Top Labelers',sub:'Leaderboard by Shift'},qtc:{pg:'pgQtc',title:'Top QTC',sub:'QTC Performance'},qtcstats:{pg:'pgQtcStats',title:'QTC Stats',sub:'Individual QTC Performance'},attendance:{pg:'pgAttendance',title:'Attendance',sub:'Daily Attendance Summary'},attdetails:{pg:'pgAttDetails',title:'Details of Attendance',sub:'Full Names — Present & Absent'},otdetails: { pg: 'pgOtDetails', title: 'Details of OT', sub: 'Overtime Records' },users:{pg:'pgUsers',title:'Users',sub:'Manage Dashboard Users'}};
+var PAGES={home:{pg:'pgHome',title:'Home',sub:'Overview & Statistics'},detailsofdata:{pg:'pgDetailsOfData',title:'Details of Data',sub:'Raw Data — Every Task'},labelers:{pg:'pgLabelers',title:'Top Labelers',sub:'Leaderboard by Shift'},qtc:{pg:'pgQtc',title:'Top QTC',sub:'QTC Performance'},qtcstats:{pg:'pgQtcStats',title:'QTC Stats',sub:'Individual QTC Performance'},attendance:{pg:'pgAttendance',title:'Attendance',sub:'Daily Attendance Summary'},attdetails:{pg:'pgAttDetails',title:'Details of Attendance',sub:'Full Names — Present & Absent'},otdetails: { pg: 'pgOtDetails', title: 'Details of OT', sub: 'Overtime Records' },users:{pg:'pgUsers',title:'Users',sub:'Manage Dashboard Users'}};
 
 function navTo(page){
   if(page==='data'&&SESSION&&!hasRole(SESSION.role,ROLES_VIEW_DATA))return;
   if(page==='users'&&SESSION&&!hasRole(SESSION.role,ROLES_MANAGE_USERS))return;
   
   // Toggle Global Filter Bar visibility
-  var pagesWithGlobalFilter = ['home', 'data', 'detailsofdata', 'labelers', 'qtc', 'qtcstats'];
+var pagesWithGlobalFilter = ['home', 'detailsofdata', 'labelers', 'qtc', 'qtcstats'];
   var gf = gid('globalFilterBar');
   if(gf) gf.style.display = pagesWithGlobalFilter.includes(page) ? 'flex' : 'none';
 
