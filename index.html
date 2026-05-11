@@ -2021,7 +2021,18 @@ function renderQtcPage(data){
   var activeShift='all',qtcSortKey='total',activeUnits=new Set(['all']);
 
   var activeOverShiftCode = 'all';
-  function getList(){var base=allQtcs;if(activeShift!=='all')base=base.filter(function(q){return q.shift===activeShift;});if(activeShift==='Over Shift'&&activeOverShiftCode!=='all')base=base.filter(function(q){return q.overShiftCode===('('+activeOverShiftCode+')')});if(!activeUnits.has('all'))base=base.filter(function(q){return activeUnits.has(q.unit);});return base.slice().sort(function(a,b){return(b[qtcSortKey]||0)-(a[qtcSortKey]||0);});}
+  function getList(){
+  var base = allQtcs;
+  if(activeShift !== 'all') base = base.filter(function(q){ return q.shift === activeShift; });
+  // ✅ فلترة Over Shift Code
+  if(activeShift === 'Over Shift' && activeOverShiftCode !== 'all') {
+    base = base.filter(function(q){ 
+      return q.overShiftCode === ('('+activeOverShiftCode+')'); 
+    });
+  }
+  if(!activeUnits.has('all')) base = base.filter(function(q){ return activeUnits.has(q.unit); });
+  return base.slice().sort(function(a,b){ return (b[qtcSortKey]||0) - (a[qtcSortKey]||0); });
+}
 
   function renderQtcList(){
     var list=getList(),wrap=gid('qtcListWrap');if(!wrap)return;
@@ -2051,7 +2062,7 @@ function renderQtcPage(data){
   SORT_PILLS.forEach(function(p){html+='<button class="lab-sort-pill'+(p.key==='total'?' active-total':'')+'" data-qsortkey="'+p.key+'">'+p.label+'</button>';});
   html+='</div></div>';
   if(unitsSet.length>1){html+='<div id="qtcUnitBar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:#f8f9ff;border-bottom:1px solid var(--border)"><span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Unit</span><button class="mod-btn qtc-unit-btn" data-unit="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>';unitsSet.forEach(function(u){html+='<button class="mod-btn qtc-unit-btn" data-unit="'+u+'">'+u+'</button>';});html+='</div>';}
-  html+='<div id="qtcOverShiftBtns" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:#f0f4ff;border-bottom:1px solid var(--border)"><span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Over Shift Code</span><button class="mod-btn qtc-os-btn" data-oscode="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button><button class="mod-btn qtc-os-btn" data-oscode="M">M</button><button class="mod-btn qtc-os-btn" data-oscode="N">N</button><button class="mod-btn qtc-os-btn" data-oscode="ON">ON</button></div>';
+  html+='<div id="qtcOverShiftBtns" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:#f0f4ff;border-bottom:1px solid var(--border)"><span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-right:8px">Shift</span><button class="mod-btn qtc-os-btn" data-oscode="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button><button class="mod-btn qtc-os-btn" data-oscode="M" style="background:white;color:var(--gray);border-color:var(--border)">M</button><button class="mod-btn qtc-os-btn" data-oscode="N" style="background:white;color:var(--gray);border-color:var(--border)">N</button><button class="mod-btn qtc-os-btn" data-oscode="ON" style="background:white;color:var(--gray);border-color:var(--border)">ON</button></div>';
   html+='<div id="qtcListWrap"></div></div>';
   shtml('qtcArea',html);
 
@@ -2096,23 +2107,24 @@ function renderQtcPage(data){
     if(pillsEl){pillsEl.addEventListener('click',function(e){var p=e.target.closest('.lab-sort-pill');if(!p)return;var key=p.getAttribute('data-qsortkey');if(!key)return;qtcSortKey=key;pillsEl.querySelectorAll('.lab-sort-pill').forEach(function(x){SORT_PILLS.forEach(function(sp){x.classList.remove(sp.ac);});if(x.getAttribute('data-qsortkey')===key){var sp=SORT_PILLS.filter(function(s){return s.key===key;})[0];if(sp)x.classList.add(sp.ac);}});renderQtcList();});}
   },0);
 }
-  // ✅ معالج الأزرار Over Shift
+  // ✅ معالج الأزرار Over Shift — التبديل بدل التبديل
     document.addEventListener('click', function(e){
-      var osBtn = e.target.closest('.qtc-os-btn');
+      var osBtn = e.target.closest('#qtcOverShiftBtns .qtc-os-btn');
       if(!osBtn) return;
       
       var code = osBtn.getAttribute('data-oscode');
-      activeOverShiftCode = (activeOverShiftCode === code) ? 'all' : code;
+      activeOverShiftCode = code; // ✅ تعيين مباشر بدل التبديل
       
-      // تحديث ألوان الأزرار
+      // تحديث ألوان جميع الأزرار
       document.querySelectorAll('#qtcOverShiftBtns .qtc-os-btn').forEach(function(btn){
-        var isActive = btn.getAttribute('data-oscode') === activeOverShiftCode;
+        var code_btn = btn.getAttribute('data-oscode');
+        var isActive = code_btn === activeOverShiftCode;
         btn.style.background = isActive ? 'var(--blue)' : 'white';
         btn.style.color = isActive ? 'white' : 'var(--gray)';
         btn.style.borderColor = isActive ? 'var(--blue)' : 'var(--border)';
       });
       
-      // إعادة تصيير القائمة
+      // ✅ إعادة تصيير القائمة
       renderQtcList();
     });
 </script>
