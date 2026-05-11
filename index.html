@@ -1995,13 +1995,7 @@ function renderQtcPage(data){
     var rowShift=nShift(r[F.shift]||'');
     var qtcSuffix=raw.match(/\(([^)]+)\)\s*$/);
     var qtcCode=qtcSuffix?qtcSuffix[1].trim().toUpperCase():'';
-    var isOverShift=rowShift==='Over Shift';
-    var sh;
-    if(isOverShift){
-      sh=qtcCode==='M'?'Over Shift (M)':qtcCode==='N'?'Over Shift (N)':qtcCode==='ON'?'Over Shift (ON)':'Over Shift';
-    } else {
-      sh=rowShift;
-    }
+    var sh = (rowShift === 'Over Shift') ? 'Over Shift' : rowShift;
     var name=cleanQtcName(raw),un=(r[F.unit]||'Unknown').trim();
     var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
     var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;
@@ -2013,12 +2007,14 @@ function renderQtcPage(data){
   });
   var allQtcs=Object.values(qtcs);
   if(!allQtcs.length){shtml('qtcArea','<div class="empty">No QTC records found.</div>');return;}
-  var SH_ORD=['Morning','Night','Over Night','Over Shift (M)','Over Shift (N)','Over Shift (ON)'];
+  var SH_ORD = ['Morning','Night','Over Night','Over Shift'];
   var sortColors={total:'var(--blue)',lfp:'#1e8e3e',lqa:'#e37400',lifp:'#007b83',liqa:'#7b1fa2'};
   var sortBg={total:'var(--blue-bg)',lfp:'#e8f5e9',lqa:'#fff3cd',lifp:'#e0f7fa',liqa:'#f3e5f5'};
   var sortLabels={total:'Total',lfp:'Lane FP',lqa:'Lane QA',lifp:'Lidar FP',liqa:'Lidar QA'};
   var SORT_PILLS=[{key:'total',label:'Total',ac:'active-total'},{key:'lfp',label:'Lane FP',ac:'active-lfp'},{key:'lqa',label:'Lane QA',ac:'active-lqa'},{key:'lifp',label:'Lidar FP',ac:'active-lifp'},{key:'liqa',label:'Lidar QA',ac:'active-liqa'}];
-  var availShifts=['Morning','Night','Over Night','Over Shift (M)','Over Shift (N)','Over Shift (ON)'].filter(function(s){return allQtcs.some(function(q){return q.shift===s;});});
+ var availShifts = ['Morning','Night','Over Night','Over Shift'].filter(function(s){
+  return allQtcs.some(function(q){ return q.shift === s; });
+});
   var activeShift='all',qtcSortKey='total',activeUnits=new Set(['all']);
 
   function getList(){var base=allQtcs;if(activeShift!=='all')base=base.filter(function(q){return q.shift===activeShift;});if(!activeUnits.has('all'))base=base.filter(function(q){return activeUnits.has(q.unit);});return base.slice().sort(function(a,b){return(b[qtcSortKey]||0)-(a[qtcSortKey]||0);});}
@@ -2038,8 +2034,6 @@ function renderQtcPage(data){
     list.forEach(function(q,i){
       var sv=q[qtcSortKey]||0,pct=Math.round(sv/maxV*100),lw=q.total>0?Math.round(q.laneTotal/q.total*pct):0,liw=pct-lw;
       var qtcDisplayName = q.name;
-      var qtcShiftCode = q.shift === 'Over Shift (M)' ? ' (M)' : q.shift === 'Over Shift (N)' ? ' (N)' : q.shift === 'Over Shift (ON)' ? ' (ON)' : '';
-      if(qtcShiftCode) qtcDisplayName = q.name + qtcShiftCode;
       h+='<div style="display:grid;grid-template-columns:'+gridCols+';gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid #f5f5f5"><div class="labeler-rank '+(['gold','silver','bronze'][i]||'')+'">'+(i+1)+'</div><div><div style="font-weight:700;font-size:13px;margin-bottom:5px">'+qtcDisplayName+(activeShift==='all'?'<span class="badge '+shiftBadge(q.shift)+'" style="margin-left:8px;font-size:10px;vertical-align:middle">'+q.shift+'</span>':'')+'</div><div style="height:5px;border-radius:3px;background:var(--blue-lt);overflow:hidden;display:flex"><div style="width:'+lw+'%;background:var(--green);transition:width .4s"></div><div style="width:'+liw+'%;background:var(--teal);transition:width .4s"></div></div></div>';
       subCols.forEach(function(k){h+=cell(q[k],k);});
       h+='<div style="font-size:20px;font-weight:800;color:'+(sortColors[qtcSortKey]||'var(--blue)')+';text-align:right">'+sv+'</div></div>';
