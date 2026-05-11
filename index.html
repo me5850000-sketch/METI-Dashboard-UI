@@ -2107,25 +2107,22 @@ function renderQtcPage(data){
     if(pillsEl){pillsEl.addEventListener('click',function(e){var p=e.target.closest('.lab-sort-pill');if(!p)return;var key=p.getAttribute('data-qsortkey');if(!key)return;qtcSortKey=key;pillsEl.querySelectorAll('.lab-sort-pill').forEach(function(x){SORT_PILLS.forEach(function(sp){x.classList.remove(sp.ac);});if(x.getAttribute('data-qsortkey')===key){var sp=SORT_PILLS.filter(function(s){return s.key===key;})[0];if(sp)x.classList.add(sp.ac);}});renderQtcList();});}
   },0);
 }
-  // ✅ معالج الأزرار Over Shift — التبديل بدل التبديل
-    document.addEventListener('click', function(e){
+  document.addEventListener('click', function(e){
       var osBtn = e.target.closest('#qtcOverShiftBtns .qtc-os-btn');
       if(!osBtn) return;
+      e.stopPropagation();
       
       var code = osBtn.getAttribute('data-oscode');
-      activeOverShiftCode = code; // ✅ تعيين مباشر بدل التبديل
+      activeOverShiftCode = (activeOverShiftCode === code && code !== 'all') ? 'all' : code;
       
-      // تحديث ألوان جميع الأزرار
       document.querySelectorAll('#qtcOverShiftBtns .qtc-os-btn').forEach(function(btn){
-        var code_btn = btn.getAttribute('data-oscode');
-        var isActive = code_btn === activeOverShiftCode;
+        var isActive = btn.getAttribute('data-oscode') === activeOverShiftCode;
         btn.style.background = isActive ? 'var(--blue)' : 'white';
         btn.style.color = isActive ? 'white' : 'var(--gray)';
         btn.style.borderColor = isActive ? 'var(--blue)' : 'var(--border)';
       });
       
-      // ✅ إعادة تصيير القائمة
-      renderQtcList();
+      if(typeof renderQtcList === 'function') renderQtcList();
     });
 </script>
 
