@@ -1020,7 +1020,7 @@ function nShift(s){return s.replace(/\s*\(.*?\)/g,'').replace(/\s*12\s*H/gi,'').
 function titleCase(s){if(!s)return '-';s=s.trim();return s.indexOf(' ')!==-1?s.split(' ').map(function(w){return w.length?w[0].toUpperCase()+w.slice(1).toLowerCase():'';}).join(' '):s[0].toUpperCase()+s.slice(1).toLowerCase();}
 function toAMPM(t){if(!t||t.length<5)return t||'-';var p=t.substring(0,5).split(':'),h=parseInt(p[0]),m=p[1];return(h===0?12:(h>12?h-12:h))+':'+m+' '+(h>=12?'PM':'AM');}
 function fmtUbkey(raw){if(!raw)return '-';raw=raw.toString().trim();var local=raw.replace(/@meti\.ai$/i,'').replace(/^me/i,'').replace(/\D/g,'');return local?'me'+('000000'+local).slice(-6)+'@meti.ai':raw;}
-function shiftBadge(s){if(s==='Morning')return 'b-morning';if(s==='Night')return 'b-night';if(s==='Over Night')return 'b-overnight';if(s==='Over Shift')return 'b-overshift';return '';}
+function shiftBadge(s){if(s==='Morning')return 'b-morning';if(s==='Night')return 'b-night';if(s==='Over Night')return 'b-overnight';if(s==='Over Shift'||s==='Over Shift (M)'||s==='Over Shift (N)'||s==='Over Shift (ON)')return 'b-overshift';return '';}
 function mkCard(lbl,val,color,dtype){return '<div class="card" data-dtype="'+(dtype||'')+'"><div class="card-stripe cs-'+color+'"></div><div class="card-lbl">'+lbl+'</div><div class="card-val">'+val+'</div></div>';}
 function userSeeOwnOnly(){return SESSION&&hasRole(SESSION.role,ROLES_OWN)&&SESSION.shift;}
 function cleanQtcName(name){return titleCase(name.replace(/\s*\([^)]*\)\s*$/,'').trim());}
@@ -1993,7 +1993,16 @@ function renderQtcPage(data){
   data.forEach(function(r){
     var raw=(r[F.qc]||'').trim();if(!raw||raw==='-')return;
     var rowShift=nShift(r[F.shift]||'');
-    var sh=nShift(r[F.shift]||''),name=cleanQtcName(raw),un=(r[F.unit]||'Unknown').trim();
+    var qtcSuffix=raw.match(/\(([^)]+)\)\s*$/);
+    var qtcCode=qtcSuffix?qtcSuffix[1].trim().toUpperCase():'';
+    var isOverShift=rowShift==='Over Shift';
+    var sh;
+    if(isOverShift){
+      sh=qtcCode==='M'?'Over Shift (M)':qtcCode==='N'?'Over Shift (N)':qtcCode==='ON'?'Over Shift (ON)':'Over Shift';
+    } else {
+      sh=rowShift;
+    }
+    var name=cleanQtcName(raw),un=(r[F.unit]||'Unknown').trim();
     var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
     var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;
     var key=name+'||'+sh;
@@ -2004,12 +2013,12 @@ function renderQtcPage(data){
   });
   var allQtcs=Object.values(qtcs);
   if(!allQtcs.length){shtml('qtcArea','<div class="empty">No QTC records found.</div>');return;}
-  var SH_ORD=['Morning','Night','Over Night'];
+  var SH_ORD=['Morning','Night','Over Night','Over Shift (M)','Over Shift (N)','Over Shift (ON)'];
   var sortColors={total:'var(--blue)',lfp:'#1e8e3e',lqa:'#e37400',lifp:'#007b83',liqa:'#7b1fa2'};
   var sortBg={total:'var(--blue-bg)',lfp:'#e8f5e9',lqa:'#fff3cd',lifp:'#e0f7fa',liqa:'#f3e5f5'};
   var sortLabels={total:'Total',lfp:'Lane FP',lqa:'Lane QA',lifp:'Lidar FP',liqa:'Lidar QA'};
   var SORT_PILLS=[{key:'total',label:'Total',ac:'active-total'},{key:'lfp',label:'Lane FP',ac:'active-lfp'},{key:'lqa',label:'Lane QA',ac:'active-lqa'},{key:'lifp',label:'Lidar FP',ac:'active-lifp'},{key:'liqa',label:'Lidar QA',ac:'active-liqa'}];
-  var availShifts=SH_ORD.filter(function(s){return allQtcs.some(function(q){return q.shift===s;});});
+  var availShifts=['Morning','Night','Over Night','Over Shift (M)','Over Shift (N)','Over Shift (ON)'].filter(function(s){return allQtcs.some(function(q){return q.shift===s;});});
   var activeShift='all',qtcSortKey='total',activeUnits=new Set(['all']);
 
   function getList(){var base=allQtcs;if(activeShift!=='all')base=base.filter(function(q){return q.shift===activeShift;});if(!activeUnits.has('all'))base=base.filter(function(q){return activeUnits.has(q.unit);});return base.slice().sort(function(a,b){return(b[qtcSortKey]||0)-(a[qtcSortKey]||0);});}
