@@ -1995,11 +1995,14 @@ function renderQtcPage(data){
     var rowShift=nShift(r[F.shift]||'');
     var qtcSuffix=raw.match(/\(([^)]+)\)\s*$/);
     var qtcCode=qtcSuffix?qtcSuffix[1].trim().toUpperCase():'';
-    var sh = (rowShift === 'Over Shift') ? 'Over Shift' : rowShift;
+    var isOverShift = (rowShift === 'Over Shift');
+    var sh = isOverShift ? 'Over Shift' : rowShift;
+    var overShiftCode = isOverShift ? (qtcCode === 'M' ? '(M)' : qtcCode === 'N' ? '(N)' : qtcCode === 'ON' ? '(ON)' : '') : '';
     var name=cleanQtcName(raw),un=(r[F.unit]||'Unknown').trim();
     var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
     var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;
-    var key=name+'||'+sh;
+    var key=name+'||'+sh+'||'+overShiftCode;
+    if(!qtcs[key])qtcs[key]={name:name,shift:sh,overShiftCode:overShiftCode,unit:un,total:0,lfp:0,lqa:0,lifp:0,liqa:0,laneTotal:0,lidarTotal:0};
     if(!qtcs[key])qtcs[key]={name:name,shift:sh,unit:un,total:0,lfp:0,lqa:0,lifp:0,liqa:0,laneTotal:0,lidarTotal:0};
     qtcs[key].total++;
     if(isL&&pass==='FP'){qtcs[key].lfp++;qtcs[key].laneTotal++;}if(isL&&pass==='QA'){qtcs[key].lqa++;qtcs[key].laneTotal++;}
@@ -2017,7 +2020,8 @@ function renderQtcPage(data){
 });
   var activeShift='all',qtcSortKey='total',activeUnits=new Set(['all']);
 
-  function getList(){var base=allQtcs;if(activeShift!=='all')base=base.filter(function(q){return q.shift===activeShift;});if(!activeUnits.has('all'))base=base.filter(function(q){return activeUnits.has(q.unit);});return base.slice().sort(function(a,b){return(b[qtcSortKey]||0)-(a[qtcSortKey]||0);});}
+  var activeOverShiftCode = 'all';
+  function getList(){var base=allQtcs;if(activeShift!=='all')base=base.filter(function(q){return q.shift===activeShift;});if(activeShift==='Over Shift'&&activeOverShiftCode!=='all')base=base.filter(function(q){return q.overShiftCode===('('+activeOverShiftCode+')')});if(!activeUnits.has('all'))base=base.filter(function(q){return activeUnits.has(q.unit);});return base.slice().sort(function(a,b){return(b[qtcSortKey]||0)-(a[qtcSortKey]||0);});}
 
   function renderQtcList(){
     var list=getList(),wrap=gid('qtcListWrap');if(!wrap)return;
@@ -2033,7 +2037,7 @@ function renderQtcPage(data){
     h+='<span style="text-align:right;color:'+(sortColors[qtcSortKey]||'var(--blue)')+'">'+sortLabels[qtcSortKey]+'</span></div>';
     list.forEach(function(q,i){
       var sv=q[qtcSortKey]||0,pct=Math.round(sv/maxV*100),lw=q.total>0?Math.round(q.laneTotal/q.total*pct):0,liw=pct-lw;
-      var qtcDisplayName = q.name;
+      var qtcDisplayName = q.name + (q.overShiftCode ? ' <span style="font-size:10px;background:rgba(28,69,135,.12);color:var(--blue);padding:1px 6px;border-radius:6px;font-weight:800">'+q.overShiftCode+'</span>' : '');
       h+='<div style="display:grid;grid-template-columns:'+gridCols+';gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid #f5f5f5"><div class="labeler-rank '+(['gold','silver','bronze'][i]||'')+'">'+(i+1)+'</div><div><div style="font-weight:700;font-size:13px;margin-bottom:5px">'+qtcDisplayName+(activeShift==='all'?'<span class="badge '+shiftBadge(q.shift)+'" style="margin-left:8px;font-size:10px;vertical-align:middle">'+q.shift+'</span>':'')+'</div><div style="height:5px;border-radius:3px;background:var(--blue-lt);overflow:hidden;display:flex"><div style="width:'+lw+'%;background:var(--green);transition:width .4s"></div><div style="width:'+liw+'%;background:var(--teal);transition:width .4s"></div></div></div>';
       subCols.forEach(function(k){h+=cell(q[k],k);});
       h+='<div style="font-size:20px;font-weight:800;color:'+(sortColors[qtcSortKey]||'var(--blue)')+';text-align:right">'+sv+'</div></div>';
@@ -2047,6 +2051,7 @@ function renderQtcPage(data){
   SORT_PILLS.forEach(function(p){html+='<button class="lab-sort-pill'+(p.key==='total'?' active-total':'')+'" data-qsortkey="'+p.key+'">'+p.label+'</button>';});
   html+='</div></div>';
   if(unitsSet.length>1){html+='<div id="qtcUnitBar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:#f8f9ff;border-bottom:1px solid var(--border)"><span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Unit</span><button class="mod-btn qtc-unit-btn" data-unit="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>';unitsSet.forEach(function(u){html+='<button class="mod-btn qtc-unit-btn" data-unit="'+u+'">'+u+'</button>';});html+='</div>';}
+  html+='<div id="qtcOverShiftBtns" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:#f0f4ff;border-bottom:1px solid var(--border)"><span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Code</span><button class="mod-btn qtc-os-btn" data-oscode="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button><button class="mod-btn qtc-os-btn" data-oscode="M">M</button><button class="mod-btn qtc-os-btn" data-oscode="N">N</button><button class="mod-btn qtc-os-btn" data-oscode="ON">ON</button></div>';
   html+='<div id="qtcListWrap"></div></div>';
   shtml('qtcArea',html);
 
@@ -2086,7 +2091,7 @@ function renderQtcPage(data){
     renderQtcList();
     renderTop4(activeShift);
     document.querySelectorAll('.qtc-unit-btn').forEach(function(b){b.addEventListener('click',function(){var u=b.getAttribute('data-unit');if(u==='all'){activeUnits.clear();activeUnits.add('all');}else{activeUnits.delete('all');if(activeUnits.has(u)){activeUnits.delete(u);if(activeUnits.size===0)activeUnits.add('all');}else activeUnits.add(u);}updateUnitBtns();renderQtcList();});});
-    document.querySelectorAll('#qtcCard .qtc-tab').forEach(function(t){t.addEventListener('click',function(){activeShift=t.getAttribute('data-qtcsh');document.querySelectorAll('#qtcCard .qtc-tab').forEach(function(x){var a=x.getAttribute('data-qtcsh')===activeShift;x.style.borderBottomColor=a?'var(--blue)':'transparent';x.style.color=a?'var(--blue)':'var(--gray)';});renderQtcList();renderTop4(activeShift);});});
+    document.querySelectorAll('#qtcCard .qtc-tab').forEach(function(t){t.addEventListener('click',function(){activeShift=t.getAttribute('data-qtcsh');activeOverShiftCode='all';document.querySelectorAll('#qtcCard .qtc-tab').forEach(function(x){var a=x.getAttribute('data-qtcsh')===activeShift;x.style.borderBottomColor=a?'var(--blue)':'transparent';x.style.color=a?'var(--blue)':'var(--gray)';});var osBtns=gid('qtcOverShiftBtns');if(osBtns)osBtns.style.display=activeShift==='Over Shift'?'flex':'none';renderQtcList();renderTop4(activeShift);});});
     var pillsEl=gid('qtcSortPills');
     if(pillsEl){pillsEl.addEventListener('click',function(e){var p=e.target.closest('.lab-sort-pill');if(!p)return;var key=p.getAttribute('data-qsortkey');if(!key)return;qtcSortKey=key;pillsEl.querySelectorAll('.lab-sort-pill').forEach(function(x){SORT_PILLS.forEach(function(sp){x.classList.remove(sp.ac);});if(x.getAttribute('data-qsortkey')===key){var sp=SORT_PILLS.filter(function(s){return s.key===key;})[0];if(sp)x.classList.add(sp.ac);}});renderQtcList();});}
   },0);
