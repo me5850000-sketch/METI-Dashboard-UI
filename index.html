@@ -1547,7 +1547,6 @@ function renderBestQtc(data){
   var qtcs={};
   data.forEach(function(r){
     var raw=(r[F.qc]||'').trim();if(!raw||raw==='-')return;
-    if(nShift(r[F.shift]||'')==='Over Shift')return;
     var name=cleanQtcName(raw);var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
     var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;
     if(!qtcs[name])qtcs[name]={lfp:0,lqa:0,lifp:0,liqa:0};
@@ -1993,8 +1992,8 @@ function renderQtcPage(data){
   var qtcs={};
   data.forEach(function(r){
     var raw=(r[F.qc]||'').trim();if(!raw||raw==='-')return;
-    var rowShift=nShift(r[F.shift]||'');if(rowShift==='Over Shift')return;
-    var sh=parseQtcShift(raw),name=cleanQtcName(raw),un=(r[F.unit]||'Unknown').trim();
+    var rowShift=nShift(r[F.shift]||'');
+    var sh=nShift(r[F.shift]||''),name=cleanQtcName(raw),un=(r[F.unit]||'Unknown').trim();
     var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
     var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;
     var key=name+'||'+sh;
@@ -2163,7 +2162,7 @@ function loadQtcStatsFor(teamsName,userName,shift){
 function renderQtcStatsResult(allData,teamsName,userName,userShift){
   var res=gid('qtcStatsResult');if(!res)return;
   var qtcTotals={};
-  allData.forEach(function(r){var name=cleanQtcName(r[F.qc]||'');if(!name||name==='-')return;if(nShift(r[F.shift]||'')==='Over Shift')return;if(!qtcTotals[name])qtcTotals[name]={total:0,lfp:0,lqa:0,lifp:0,liqa:0};qtcTotals[name].total++;var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;if(isL&&pass==='FP')qtcTotals[name].lfp++;if(isL&&pass==='QA')qtcTotals[name].lqa++;if(isLi&&pass==='FP')qtcTotals[name].lifp++;if(isLi&&pass==='QA')qtcTotals[name].liqa++;});
+  allData.forEach(function(r){var name=cleanQtcName(r[F.qc]||'');if(!name||name==='-')return;if(!qtcTotals[name])qtcTotals[name]={total:0,lfp:0,lqa:0,lifp:0,liqa:0};qtcTotals[name].total++;var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;if(isL&&pass==='FP')qtcTotals[name].lfp++;if(isL&&pass==='QA')qtcTotals[name].lqa++;if(isLi&&pass==='FP')qtcTotals[name].lifp++;if(isLi&&pass==='QA')qtcTotals[name].liqa++;});
   var myKey=cleanQtcName(teamsName);
   var my=qtcTotals[myKey]||{total:0,lfp:0,lqa:0,lifp:0,liqa:0};
   var allSorted=Object.keys(qtcTotals).sort(function(a,b){return qtcTotals[b].total-qtcTotals[a].total;});
