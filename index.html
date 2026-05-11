@@ -2051,7 +2051,7 @@ function renderQtcPage(data){
   SORT_PILLS.forEach(function(p){html+='<button class="lab-sort-pill'+(p.key==='total'?' active-total':'')+'" data-qsortkey="'+p.key+'">'+p.label+'</button>';});
   html+='</div></div>';
   if(unitsSet.length>1){html+='<div id="qtcUnitBar" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:#f8f9ff;border-bottom:1px solid var(--border)"><span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Unit</span><button class="mod-btn qtc-unit-btn" data-unit="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>';unitsSet.forEach(function(u){html+='<button class="mod-btn qtc-unit-btn" data-unit="'+u+'">'+u+'</button>';});html+='</div>';}
-  html+='<div id="qtcOverShiftBtns" style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:#f0f4ff;border-bottom:1px solid var(--border)"><span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Unit</span><button class="mod-btn qtc-os-btn" data-oscode="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button><button class="mod-btn qtc-os-btn" data-oscode="M">M</button><button class="mod-btn qtc-os-btn" data-oscode="N">N</button><button class="mod-btn qtc-os-btn" data-oscode="ON">ON</button></div>';
+  html+='<div id="qtcOverShiftBtns" style="display:none;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 14px;background:#f0f4ff;border-bottom:1px solid var(--border)"><span style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">Over Shift Code</span><button class="mod-btn qtc-os-btn" data-oscode="all" style="background:var(--blue);color:white;border-color:var(--blue)">All</button><button class="mod-btn qtc-os-btn" data-oscode="M">M</button><button class="mod-btn qtc-os-btn" data-oscode="N">N</button><button class="mod-btn qtc-os-btn" data-oscode="ON">ON</button></div>';
   html+='<div id="qtcListWrap"></div></div>';
   shtml('qtcArea',html);
 
@@ -2091,11 +2091,30 @@ function renderQtcPage(data){
     renderQtcList();
     renderTop4(activeShift);
     document.querySelectorAll('.qtc-unit-btn').forEach(function(b){b.addEventListener('click',function(){var u=b.getAttribute('data-unit');if(u==='all'){activeUnits.clear();activeUnits.add('all');}else{activeUnits.delete('all');if(activeUnits.has(u)){activeUnits.delete(u);if(activeUnits.size===0)activeUnits.add('all');}else activeUnits.add(u);}updateUnitBtns();renderQtcList();});});
-    document.querySelectorAll('#qtcCard .qtc-tab').forEach(function(t){t.addEventListener('click',function(){activeShift=t.getAttribute('data-qtcsh');activeOverShiftCode='all';document.querySelectorAll('#qtcCard .qtc-tab').forEach(function(x){var a=x.getAttribute('data-qtcsh')===activeShift;x.style.borderBottomColor=a?'var(--blue)':'transparent';x.style.color=a?'var(--blue)':'var(--gray)';});var osBtns=gid('qtcOverShiftBtns');if(osBtns)osBtns.style.display=activeShift==='Over Shift'?'flex':'none';renderQtcList();renderTop4(activeShift);});});
+    document.querySelectorAll('#qtcCard .qtc-tab').forEach(function(t){t.addEventListener('click',function(){activeShift=t.getAttribute('data-qtcsh');activeOverShiftCode='all';document.querySelectorAll('#qtcCard .qtc-tab').forEach(function(x){var a=x.getAttribute('data-qtcsh')===activeShift;x.style.borderBottomColor=a?'var(--blue)':'transparent';x.style.color=a?'var(--blue)':'var(--gray)';});var osBtns=gid('qtcOverShiftBtns');if(osBtns){osBtns.style.display=activeShift==='Over Shift'?'flex':'none';osBtns.querySelectorAll('.qtc-os-btn').forEach(function(btn){btn.style.background=btn.getAttribute('data-oscode')==='all'?'var(--blue)':'white';btn.style.color=btn.getAttribute('data-oscode')==='all'?'white':'var(--gray)';btn.style.borderColor=btn.getAttribute('data-oscode')==='all'?'var(--blue)':'var(--border)';});}renderQtcList();renderTop4(activeShift);});});
     var pillsEl=gid('qtcSortPills');
     if(pillsEl){pillsEl.addEventListener('click',function(e){var p=e.target.closest('.lab-sort-pill');if(!p)return;var key=p.getAttribute('data-qsortkey');if(!key)return;qtcSortKey=key;pillsEl.querySelectorAll('.lab-sort-pill').forEach(function(x){SORT_PILLS.forEach(function(sp){x.classList.remove(sp.ac);});if(x.getAttribute('data-qsortkey')===key){var sp=SORT_PILLS.filter(function(s){return s.key===key;})[0];if(sp)x.classList.add(sp.ac);}});renderQtcList();});}
   },0);
 }
+  // ✅ معالج الأزرار Over Shift
+    document.addEventListener('click', function(e){
+      var osBtn = e.target.closest('.qtc-os-btn');
+      if(!osBtn) return;
+      
+      var code = osBtn.getAttribute('data-oscode');
+      activeOverShiftCode = (activeOverShiftCode === code) ? 'all' : code;
+      
+      // تحديث ألوان الأزرار
+      document.querySelectorAll('#qtcOverShiftBtns .qtc-os-btn').forEach(function(btn){
+        var isActive = btn.getAttribute('data-oscode') === activeOverShiftCode;
+        btn.style.background = isActive ? 'var(--blue)' : 'white';
+        btn.style.color = isActive ? 'white' : 'var(--gray)';
+        btn.style.borderColor = isActive ? 'var(--blue)' : 'var(--border)';
+      });
+      
+      // إعادة تصيير القائمة
+      renderQtcList();
+    });
 </script>
 
 <script>
