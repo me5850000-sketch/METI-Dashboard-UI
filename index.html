@@ -1993,13 +1993,14 @@ function renderQtcPage(data){
   var qtcs={};
   data.forEach(function(r){
     var raw=(r[F.qc]||'').trim();if(!raw||raw==='-')return;
-    var rowShift=nShift(r[F.shift]||'');if(rowShift==='Over Shift')return;
+    var rowShift=nShift(r[F.shift]||'');
     var sh=parseQtcShift(raw),name=cleanQtcName(raw),un=(r[F.unit]||'Unknown').trim();
     var mod=(r[F.modality]||'').toLowerCase(),pass=(r[F.pass]||'').toUpperCase();
     var isL=mod.indexOf('lane')!==-1,isLi=mod.indexOf('lidar')!==-1;
     var key=name+'||'+sh;
-    if(!qtcs[key])qtcs[key]={name:name,shift:sh,unit:un,total:0,lfp:0,lqa:0,lifp:0,liqa:0,laneTotal:0,lidarTotal:0};
+    if(!qtcs[key])qtcs[key]={name:name,shift:sh,unit:un,total:0,lfp:0,lqa:0,lifp:0,liqa:0,laneTotal:0,lidarTotal:0,overShift:0};
     qtcs[key].total++;
+    if(rowShift==='Over Shift') qtcs[key].overShift++;
     if(isL&&pass==='FP'){qtcs[key].lfp++;qtcs[key].laneTotal++;}if(isL&&pass==='QA'){qtcs[key].lqa++;qtcs[key].laneTotal++;}
     if(isLi&&pass==='FP'){qtcs[key].lifp++;qtcs[key].lidarTotal++;}if(isLi&&pass==='QA'){qtcs[key].liqa++;qtcs[key].lidarTotal++;}
   });
@@ -2029,7 +2030,7 @@ function renderQtcPage(data){
     h+='<span style="text-align:right;color:'+(sortColors[qtcSortKey]||'var(--blue)')+'">'+sortLabels[qtcSortKey]+'</span></div>';
     list.forEach(function(q,i){
       var sv=q[qtcSortKey]||0,pct=Math.round(sv/maxV*100),lw=q.total>0?Math.round(q.laneTotal/q.total*pct):0,liw=pct-lw;
-      h+='<div style="display:grid;grid-template-columns:'+gridCols+';gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid #f5f5f5"><div class="labeler-rank '+(['gold','silver','bronze'][i]||'')+'">'+(i+1)+'</div><div><div style="font-weight:700;font-size:13px;margin-bottom:5px">'+q.name+(activeShift==='all'?'<span class="badge '+shiftBadge(q.shift)+'" style="margin-left:8px;font-size:10px;vertical-align:middle">'+q.shift+'</span>':'')+'</div><div style="height:5px;border-radius:3px;background:var(--blue-lt);overflow:hidden;display:flex"><div style="width:'+lw+'%;background:var(--green);transition:width .4s"></div><div style="width:'+liw+'%;background:var(--teal);transition:width .4s"></div></div></div>';
+      h+='<div style="display:grid;grid-template-columns:'+gridCols+';gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid #f5f5f5"><div class="labeler-rank '+(['gold','silver','bronze'][i]||'')+'">'+(i+1)+'</div><div><div style="font-weight:700;font-size:13px;margin-bottom:3px">'+q.name+(activeShift==='all'?'<span class="badge '+shiftBadge(q.shift)+'" style="margin-left:8px;font-size:10px;vertical-align:middle">'+q.shift+'</span>':'')+'</div>'+(q.overShift>0?'<div style="font-size:10px;font-weight:700;color:#e37400;background:#fff3cd;padding:1px 8px;border-radius:5px;display:inline-block;margin-bottom:4px">+'+q.overShift+' Over Shift</div>':'')<div style="height:5px;border-radius:3px;background:var(--blue-lt);overflow:hidden;display:flex"><div style="width:'+lw+'%;background:var(--green);transition:width .4s"></div><div style="width:'+liw+'%;background:var(--teal);transition:width .4s"></div></div></div>';
       subCols.forEach(function(k){h+=cell(q[k],k);});
       h+='<div style="font-size:20px;font-weight:800;color:'+(sortColors[qtcSortKey]||'var(--blue)')+';text-align:right">'+sv+'</div></div>';
     });
