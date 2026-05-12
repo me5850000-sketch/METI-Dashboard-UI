@@ -1994,7 +1994,7 @@ function renderQtcPage(data){
     var raw=(r[F.qc]||'').trim();if(!raw||raw==='-')return;
     var rowShift=nShift(r[F.shift]||'');
     var qtcSuffix=raw.match(/\(([^)]+)\)\s*$/);
-    if(!qtcs[key])qtcs[key]={name:name,shift:sh,overShiftCode:overShiftCode,qtcCode:qtcCode,unit:un,total:0,lfp:0,lqa:0,lifp:0,liqa:0,laneTotal:0,lidarTotal:0};
+    var qtcCode=qtcSuffix?qtcSuffix[1].trim().toUpperCase():'';
     // استخراج الشيفت الأصلي للـ QTC من اسمه
 var qtcOriginalShift = '';
 if(qtcCode === 'M') qtcOriginalShift = 'Morning';
@@ -2056,8 +2056,7 @@ var isOverShift = (rowShift === 'Over Shift') ||
     h+='<span style="text-align:right;color:'+(sortColors[qtcSortKey]||'var(--blue)')+'">'+sortLabels[qtcSortKey]+'</span></div>';
     list.forEach(function(q,i){
       var sv=q[qtcSortKey]||0,pct=Math.round(sv/maxV*100),lw=q.total>0?Math.round(q.laneTotal/q.total*pct):0,liw=pct-lw;
-      var qtcDisplayName = q.name + (q.qtcCode ? ' <span style="font-size:10px;background:rgba(28,69,135,.12);color:var(--blue);padding:1px 6px;border-radius:6px;font-weight:800">('+q.qtcCode+')</span>' : '') + (q.overShiftCode ? ' <span style="font-size:10px;background:rgba(28,69,135,.12);color:var(--blue);padding:1px 6px;border-radius:6px;font-weight:800">'+q.overShiftCode+'</span>' : '');
-
+      var qtcDisplayName = q.name + (q.overShiftCode ? ' <span style="font-size:10px;background:rgba(28,69,135,.12);color:var(--blue);padding:1px 6px;border-radius:6px;font-weight:800">'+q.overShiftCode+'</span>' : '');
       h+='<div style="display:grid;grid-template-columns:'+gridCols+';gap:10px;align-items:center;padding:9px 14px;border-bottom:1px solid #f5f5f5"><div class="labeler-rank '+(['gold','silver','bronze'][i]||'')+'">'+(i+1)+'</div><div><div style="font-weight:700;font-size:13px;margin-bottom:5px">'+qtcDisplayName+(activeShift==='all'?'<span class="badge '+shiftBadge(q.shift)+'" style="margin-left:8px;font-size:10px;vertical-align:middle">'+q.shift+'</span>':'')+'</div><div style="height:5px;border-radius:3px;background:var(--blue-lt);overflow:hidden;display:flex"><div style="width:'+lw+'%;background:var(--green);transition:width .4s"></div><div style="width:'+liw+'%;background:var(--teal);transition:width .4s"></div></div></div>';
       subCols.forEach(function(k){h+=cell(q[k],k);});
       h+='<div style="font-size:20px;font-weight:800;color:'+(sortColors[qtcSortKey]||'var(--blue)')+';text-align:right">'+sv+'</div></div>';
