@@ -2100,6 +2100,7 @@ function renderQtcPage(data){
       h+='</div>';
       el.innerHTML=h;
     }
+     window._qtcRenderList = renderQtcList;
     renderQtcList();
     renderTop4(activeShift);
     document.querySelectorAll('.qtc-unit-btn').forEach(function(b){b.addEventListener('click',function(){var u=b.getAttribute('data-unit');if(u==='all'){activeUnits.clear();activeUnits.add('all');}else{activeUnits.delete('all');if(activeUnits.has(u)){activeUnits.delete(u);if(activeUnits.size===0)activeUnits.add('all');}else activeUnits.add(u);}updateUnitBtns();renderQtcList();});});
