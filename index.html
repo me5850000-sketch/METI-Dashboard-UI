@@ -2019,10 +2019,8 @@ function renderQtcPage(data){
   return allQtcs.some(function(q){ return q.shift === s; });
 });
   var activeShift='all',qtcSortKey='total',activeUnits=new Set(['all']);
-  var activeOverShiftCode = 'all';
-  
-  window._qtcRenderList = null; // ← global reference
 
+  var activeOverShiftCode = 'all';
   function getList(){
   var base = allQtcs;
   if(activeShift !== 'all') base = base.filter(function(q){ return q.shift === activeShift; });
@@ -2036,7 +2034,7 @@ function renderQtcPage(data){
   return base.slice().sort(function(a,b){ return (b[qtcSortKey]||0) - (a[qtcSortKey]||0); });
 }
 
-  window._qtcRenderList = function renderQtcList(){
+  function renderQtcList(){
     var list=getList(),wrap=gid('qtcListWrap');if(!wrap)return;
     if(!list.length){wrap.innerHTML='<div class="empty" style="padding:32px">No data.</div>';return;}
     var maxV=list[0][qtcSortKey]||1;
@@ -2124,7 +2122,7 @@ function renderQtcPage(data){
         btn.style.borderColor = isActive ? 'var(--blue)' : 'var(--border)';
       });
       
-     if(gid('qtcListWrap') && typeof window._qtcRenderList === 'function') window._qtcRenderList();
+      if(typeof renderQtcList === 'function') renderQtcList();
     });
 </script>
 
