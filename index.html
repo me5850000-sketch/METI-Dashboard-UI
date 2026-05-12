@@ -1977,8 +1977,7 @@ if(isLi){bump(labelers[labKey].lidar);bump(labelers[labKey].shifts[sh].lidar);}
 function loadQtc(){
   var from=getFilterISO(true),to=getFilterISO(false);
   shtml('qtcArea','<div class="loading"><div class="spin"></div> Loading...</div>');
-  var fn=(SESSION&&SESSION.role==='qtc')?'getQtcStats':'getStats';
-  google.script.run.withSuccessHandler(function(r){if(r.err){shtml('qtcArea','<div class="empty">'+r.err+'</div>');return;}renderQtcPage(r.data);}).withFailureHandler(function(e){shtml('qtcArea','<div class="empty">'+e.message+'</div>');})[fn](TOKEN,from,to);
+  google.script.run.withSuccessHandler(function(r){if(r.err){shtml('qtcArea','<div class="empty">'+r.err+'</div>');return;}renderQtcPage(r.data);}).withFailureHandler(function(e){shtml('qtcArea','<div class="empty">'+e.message+'</div>');}).getStats(TOKEN,from,to);
 }
 
 function parseQtcShift(name){var m=name.match(/\(([^)]+)\)\s*$/);if(!m)return 'Unknown';var code=m[1].trim().toUpperCase();if(code==='M')return 'Morning';if(code==='N')return 'Night';if(code==='ON')return 'Over Night';return code;}
@@ -2099,7 +2098,7 @@ var isOverShift = (rowShift === 'Over Shift') ||
           var isF=i===0;
           h+='<div style="display:flex;align-items:center;gap:10px;padding:10px 16px;background:'+(isF?cat.bg:'')+';border-bottom:1px solid #f5f5f5">';
           h+='<span style="font-size:18px;flex-shrink:0">'+ranks[i]+'</span>';
-          h+='<span style="flex:1;font-size:13px;font-weight:'+(isF?'800':'700')+';color:var(--dark)">'+q.name+(sh==='all'?'<span class="badge '+shiftBadge(q.shift)+'" style="margin-left:6px;font-size:10px;vertical-align:middle">'+q.shift+'</span>':'')+'</span>';
+          h+='<span style="flex:1;font-size:13px;font-weight:'+(isF?'800':'700')+';color:var(--dark)">'+q.name+(q.overShiftCode?'<span style="font-size:10px;background:rgba(28,69,135,.12);color:var(--blue);padding:1px 6px;border-radius:6px;font-weight:800;margin-left:4px">'+q.overShiftCode+'</span>':'')+(sh==='all'?'<span class="badge '+shiftBadge(q.shift)+'" style="margin-left:6px;font-size:10px;vertical-align:middle">'+q.shift+'</span>':'')+'</span>';
           h+='<span style="font-size:16px;font-weight:800;color:'+cat.color+'">'+q[cat.key]+'</span>';
           h+='</div>';
         });}
