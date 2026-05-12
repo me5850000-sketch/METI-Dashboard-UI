@@ -2101,6 +2101,9 @@ function renderQtcPage(data){
       el.innerHTML=h;
     }
      window._qtcRenderList = renderQtcList;
+    window._qtcHandleOsCode = function(code) {
+      activeOverShiftCode = (activeOverShiftCode === code && code !== 'all') ? 'all' : code;
+    };
     renderQtcList();
     renderTop4(activeShift);
     document.querySelectorAll('.qtc-unit-btn').forEach(function(b){b.addEventListener('click',function(){var u=b.getAttribute('data-unit');if(u==='all'){activeUnits.clear();activeUnits.add('all');}else{activeUnits.delete('all');if(activeUnits.has(u)){activeUnits.delete(u);if(activeUnits.size===0)activeUnits.add('all');}else activeUnits.add(u);}updateUnitBtns();renderQtcList();});});
@@ -2115,7 +2118,7 @@ function renderQtcPage(data){
       e.stopPropagation();
       
       var code = osBtn.getAttribute('data-oscode');
-      activeOverShiftCode = (activeOverShiftCode === code && code !== 'all') ? 'all' : code;
+      if(typeof window._qtcHandleOsCode === 'function') window._qtcHandleOsCode(code);
       
       document.querySelectorAll('#qtcOverShiftBtns .qtc-os-btn').forEach(function(btn){
         var isActive = btn.getAttribute('data-oscode') === activeOverShiftCode;
