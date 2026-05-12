@@ -1995,7 +1995,15 @@ function renderQtcPage(data){
     var rowShift=nShift(r[F.shift]||'');
     var qtcSuffix=raw.match(/\(([^)]+)\)\s*$/);
     var qtcCode=qtcSuffix?qtcSuffix[1].trim().toUpperCase():'';
-    var isOverShift = (rowShift === 'Over Shift');
+    // استخراج الشيفت الأصلي للـ QTC من اسمه
+var qtcOriginalShift = '';
+if(qtcCode === 'M') qtcOriginalShift = 'Morning';
+else if(qtcCode === 'N') qtcOriginalShift = 'Night';
+else if(qtcCode === 'ON') qtcOriginalShift = 'Over Night';
+
+// لو الـ QTC شغال في شيفت مختلف عن شيفته الأصلية → Over Shift
+var isOverShift = (rowShift === 'Over Shift') || 
+  (qtcOriginalShift !== '' && rowShift !== qtcOriginalShift && rowShift !== 'Over Shift');
     var sh = isOverShift ? 'Over Shift' : rowShift;
     var overShiftCode = isOverShift ? (qtcCode === 'M' ? '(M)' : qtcCode === 'N' ? '(N)' : qtcCode === 'ON' ? '(ON)' : '') : '';
     var name=cleanQtcName(raw),un=(r[F.unit]||'Unknown').trim();
