@@ -2053,8 +2053,9 @@ function renderQtcPage(data){
       subCols.forEach(function(k){h+=cell(q[k],k);});
       h+='<div style="font-size:20px;font-weight:800;color:'+(sortColors[qtcSortKey]||'var(--blue)')+';text-align:right">'+sv+'</div></div>';
     });
-    wrap.innerHTML=h;
+   wrap.innerHTML=h;
   }
+  window._qtcRenderList = renderQtcList;
 
   var html='<div id="qtcTop4" style="margin-bottom:18px"></div><div class="tbl-card" id="qtcCard" style="overflow:visible"><div style="display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--blue-lt);padding:0 12px 0 0;flex-wrap:wrap;gap:8px;position:sticky;top:135px;z-index:100;background:white;border-radius:12px 12px 0 0;"><div style="display:flex;gap:0"><div class="qtc-tab active" data-qtcsh="all" style="padding:10px 16px;cursor:pointer;font-size:13px;font-weight:700;border-bottom:2px solid var(--blue);color:var(--blue);margin-bottom:-2px">All</div>';
   availShifts.forEach(function(sh){html+='<div class="qtc-tab" data-qtcsh="'+sh+'" style="padding:10px 16px;cursor:pointer;font-size:13px;font-weight:700;border-bottom:2px solid transparent;color:var(--gray);margin-bottom:-2px"><span class="badge '+shiftBadge(sh)+'" style="margin-right:4px;font-size:10px">'+sh+'</span></div>';});
@@ -2122,7 +2123,7 @@ function renderQtcPage(data){
         btn.style.borderColor = isActive ? 'var(--blue)' : 'var(--border)';
       });
       
-      if(typeof renderQtcList === 'function') renderQtcList();
+      if(typeof window._qtcRenderList === 'function') window._qtcRenderList();
     });
 </script>
 
