@@ -2982,7 +2982,22 @@ window.onload=function(){
   initStatsListener();
   initAttendancePage();
   initAttDetailsPage();
-
+// ══ SESSION HEALTH CHECK ══
+function startSessionCheck() {
+  setInterval(function() {
+    if (!TOKEN || !SESSION) return;
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (r && r.err === 'SESSION_EXPIRED') {
+          toast('Your account has been deactivated. Logging out...', 'err');
+          setTimeout(function() { doLogout(); }, 1500);
+        }
+      })
+      .withFailureHandler(function() {})
+      .getStats(TOKEN, null, null);
+  }, 30000); // كل 30 ثانية
+}
+startSessionCheck();
   // Clock
   function updateClock(){var d=new Date(),h=('0'+d.getHours()).slice(-2),m=('0'+d.getMinutes()).slice(-2),s=('0'+d.getSeconds()).slice(-2);var c=gid('topClock');if(c)c.textContent=h+':'+m+':'+s;}
   updateClock();setInterval(updateClock,1000);
