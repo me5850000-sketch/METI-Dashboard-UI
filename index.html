@@ -968,7 +968,15 @@ var google = {
           body: JSON.stringify({ fn: fn, args: args })
         })
         .then(r => r.json())
-        .then(data => { if (s) s(data); })
+        .then(data => { 
+  if (data && data.err === 'SESSION_EXPIRED' && SESSION) {
+    toast('Session expired. Please login again.', 'err');
+    setTimeout(function() { doLogout(); }, 1500);
+    return;
+  }
+  if (s) s(data); 
+})
+
         .catch(e => { console.error(e); if (f) f(e); });
       },
       login: function(id, pwd) { this.execute('login', [id, pwd]); },
