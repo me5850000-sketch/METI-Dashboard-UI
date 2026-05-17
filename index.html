@@ -1091,6 +1091,13 @@ var SHARED={
     if(gid('gToTime')) gid('gToTime').value = this.toTime;
   },
   reloadActive:function(){
+    // امسح الـ cache عشان كل الصفحات تتحدث
+    cachedStats = null;
+    dataAll = [];
+    _lastAttR = null; _lastAttDate = '';
+    _attShift2Cache = null; _lastAttDate2 = '';
+    
+    // حدث الصفحة الحالية
     if(gid('pgHome').style.display!=='none')loadStats();
     else if(gid('pgData').style.display!=='none')loadData();
     else if(gid('pgLabelers').style.display!=='none')loadLabelers();
@@ -2972,6 +2979,19 @@ window.onload=function(){
     var ft=gid('gFromTime'),tt=gid('gToTime');
     SHARED.fromTime=ft?ft.value:'00:00';SHARED.toTime=tt?tt.value:'23:59';
     SHARED.syncAll();SHARED.reloadActive();
+  });
+
+  // ══ AUTO SYNC: لما تختار تاريخ من الـ Date Picker يتطبق تلقائياً ══
+  ['gFrom','gTo'].forEach(function(id){
+    var el=gid(id);
+    if(el){
+      el.addEventListener('change',function(){
+        SHARED.from=DP.getVal('gFrom');
+        SHARED.to=DP.getVal('gTo');
+        SHARED.syncAll();
+        if(SESSION)SHARED.reloadActive();
+      });
+    }
   });
   if(btnGClear) btnGClear.addEventListener('click',function(){
     applyShiftDefaults(SESSION&&SESSION.shift);SHARED.reloadActive();
