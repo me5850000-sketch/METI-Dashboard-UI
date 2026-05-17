@@ -1005,6 +1005,7 @@ if (data && data.err === 'SESSION_CONFLICT' && SESSION) {
       deleteUser: function(t, u) { this.execute('deleteUser', [t, u]); },
       getAttendance: function(t, d, s) { this.execute('getAttendance', [t, d, s]); },
       getTargets: function(t) { this.execute('getTargets', [t]); },
+      getBestQtcData: function(t) { this.execute('getBestQtcData', [t]); },
       setTarget: function(t, k, v) { this.execute('setTarget', [t, k, v]); }
     }
   }
@@ -1415,7 +1416,14 @@ function renderStats(data, user){
       google.script.run.withSuccessHandler(function(r){initWeekTarget(r&&!r.err?r.data:cachedStats);}).withFailureHandler(function(){initWeekTarget(cachedStats);}).getStats(TOKEN,_wf,null);
     },0);
   }
-  setTimeout(function(){renderBestQtc(data);},0);
+  google.script.run
+  .withSuccessHandler(function(r){
+    setTimeout(function(){renderBestQtc(r&&!r.err?r.data:data);},0);
+  })
+  .withFailureHandler(function(){
+    setTimeout(function(){renderBestQtc(data);},0);
+  })
+  .getBestQtcData(TOKEN);
 
   if(activeDrillCard){
     gid('statsArea').querySelectorAll('.card').forEach(function(c){if(c.getAttribute('data-dtype')===activeDrillCard)c.classList.add('card-active');});
@@ -1564,7 +1572,6 @@ else if(dtype==='lidar_qa')st='<span class="drill-stat ds-liqa">'+val+'</span>';
 
 function renderBestQtc(data){
   var el=gid('bestQtcArea');if(!el)return;
-  if(SESSION&&SESSION.role==='qtc'&&SESSION.shift){var ml=SESSION.shift.trim().toLowerCase();data=data.filter(function(r){return(r[F.shift]||'').trim().toLowerCase()===ml;});}
   var cats=[{key:'lfp',label:'Lane FP',color:'#202124',bg:'#f1f3f4'},{key:'lqa',label:'Lane QA',color:'#202124',bg:'#f1f3f4'},{key:'lifp',label:'Lidar FP',color:'#202124',bg:'#f1f3f4'},{key:'liqa',label:'Lidar QA',color:'#202124',bg:'#f1f3f4'}];
   var qtcs={};
   data.forEach(function(r){
