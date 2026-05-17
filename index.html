@@ -961,11 +961,24 @@ var google = {
       withSuccessHandler: function(cb) { this._s = cb; return this; },
       withFailureHandler: function(cb) { this._f = cb; return this; },
       execute: function(fn, args) {
-        var s = this._s, f = this._f;
-        fetch(APPS_SCRIPT_URL, {
-          method: 'POST',
-          mode: 'cors',
-          body: JSON.stringify({ fn: fn, args: args })
+  var s = this._s, f = this._f;
+  
+  // إلغاء الـ request القديم لو كان شغال
+  if (_currentAbort) {
+    _currentAbort.abort();
+  }
+  var controller = new AbortController();
+  _currentAbort = controller;
+  
+  fetch(APPS_SCRIPT_URL, {
+    method: 'POST',
+    mode: 'cors',
+    signal: controller.signal,
+    body: JSON.stringify({ fn: fn, args: args })
+  })
+  .then(r => r.json())
+  .then(data => {
+    _currentAbort = null;
         })
         .then(r => r.json())
         .then(data => { 
@@ -1018,6 +1031,7 @@ var ROLES_SEE_ALL=['admin','sm','ssv','sv','wla'],ROLES_OWN=['qtc'],ROLES_MANAGE
 var F={labeler:'labeler_name',shift:'shift',unit:'unit',modality:'modality',pass:'pass',queue:'queue_name',objects:'object_count',date:'created_at',qc:'qtc_name',ubkey:'yubikey_email',link:'task_link',stage:'stage',pc:'pc_no'};
 var MOD_COLORS={all:{bg:'var(--blue)',border:'var(--blue)'},lane:{bg:'var(--green)',border:'var(--green)'},lidar:{bg:'var(--teal)',border:'var(--teal)'},lane_fp:{bg:'#2d5fa8',border:'#2d5fa8'},lane_qa:{bg:'var(--orange)',border:'var(--orange)'},lidar_fp:{bg:'#007b83',border:'#007b83'},lidar_qa:{bg:'var(--purple)',border:'var(--purple)'}};
 var SESSION=null,TOKEN=null;
+var _currentAbort = null;
 var dataAll=[],dataPage=1,PAGE_SZ=500;
 var activeModFilters=new Set(['all']),activeDataUnits=new Set(['all']),activeDataShifts=new Set(['all']),activeDataSearch={field:'labeler',query:''};
 var cachedStats=null,cachedUser=null,activeSFilter=null,activeRFilter=null,activeDrillCard=null,activeDrillShift=null;
@@ -1276,7 +1290,8 @@ function loadStats(){
   if(TOKEN)google.script.run.withSuccessHandler(function(r){if(r&&!r.err&&r.targets)TARGETS=r.targets;}).withFailureHandler(function(){}).getTargets(TOKEN);
   var from=getFilterISO(true),to=getFilterISO(false);
   shtml('statsArea','<div class="loading"><div class="spin"></div> Loading stats...</div>');
-  google.script.run
+  requestAnimationFrame(function() {
+google.script.run
     .withSuccessHandler(function(r){
       if(r.err){shtml('statsArea','<div class="empty">Error: '+r.err+'</div>');return;}
       cachedStats=r.data;cachedUser=r.user;activeSFilter=null;activeRFilter=null;
@@ -1284,8 +1299,8 @@ function loadStats(){
     })
     .withFailureHandler(function(e){shtml('statsArea','<div class="empty">'+e.message+'</div>');})
     .getStats(TOKEN,from,to);
+});
 }
-
 function applyFilters(data){
   return data.filter(function(r){
     var s=nShift(r[F.shift]||''),u=(r[F.unit]||'').trim();
