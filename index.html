@@ -964,16 +964,17 @@ var google = {
   var s = this._s, f = this._f;
   
   // إلغاء الـ request القديم لو كان شغال
-  if (_currentAbort) {
+ var isAbortable = _abortableActions.indexOf(fn) !== -1;
+  if (isAbortable && _currentAbort) {
     _currentAbort.abort();
   }
-  var controller = new AbortController();
-  _currentAbort = controller;
+  var controller = isAbortable ? new AbortController() : null;
+  if (isAbortable) _currentAbort = controller;
   
   fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     mode: 'cors',
-    signal: controller.signal,
+    signal: controller ? controller.signal : undefined,
     body: JSON.stringify({ fn: fn, args: args })
   })
   .then(r => r.json())
@@ -1032,6 +1033,7 @@ var F={labeler:'labeler_name',shift:'shift',unit:'unit',modality:'modality',pass
 var MOD_COLORS={all:{bg:'var(--blue)',border:'var(--blue)'},lane:{bg:'var(--green)',border:'var(--green)'},lidar:{bg:'var(--teal)',border:'var(--teal)'},lane_fp:{bg:'#2d5fa8',border:'#2d5fa8'},lane_qa:{bg:'var(--orange)',border:'var(--orange)'},lidar_fp:{bg:'#007b83',border:'#007b83'},lidar_qa:{bg:'var(--purple)',border:'var(--purple)'}};
 var SESSION=null,TOKEN=null;
 var _currentAbort = null;
+var _abortableActions = ['getStats', 'getQtcStats'];
 var dataAll=[],dataPage=1,PAGE_SZ=500;
 var activeModFilters=new Set(['all']),activeDataUnits=new Set(['all']),activeDataShifts=new Set(['all']),activeDataSearch={field:'labeler',query:''};
 var cachedStats=null,cachedUser=null,activeSFilter=null,activeRFilter=null,activeDrillCard=null,activeDrillShift=null;
