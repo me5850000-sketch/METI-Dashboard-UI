@@ -3991,6 +3991,7 @@ renderStats = function(data, user){
 // ══ 6. Home / Data / Labelers — فلترة الشيفت حسب الدور ══
 var _origLoadStats = loadStats;
 loadStats = function(){
+  if(!TOKEN || !SESSION){ return; }
   var from = getFilterISO(true), to = getFilterISO(false);
   shtml('statsArea','<div class="loading"><div class="spin"></div> Loading stats...</div>');
   google.script.run
