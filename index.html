@@ -1194,24 +1194,28 @@ function showLoginErr(msg) {
 }
 
 function doLogout() {
+  var oldToken = TOKEN;
+
   sessionStorage.clear();
-  localStorage.removeItem('meti_token'); 
-  
+  localStorage.removeItem('meti_token');
+
   SESSION = null;
   TOKEN = null;
   cachedStats = null;
 
   document.getElementById('dashScreen').style.display = 'none';
- document.getElementById('loginScreen').style.display = 'block';
-  
-  if (document.getElementById('lPass')) document.getElementById('lPass').value = '';
+  document.getElementById('loginScreen').style.display = 'block';
 
-  if (TOKEN) {
+  if (document.getElementById('lPass')) document.getElementById('lPass').value = '';
+  if (document.getElementById('lEmail')) document.getElementById('lEmail').value = '';
+
+  if (oldToken) {
     google.script.run
-      .withSuccessHandler(function() { console.log("Server session cleared"); })
-      .logout(TOKEN);
+      .withSuccessHandler(function() {})
+      .withFailureHandler(function() {})
+      .logout(oldToken);
   }
-  
+
   toast("Signed out successfully", "ok");
 }
 
