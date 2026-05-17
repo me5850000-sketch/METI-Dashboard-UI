@@ -963,18 +963,9 @@ var google = {
       execute: function(fn, args) {
   var s = this._s, f = this._f;
   
-  // إلغاء الـ request القديم لو كان شغال
- var isAbortable = _abortableActions.indexOf(fn) !== -1;
-  if (isAbortable && _currentAbort) {
-    _currentAbort.abort();
-  }
-  var controller = isAbortable ? new AbortController() : null;
-  if (isAbortable) _currentAbort = controller;
-  
   fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     mode: 'cors',
-    signal: controller ? controller.signal : undefined,
     body: JSON.stringify({ fn: fn, args: args })
   })
   .then(r => r.json())
