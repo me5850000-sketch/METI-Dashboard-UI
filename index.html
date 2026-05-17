@@ -3958,13 +3958,13 @@ showDash = function(){
   var navAtt = gid('nav-attendance');
   if(navAtt) navAtt.style.display = hasRole(role, ROLES_ATT_VIEW) ? '' : 'none';
 
-  // Details of Attendance → الجميع (الفلترة بتتحكم في المحتوى)
-  var navAttD = gid('nav-attdetails');
-  if(navAttD) navAttD.style.display = '';
+  // Details of Attendance → مخفية للـ QTC و SL
+var navAttD = gid('nav-attdetails');
+if(navAttD) navAttD.style.display = hasRole(role, ['admin','sm','ssv','sv','wla']) ? '' : 'none';
 
-  // Details of OT → الجميع (الفلترة بتتحكم في المحتوى)
-  var navOt = gid('nav-otdetails');
-  if(navOt) navOt.style.display = '';
+// Details of OT → مخفية للـ QTC و SL
+var navOt = gid('nav-otdetails');
+if(navOt) navOt.style.display = hasRole(role, ['admin','sm','ssv','sv','wla']) ? '' : 'none';
 
   // Users → ROLES_MANAGE_USERS فقط
   var navU = gid('nav-users');
@@ -4008,8 +4008,8 @@ navTo = function(page){
   if(page === 'attendance' && !hasRole(role, ROLES_ATT_VIEW)) return;
   // Users → ROLES_MANAGE_USERS فقط
   if(page === 'users' && !hasRole(role, ROLES_MANAGE_USERS)) return;
-  // Data / Details of Data → ROLES_VIEW_DATA فقط
-  if((page === 'data' || page === 'detailsofdata') && !hasRole(role, ROLES_VIEW_DATA)) return;
+  // Att Details / OT → مخفية للـ QTC و SL
+if((page === 'attdetails' || page === 'otdetails') && !hasRole(role, ['admin','sm','ssv','sv','wla'])) return;
   _origNavTo(page);
 };
 
