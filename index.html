@@ -985,7 +985,7 @@ var google = {
         '<div style="font-size:48px;margin-bottom:16px">🔐</div>' +
         '<div style="font-size:18px;font-weight:800;color:#c5221f;margin-bottom:10px">Someone Logged In On The Same Account</div>' +
 '<div style="font-size:14px;color:#5f6368;margin-bottom:24px;line-height:1.6">Your account has been accessed from another device.<br>You have been automatically signed out for security.</div>' +
-'<button onclick="document.body.innerHTML=\'\';location.reload();" style="width:100%;padding:12px;background:#1c4587;color:white;border:none;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer">OK — Back to Login</button>' +
+'<button onclick="sessionStorage.clear();document.body.innerHTML=\'\';location.reload();" style="width:100%;padding:12px;background:#1c4587;color:white;border:none;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer">OK — Back to Login</button>' +
         '</div>';
       document.body.appendChild(bd);
       return;
