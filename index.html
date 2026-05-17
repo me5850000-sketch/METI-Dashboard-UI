@@ -971,8 +971,18 @@ var google = {
   .then(function(r) { return r.json(); })
   .then(function(data) {
     if (data && data.err === 'SESSION_EXPIRED' && SESSION) {
-      toast('Session expired after 8 hours. Please login again.', 'err');
-      setTimeout(function() { doLogout(); }, 2000);
+      setTimeout(function() {
+        if (!SESSION) return;
+        google.script.run
+          .withSuccessHandler(function(confirmR) {
+            if (confirmR && confirmR.err === 'SESSION_EXPIRED') {
+              toast('Session expired after 8 hours. Please login again.', 'err');
+              setTimeout(function() { doLogout(); }, 2000);
+            }
+          })
+          .withFailureHandler(function() {})
+          .pingSession(TOKEN);
+      }, 3000);
       return;
     }
     if (data && data.err === 'SESSION_CONFLICT' && SESSION) {
@@ -995,6 +1005,7 @@ var google = {
   .catch(function(e) { console.error(e); if (f) f(e); });
 },
       login: function(id, pwd) { this.execute('login', [id, pwd]); },
+pingSession: function(t) { this.execute('pingSession', [t]); },
       logout: function(t) { this.execute('logout', [t]); },registerUser: function(p) { this.execute('registerUser', [p]); },
       approveUser: function(t, id, action, rd) { this.execute('approveUser', [t, id, action, rd]); },
       getStats: function(t, f, to) { this.execute('getStats', [t, f, to]); },
@@ -3042,14 +3053,21 @@ function startSessionCheck() {
     if (!TOKEN || !SESSION) return;
     google.script.run
       .withSuccessHandler(function(r) {
-        if (r && r.err === 'SESSION_EXPIRED') {
-          toast('Your account has been deactivated. Logging out...', 'err');
-          setTimeout(function() { doLogout(); }, 1500);
+        if (!r) return;
+        if (r.err === 'SESSION_EXPIRED') {
+          toast('Session expired. Please login again.', 'err');
+          setTimeout(function() { doLogout(); }, 2000);
+        } else if (r.err === 'SESSION_CONFLICT') {
+          SESSION = null; TOKEN = null;
+          var bd = document.createElement('div');
+          bd.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;';
+          bd.innerHTML = '<div style="background:white;border-radius:16px;padding:32px;max-width:380px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)"><div style="font-size:48px;margin-bottom:16px">🔐</div><div style="font-size:18px;font-weight:800;color:#c5221f;margin-bottom:10px">Logged in on another device</div><div style="font-size:14px;color:#5f6368;margin-bottom:24px;line-height:1.6">Your account was accessed from another device.<br>You have been signed out for security.</div><button onclick="sessionStorage.clear();document.body.innerHTML=\'\';location.reload();" style="width:100%;padding:12px;background:#1c4587;color:white;border:none;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer">OK — Back to Login</button></div>';
+          document.body.appendChild(bd);
         }
       })
       .withFailureHandler(function() {})
-      .getStats(TOKEN, null, null);
-  }, 10000); // كل 30 ثانية
+      .pingSession(TOKEN);
+  }, 30000);
 }
 startSessionCheck();
   // Clock
