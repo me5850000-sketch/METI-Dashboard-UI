@@ -1221,7 +1221,7 @@ if (addBtn) addBtn.style.display = hasRole(SESSION.role, ['admin','sm','ssv','sv
   if(navUsers) navUsers.style.display = '';
 }
   if(!hasRole(SESSION.role,ROLES_VIEW_DATA)){var nd=gid('nav-data');if(nd)nd.style.display='none';}
-  if(userSeeOwnOnly()){gid('shiftBannerHomeText').textContent=SESSION.shift;gid('shiftBannerData').style.display='flex';}
+  if(userSeeOwnOnly()){gid('shiftBannerHomeText').textContent=SESSION.shift;var sbd = gid('shiftBannerData'); if(sbd) sbd.style.display='flex';}
   
   // Show global filter initially
   var gf = gid('globalFilterBar');
@@ -3860,6 +3860,7 @@ var ROLES_APPROVE_USERS   = ['admin','sm','ssv','sv'];
 var _origShowDash = showDash;
 showDash = function(){
   _origShowDash();
+  if (!SESSION) return;
 
   var role = SESSION && SESSION.role;
 
