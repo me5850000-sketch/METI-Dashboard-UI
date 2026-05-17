@@ -2216,7 +2216,7 @@ function renderQtcStatsSearchWithSelected(sel){
 }
 
 function buildQtcSearchHtml(sel){
-  var isQR=SESSION&&SESSION.role==='qtc';
+  var isQR=SESSION&&(SESSION.role==='qtc'||SESSION.role==='sl');
   var html='<div style="margin-bottom:16px">';
   if(!isQR)html+='<div class="sec-hdr">Search QTC</div><div style="display:flex;gap:8px;margin-bottom:14px;align-items:center"><input type="text" id="qtcStatsSearch" placeholder="Type QTC name..." autocomplete="off" style="flex:1;max-width:360px;padding:9px 14px;border:1.5px solid var(--border);border-radius:9px;font-size:14px;outline:none;color:var(--dark);background:var(--white)"></div>';
   html+='<div class="sec-hdr" style="margin-top:4px">Select QTC</div><div id="qtcStatsBtnWrap" style="display:flex;gap:8px;flex-wrap:wrap">';
