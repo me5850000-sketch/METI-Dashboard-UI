@@ -2196,8 +2196,8 @@ function initQtcStats(){
     .withSuccessHandler(function(r){
       if(r.err){area.innerHTML='<div class="empty">'+r.err+'</div>';return;}
       qtcStatsList=r.data||[];
-      if(SESSION&&SESSION.role==='qtc'){
-        var me=null,myNL=SESSION.name.trim().toLowerCase();
+      if(SESSION&&(SESSION.role==='qtc'||SESSION.role==='sl')){
+    var me=null,myNL=SESSION.name.trim().toLowerCase();
         for(var i=0;i<qtcStatsList.length;i++){if(qtcStatsList[i].name.trim().toLowerCase()===myNL){me=qtcStatsList[i];break;}}
         if(me)renderQtcStatsSearchWithSelected(me.teamsName);
         else renderQtcStatsSearch();
