@@ -969,11 +969,16 @@ var google = {
         })
         .then(r => r.json())
         .then(data => { 
-  if (data && data.err === 'SESSION_EXPIRED' && SESSION) {
-    toast('Session expired. Please login again.', 'err');
-    setTimeout(function() { doLogout(); }, 1500);
-    return;
-  }
+if (data && data.err === 'SESSION_EXPIRED' && SESSION) {
+  toast('Session expired after 8 hours. Please login again.', 'err');
+  setTimeout(function() { doLogout(); }, 2000);
+  return;
+}
+if (data && data.err === 'SESSION_CONFLICT' && SESSION) {
+  toast('⚠️ Your account was opened on another device. You have been logged out.', 'err');
+  setTimeout(function() { doLogout(); }, 2500);
+  return;
+}
   if (s) s(data); 
 })
 
