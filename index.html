@@ -4200,11 +4200,13 @@ function _renderUsersPatch(users, pending){
   var role    = SESSION && SESSION.role;
   var myShift = SESSION && SESSION.shift;
   var isFullAdmin = hasRole(role, ['admin','sm']);
-  var isSvSsvLevel = hasRole(role, ['sv','ssv']);
+var isSsvLevel = hasRole(role, ['ssv']);
+var isSvLevel  = hasRole(role, ['sv']);
+var isSvSsvLevel = isSsvLevel || isSvLevel;
 
-  // SV/SSV يشوفوا بس الـ users اللي في شيفتهم
-  var filteredUsers   = isFullAdmin ? users   : users.filter(function(u){ return u.shift === myShift; });
-  var filteredPending = isFullAdmin ? pending : pending.filter(function(p){ return p.shift === myShift; });
+// SSV يشوف الكل، SV يشوف شيفته بس
+var filteredUsers   = (isFullAdmin || isSsvLevel) ? users   : users.filter(function(u){ return u.shift === myShift; });
+var filteredPending = (isFullAdmin || isSsvLevel) ? pending : pending.filter(function(p){ return p.shift === myShift; });
 
   var ROLE_ORD = ['admin', 'sm', 'ssv', 'sv', 'qt', 'wla', 'qtc', 'sl'];
   var sorted = filteredUsers.slice().sort(function(a,b){
@@ -4233,8 +4235,17 @@ function _renderUsersPatch(users, pending){
     '<th>Role</th><th>Shift</th><th>Status</th><th>Actions</th>'+
     '</tr></thead><tbody>'+
     sorted.map(function(u){
-      var canEdit = isFullAdmin || (isSvSsvLevel && u.shift === myShift);
-      var canDel  = isFullAdmin;
+      var canEdit;
+if (isFullAdmin) {
+  canEdit = true;
+} else if (isSsvLevel) {
+  canEdit = !hasRole(u.role, ['admin', 'sm']); // SSV يعدل الكل غير Admin و SM
+} else if (isSvLevel) {
+  canEdit = u.shift === myShift && !hasRole(u.role, ['admin','sm','ssv']); // SV يعدل شيفته غير الرتب الأعلى
+} else {
+  canEdit = false;
+}
+var canDel = isFullAdmin;
       return '<tr>'+
         '<td class="left bold">'+titleCase(u.name||'-')+'</td>'+
         '<td class="left" style="font-size:12px;color:var(--gray)">'+(u.email||'-')+'</td>'+
