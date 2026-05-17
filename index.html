@@ -970,21 +970,6 @@ var google = {
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
-    if (data && data.err === 'SESSION_EXPIRED' && SESSION) {
-      setTimeout(function() {
-        if (!SESSION) return;
-        google.script.run
-          .withSuccessHandler(function(confirmR) {
-            if (confirmR && confirmR.err === 'SESSION_EXPIRED') {
-              toast('Session expired after 8 hours. Please login again.', 'err');
-              setTimeout(function() { doLogout(); }, 2000);
-            }
-          })
-          .withFailureHandler(function() {})
-          .pingSession(TOKEN);
-      }, 3000);
-      return;
-    }
     if (data && data.err === 'SESSION_CONFLICT' && SESSION) {
       SESSION = null;
       TOKEN = null;
@@ -3054,10 +3039,7 @@ function startSessionCheck() {
     google.script.run
       .withSuccessHandler(function(r) {
         if (!r) return;
-        if (r.err === 'SESSION_EXPIRED') {
-          toast('Session expired. Please login again.', 'err');
-          setTimeout(function() { doLogout(); }, 2000);
-        } else if (r.err === 'SESSION_CONFLICT') {
+        if (r.err === 'SESSION_CONFLICT') {
           SESSION = null; TOKEN = null;
           var bd = document.createElement('div');
           bd.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;';
