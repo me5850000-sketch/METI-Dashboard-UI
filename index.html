@@ -3997,13 +3997,20 @@ loadStats = function(){
       if(r.err){ shtml('statsArea','<div class="empty">Error: '+r.err+'</div>'); return; }
       var role = SESSION && SESSION.role;
       var data = r.data || [];
-      // فلترة حسب الشيفت للرتب المحدودة
+      
+      // ✅ الحل: إذا ما في shift → عرّض كل البيانات
       if(!hasRole(role, ROLES_SEE_ALL_SHIFTS) && SESSION && SESSION.shift){
         var myShift = SESSION.shift;
-        data = data.filter(function(row){
+        var filtered = data.filter(function(row){
           var sh = nShift(row[F.shift]||'');
           return sh === myShift || sh === 'Over Shift';
         });
+        // لو الفلترة أرجعت بيانات → استعملها، وإلا استعمل الأصلية
+        if(filtered.length > 0){
+          data = filtered;
+        } else {
+          console.warn('No data for shift: ' + myShift + ', showing all data');
+        }
       }
       cachedStats = data; cachedUser = r.user;
       activeSFilter = null; activeRFilter = null;
