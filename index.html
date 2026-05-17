@@ -975,8 +975,17 @@ if (data && data.err === 'SESSION_EXPIRED' && SESSION) {
   return;
 }
 if (data && data.err === 'SESSION_CONFLICT' && SESSION) {
-  toast('⚠️ Your account was opened on another device. You have been logged out.', 'err');
-  setTimeout(function() { doLogout(); }, 2500);
+  var bd = document.createElement('div');
+  bd.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;';
+  bd.innerHTML = 
+    '<div style="background:white;border-radius:16px;padding:32px;max-width:380px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)">' +
+    '<div style="font-size:48px;margin-bottom:16px">🔐</div>' +
+    '<div style="font-size:18px;font-weight:800;color:#c5221f;margin-bottom:10px">Session Terminated</div>' +
+    '<div style="font-size:14px;color:#5f6368;margin-bottom:24px;line-height:1.6">Your account was signed in from another device or browser.<br>You have been logged out for security.</div>' +
+    '<button onclick="doLogout()" style="width:100%;padding:12px;background:#1c4587;color:white;border:none;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer">OK — Back to Login</button>' +
+    '</div>';
+  document.body.appendChild(bd);
+  setTimeout(function() { doLogout(); }, 5000);
   return;
 }
   if (s) s(data); 
@@ -3000,7 +3009,7 @@ function startSessionCheck() {
       })
       .withFailureHandler(function() {})
       .getStats(TOKEN, null, null);
-  }, 30000); // كل 30 ثانية
+  }, 10000); // كل 30 ثانية
 }
 startSessionCheck();
   // Clock
