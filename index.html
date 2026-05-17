@@ -983,10 +983,9 @@ var google = {
         '<div style="font-size:48px;margin-bottom:16px">🔐</div>' +
         '<div style="font-size:18px;font-weight:800;color:#c5221f;margin-bottom:10px">Session Terminated</div>' +
         '<div style="font-size:14px;color:#5f6368;margin-bottom:24px;line-height:1.6">Your account was signed in from another device or browser.<br>You have been logged out for security.</div>' +
-        '<button onclick="doLogout()" style="width:100%;padding:12px;background:#1c4587;color:white;border:none;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer">OK — Back to Login</button>' +
+        '<button onclick="document.body.innerHTML=\'\';location.reload();" style="width:100%;padding:12px;background:#1c4587;color:white;border:none;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer">OK — Back to Login</button>' +
         '</div>';
       document.body.appendChild(bd);
-      setTimeout(function() { doLogout(); }, 5000);
       return;
     }
     if (s) s(data);
