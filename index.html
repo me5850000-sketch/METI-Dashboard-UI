@@ -970,10 +970,8 @@ var google = {
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
-    if (data && data.err === 'SESSION_CONFLICT' && SESSION) {
-      SESSION = null;
-      TOKEN = null;
-      var bd = document.createElement('div');
+    if (false && data && data.err === 'SESSION_CONFLICT' && SESSION) {
+
       bd.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;';
       bd.innerHTML =
         '<div style="background:white;border-radius:16px;padding:32px;max-width:380px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)">' +
