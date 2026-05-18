@@ -3869,16 +3869,16 @@ function openOtModal(r) {
 
 // ══ 1. ROLE ARRAYS ══
 ROLES_SEE_ALL         = ['admin','sm','ssv','sv','wla'];
-ROLES_OWN             = ['qtc','sl','qt'];
+ROLES_OWN             = ['qtc','sl'];
 ROLES_VIEW_DATA       = ['admin','sm','ssv','sv','qtc','wla','sl','qt'];
 ROLES_MANAGE_USERS    = ['admin','sm','ssv','sv'];
 ROLES_SET_TARGET      = ['admin','sm','ssv'];
 
 // من يرى كل الشيفتات في صفحات البيانات والـ Labelers
 var ROLES_SEE_ALL_SHIFTS  = ['admin','sm','ssv','sv','wla','qt','qtc','sl'];
-var ROLES_SEE_TARGET      = ['admin','sm','ssv','sv','wla'];
+var ROLES_SEE_TARGET      = ['admin','sm','ssv','sv','wla','qt'];
 // من يرى صفحة Attendance (تختفي تماماً للباقين)
-var ROLES_ATT_VIEW        = ['admin','sm','ssv','sv','wla'];
+var ROLES_ATT_VIEW        = ['admin','sm','ssv','sv','wla','qt'];
 // من يرى كل شيفتات Att Details / OT
 var ROLES_ATT_DETAILS_ALL = ['admin','sm','ssv','sv'];
 var ROLES_OT_ALL          = ['admin','sm','ssv','sv'];
@@ -3960,11 +3960,11 @@ showDash = function(){
 
   // Details of Attendance → مخفية للـ QTC و SL
 var navAttD = gid('nav-attdetails');
-if(navAttD) navAttD.style.display = hasRole(role, ['admin','sm','ssv','sv','wla']) ? '' : 'none';
+if(navAttD) navAttD.style.display = hasRole(role, ['admin','sm','ssv','sv','wla','qt']) ? '' : 'none';
 
 // Details of OT → مخفية للـ QTC و SL
 var navOt = gid('nav-otdetails');
-if(navOt) navOt.style.display = hasRole(role, ['admin','sm','ssv','sv','wla']) ? '' : 'none';
+if(navOt) navOt.style.display = hasRole(role, ['admin','sm','ssv','sv','wla','qt']) ? '' : 'none';
 
   // Users → ROLES_MANAGE_USERS فقط
   var navU = gid('nav-users');
@@ -4009,7 +4009,7 @@ navTo = function(page){
   // Users → ROLES_MANAGE_USERS فقط
   if(page === 'users' && !hasRole(role, ROLES_MANAGE_USERS)) return;
   // Att Details / OT → مخفية للـ QTC و SL
-if((page === 'attdetails' || page === 'otdetails') && !hasRole(role, ['admin','sm','ssv','sv','wla'])) return;
+if((page === 'attdetails' || page === 'otdetails') && !hasRole(role, ['admin','sm','ssv','sv','wla','qt'])) return;
   _origNavTo(page);
 };
 
@@ -4137,7 +4137,7 @@ loadAttendance = function(){
   var role = SESSION && SESSION.role;
   if(!hasRole(role, ROLES_ATT_VIEW)) return; // حماية إضافية
   var attBtns = gid('attShiftBtns');
- var ROLES_ATT_ALL_SHIFTS = ['admin','sm','ssv','sv','wla'];
+ var ROLES_ATT_ALL_SHIFTS = ['admin','sm','ssv','sv','wla','qt'];
   if(attBtns) attBtns.style.display = hasRole(role, ROLES_ATT_ALL_SHIFTS) ? '' : 'none';
   if(!hasRole(role, ROLES_ATT_ALL_SHIFTS) && SESSION && SESSION.shift){
     _attShift = SESSION.shift;
