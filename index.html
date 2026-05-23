@@ -1415,7 +1415,8 @@ function renderStats(data, user){
     unT.lfp+=d.lane.fp;unT.lqa+=d.lane.qa;unT.lifp+=d.lidar.fp;unT.liqa+=d.lidar.qa;unT.t+=d.total;
   });
   html+='<tr class="total-row"><td class="left bold">TOTAL</td><td>'+unT.lfp+'</td><td>'+unT.lqa+'</td><td>'+unT.lifp+'</td><td>'+unT.liqa+'</td><td class="bold">'+unT.t+'</td></tr></tbody></table></div></div>';
-// ══ جدول Queue Name ══
+html+='</div>';
+  // ══ جدول Queue Name ══
 var queues = {};
 data.forEach(function(r){
   if(activeSFilter && nShift(r[F.shift]||'') !== activeSFilter) return;
