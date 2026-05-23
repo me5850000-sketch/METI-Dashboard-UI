@@ -1425,23 +1425,23 @@ data.forEach(function(r){
   var mod = (r[F.modality]||'').toLowerCase();
   var pass = (r[F.pass]||'').toUpperCase();
   var isLi = mod.indexOf('lidar') !== -1;
-  var tp = isLi ? 'Lidar' : 'Lane';
-  if(!queues[q]) queues[q] = {type:tp, lfp:0, lqa:0, lifp:0, liqa:0};
-  if(!isLi && pass==='FP') queues[q].lfp++;
-  if(!isLi && pass==='QA') queues[q].lqa++;
-  if(isLi  && pass==='FP') queues[q].lifp++;
-  if(isLi  && pass==='QA') queues[q].liqa++;
+  var key = q + '||' + (isLi ? 'Lidar' : 'Lane');
+  if(!queues[key]) queues[key] = {name:q, type:isLi?'Lidar':'Lane', fp:0, qa:0};
+  if(pass==='FP') queues[key].fp++;
+  if(pass==='QA') queues[key].qa++;
 });
+
 var laneQ=[], lidarQ=[];
-Object.keys(queues).forEach(function(q){
-  var d=queues[q], tot=d.lfp+d.lqa+d.lifp+d.liqa;
-  (d.type==='Lane'?laneQ:lidarQ).push({name:q,type:d.type,lfp:d.lfp,lqa:d.lqa,lifp:d.lifp,liqa:d.liqa,tot:tot});
+Object.keys(queues).forEach(function(k){
+  var d=queues[k];
+  var tot=d.fp+d.qa;
+  if(d.type==='Lane') laneQ.push({name:d.name,type:'Lane',fp:d.fp,qa:d.qa,tot:tot});
+  else lidarQ.push({name:d.name,type:'Lidar',fp:d.fp,qa:d.qa,tot:tot});
 });
 laneQ.sort(function(a,b){return b.tot-a.tot;});
 lidarQ.sort(function(a,b){return b.tot-a.tot;});
-var sortedQ = laneQ.concat(lidarQ);
 
-if(sortedQ.length){
+if(laneQ.length || lidarQ.length){
   html+='<div class="sec-hdr" style="margin-top:8px">By Queue Name'
     +(activeSFilter?' — '+activeSFilter:'')
     +(activeRFilter?' — '+activeRFilter:'')+'</div>';
@@ -1453,29 +1453,16 @@ if(sortedQ.length){
     +'<th style="color:#a5d6a7;min-width:70px">FP</th>'
     +'<th style="color:#ffcc80;min-width:70px">QA</th>'
     +'</tr></thead><tbody>';
-  
-  // Lane rows
-  laneQ.forEach(function(q,i){
+  laneQ.concat(lidarQ).forEach(function(q,i){
+    var isLane=q.type==='Lane';
     var rowBg=i%2===0?'white':'#f8f9ff';
     html+='<tr style="background:'+rowBg+';border-bottom:1px solid #f0f0f0">'
       +'<td class="left" style="font-size:13px;font-weight:700;white-space:normal;min-width:320px">'+q.name+'</td>'
-      +'<td><span style="background:#e8f5e9;color:#1b5e20;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">Lane</span></td>'
-      +'<td style="color:#1e8e3e;font-weight:800;font-size:15px">'+(q.lfp||'-')+'</td>'
-      +'<td style="color:#e37400;font-weight:800;font-size:15px">'+(q.lqa||'-')+'</td>'
+      +'<td><span style="background:'+(isLane?'#e8f5e9':'#e0f7fa')+';color:'+(isLane?'#1b5e20':'#006064')+';font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">'+q.type+'</span></td>'
+      +'<td style="color:#1e8e3e;font-weight:800;font-size:15px">'+(q.fp||'-')+'</td>'
+      +'<td style="color:#e37400;font-weight:800;font-size:15px">'+(q.qa||'-')+'</td>'
       +'</tr>';
   });
-  
-  // Lidar rows
-  lidarQ.forEach(function(q,i){
-    var rowBg=(laneQ.length+i)%2===0?'white':'#f8f9ff';
-    html+='<tr style="background:'+rowBg+';border-bottom:1px solid #f0f0f0">'
-      +'<td class="left" style="font-size:13px;font-weight:700;white-space:normal;min-width:320px">'+q.name+'</td>'
-      +'<td><span style="background:#e0f7fa;color:#006064;font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">Lidar</span></td>'
-      +'<td style="color:#1e8e3e;font-weight:800;font-size:15px">'+(q.lifp||'-')+'</td>'
-      +'<td style="color:#e37400;font-weight:800;font-size:15px">'+(q.liqa||'-')+'</td>'
-      +'</tr>';
-  });
-  
   html+='</tbody></table></div></div>';
 }
   html+='</div>';
