@@ -1508,28 +1508,7 @@ if(laneQ.length || lidarQ.length){
 
   html+='</div>'; // end grid
 }
-    +(activeSFilter?' — '+activeSFilter:'')
-    +(activeRFilter?' — '+activeRFilter:'')+'</div>';
-  html+='<div style="display:flex;justify-content:center">'
-    +'<div class="tbl-card" style="max-width:700px;width:100%">'
-    +'<table><thead><tr>'
-    +'<th class="left" style="min-width:320px">Queue Name</th>'
-    +'<th style="min-width:80px">Type</th>'
-    +'<th style="color:#a5d6a7;min-width:70px">FP</th>'
-    +'<th style="color:#ffcc80;min-width:70px">QA</th>'
-    +'</tr></thead><tbody>';
-  laneQ.concat(lidarQ).forEach(function(q,i){
-    var isLane=q.type==='Lane';
-    var rowBg=i%2===0?'white':'#f8f9ff';
-    html+='<tr style="background:'+rowBg+';border-bottom:1px solid #f0f0f0">'
-      +'<td class="left" style="font-size:13px;font-weight:700;white-space:normal;min-width:320px">'+q.name+'</td>'
-      +'<td><span style="background:'+(isLane?'#e8f5e9':'#e0f7fa')+';color:'+(isLane?'#1b5e20':'#006064')+';font-size:11px;font-weight:700;padding:3px 10px;border-radius:20px">'+q.type+'</span></td>'
-      +'<td style="color:#1e8e3e;font-weight:800;font-size:15px">'+(q.fp||'-')+'</td>'
-      +'<td style="color:#e37400;font-weight:800;font-size:15px">'+(q.qa||'-')+'</td>'
-      +'</tr>';
-  });
-  html+='</tbody></table></div></div>';
-}
+    
   html+='</div>';
 
   var isQtcRole = SESSION && !hasRole(SESSION.role, ROLES_SEE_ALL_SHIFTS);
