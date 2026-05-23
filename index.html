@@ -1445,6 +1445,71 @@ if(laneQ.length || lidarQ.length){
   html+='<div class="sec-hdr" style="margin-top:8px">By Queue Name'
     +(activeSFilter?' — '+activeSFilter:'')
     +(activeRFilter?' — '+activeRFilter:'')+'</div>';
+  
+  html+='<div style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">';
+  
+  // ── Lane Table ──
+  html+='<div>';
+  html+='<div style="background:#e8f5e9;border-radius:8px 8px 0 0;padding:8px 14px;display:flex;align-items:center;gap:8px">'
+    +'<span style="font-size:12px;font-weight:800;color:#1b5e20;text-transform:uppercase;letter-spacing:.5px">Lane Queues</span>'
+    +'<span style="margin-left:auto;font-size:11px;font-weight:700;background:#1e8e3e;color:white;padding:2px 8px;border-radius:10px">'+laneQ.length+' queues</span>'
+    +'</div>';
+  html+='<div class="tbl-card" style="border-radius:0 0 12px 12px;margin-bottom:0"><table><thead><tr>'
+    +'<th class="left" style="min-width:160px">Queue Name</th>'
+    +'<th style="color:#a5d6a7;min-width:60px">FP</th>'
+    +'<th style="color:#ffcc80;min-width:60px">QA</th>'
+    +'</tr></thead><tbody>';
+  if(laneQ.length){
+    laneQ.forEach(function(q,i){
+      var rowBg=i%2===0?'white':'#f8f9ff';
+      html+='<tr style="background:'+rowBg+';border-bottom:1px solid #f0f0f0">'
+        +'<td class="left" style="font-size:12px;font-weight:700;white-space:normal;min-width:160px">'+q.name+'</td>'
+        +'<td style="color:#1e8e3e;font-weight:800;font-size:15px">'+(q.fp||'-')+'</td>'
+        +'<td style="color:#e37400;font-weight:800;font-size:15px">'+(q.qa||'-')+'</td>'
+        +'</tr>';
+    });
+    // Lane Total row
+    var lTotFP=laneQ.reduce(function(s,q){return s+(q.fp||0);},0);
+    var lTotQA=laneQ.reduce(function(s,q){return s+(q.qa||0);},0);
+    html+='<tr class="total-row"><td class="left bold">TOTAL</td><td>'+lTotFP+'</td><td>'+lTotQA+'</td></tr>';
+  } else {
+    html+='<tr><td colspan="3" class="empty" style="padding:20px;text-align:center">No Lane data</td></tr>';
+  }
+  html+='</tbody></table></div></div>';
+
+  // ── Lidar Table ──
+  html+='<div>';
+  html+='<div style="background:#e0f7fa;border-radius:8px 8px 0 0;padding:8px 14px;display:flex;align-items:center;gap:8px">'
+    +'<span style="font-size:12px;font-weight:800;color:#006064;text-transform:uppercase;letter-spacing:.5px">Lidar Queues</span>'
+    +'<span style="margin-left:auto;font-size:11px;font-weight:700;background:#007b83;color:white;padding:2px 8px;border-radius:10px">'+lidarQ.length+' queues</span>'
+    +'</div>';
+  html+='<div class="tbl-card" style="border-radius:0 0 12px 12px;margin-bottom:0"><table><thead><tr>'
+    +'<th class="left" style="min-width:160px">Queue Name</th>'
+    +'<th style="color:#a5d6a7;min-width:60px">FP</th>'
+    +'<th style="color:#ffcc80;min-width:60px">QA</th>'
+    +'</tr></thead><tbody>';
+  if(lidarQ.length){
+    lidarQ.forEach(function(q,i){
+      var rowBg=i%2===0?'white':'#f8f9ff';
+      html+='<tr style="background:'+rowBg+';border-bottom:1px solid #f0f0f0">'
+        +'<td class="left" style="font-size:12px;font-weight:700;white-space:normal;min-width:160px">'+q.name+'</td>'
+        +'<td style="color:#1e8e3e;font-weight:800;font-size:15px">'+(q.fp||'-')+'</td>'
+        +'<td style="color:#e37400;font-weight:800;font-size:15px">'+(q.qa||'-')+'</td>'
+        +'</tr>';
+    });
+    // Lidar Total row
+    var liTotFP=lidarQ.reduce(function(s,q){return s+(q.fp||0);},0);
+    var liTotQA=lidarQ.reduce(function(s,q){return s+(q.qa||0);},0);
+    html+='<tr class="total-row"><td class="left bold">TOTAL</td><td>'+liTotFP+'</td><td>'+liTotQA+'</td></tr>';
+  } else {
+    html+='<tr><td colspan="3" class="empty" style="padding:20px;text-align:center">No Lidar data</td></tr>';
+  }
+  html+='</tbody></table></div></div>';
+
+  html+='</div>'; // end grid
+}
+    +(activeSFilter?' — '+activeSFilter:'')
+    +(activeRFilter?' — '+activeRFilter:'')+'</div>';
   html+='<div style="display:flex;justify-content:center">'
     +'<div class="tbl-card" style="max-width:700px;width:100%">'
     +'<table><thead><tr>'
