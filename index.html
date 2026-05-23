@@ -1426,7 +1426,8 @@ data.forEach(function(r){
   var pass = (r[F.pass]||'').toUpperCase();
   var isLi = mod.indexOf('lidar') !== -1;
   var tp = isLi ? 'Lidar' : 'Lane';
-  if(!queues[q]) queues[q] = {type:tp, lfp:0, lqa:0, lifp:0, liqa:0};
+var qKey = q + '||' + tp;
+if(!queues[q]) queues[q] = {type:tp, name:q, lfp:0, lqa:0, lifp:0, liqa:0};
   if(!isLi && pass==='FP') queues[q].lfp++;
   if(!isLi && pass==='QA') queues[q].lqa++;
   if(isLi  && pass==='FP') queues[q].lifp++;
@@ -1443,12 +1444,12 @@ var sortedQ = laneQ.concat(lidarQ);
 
 if(sortedQ.length){
   var laneCnt=laneQ.length, lidarCnt=lidarQ.length;
-  html+='<div class="sec-hdr" style="margin-top:8px">By Queue Name'
+  html+='<div class="sec-hdr" style="margin-top:8px;max-width:700px;margin-left:auto;margin-right:auto">By Queue Name'
     +(activeSFilter?' — '+activeSFilter:'')
     +(activeRFilter?' — '+activeRFilter:'')
     +' <span style="font-size:11px;font-weight:400;color:var(--gray);margin-left:4px">'
     +'Lane: '+laneCnt+' &nbsp;|&nbsp; Lidar: '+lidarCnt+'</span></div>';
-  html+='<div class="tbl-card"><table><thead><tr>'
+  html+='<div style="max-width:700px;margin:0 auto"><div class="tbl-card"><table><thead><tr>'
     +'<th class="left">Queue Name</th>'
     +'<th style="background:rgba(255,255,255,.1)">&nbsp;</th>'
     +'<th style="color:#a5d6a7">Lane-FP</th>'
@@ -2370,7 +2371,7 @@ var rankMedal=myRank===1?'🥇':myRank===2?'🥈':myRank===3?'🥉':'';
   html+='</div>';
   html+='<div class="sec-hdr">Comparison with Other QTCs</div><div class="tbl-card"><table><thead><tr><th>#</th><th class="left">QTC</th><th style="color:#81c784">Lane-FP</th><th style="color:#ffb74d">Lane-QA</th><th style="color:#4dd0e1">Lidar-FP</th><th style="color:#ce93d8">Lidar-QA</th><th>Total</th></tr></thead><tbody>';
   allSorted.forEach(function(name,i){var d=qtcTotals[name],isMe=name.toLowerCase()===teamsName.toLowerCase();html+='<tr style="'+(isMe?'background:var(--blue-bg)!important':'')+'"><td style="color:var(--gray)'+(isMe?';font-weight:800':'')+'">'+(i+1)+'</td><td class="left'+(isMe?' bold':'')+'" style="'+(isMe?'color:var(--blue)':'')+'">'+name+(isMe?' <span style="font-size:10px;background:var(--blue);color:white;padding:1px 6px;border-radius:6px;margin-left:4px">YOU</span>':'')+'</td><td style="color:#1e8e3e;font-weight:700">'+d.lfp+'</td><td style="color:#e37400;font-weight:700">'+d.lqa+'</td><td style="color:#007b83;font-weight:700">'+d.lifp+'</td><td style="color:#7b1fa2;font-weight:700">'+d.liqa+'</td><td class="bold">'+d.total+'</td></tr>';});
-  html+='</tbody></table></div>';
+  html+='</tbody></table></div></div>';
   res.innerHTML=html;
 }
 </script>
