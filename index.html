@@ -2521,67 +2521,6 @@ h+=(sd.bufferStats && sd.bufferStats.total > 0 ?
   }).join('')
   +'</div></div>'
   : '')
-  if(sd.queueStats && Object.keys(sd.queueStats).length){
-  var laneQueues=[], lidarQueues=[];
-  Object.keys(sd.queueStats).forEach(function(k){
-    var q=sd.queueStats[k];
-    if(q.isLidar) lidarQueues.push(q);
-    else laneQueues.push(q);
-  });
-  laneQueues.sort(function(a,b){return (b.fp+b.qa)-(a.fp+a.qa);});
-  lidarQueues.sort(function(a,b){return (b.fp+b.qa)-(a.fp+a.qa);});
-
-  h+='<div style="padding:12px 20px 16px;border-top:1px solid var(--border);margin-top:4px">';
-  h+='<div style="font-size:10px;font-weight:800;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📊 Queue Breakdown</div>';
-
-  if(laneQueues.length){
-    h+='<div style="margin-bottom:10px">';
-    h+='<div style="font-size:11px;font-weight:800;color:#1b5e20;background:#e8f5e9;padding:5px 10px;border-radius:6px 6px 0 0;border:1px solid #c3e6cb">🟢 Lane Queues</div>';
-    h+='<table style="width:100%;border-collapse:collapse;border:1px solid #c3e6cb;border-top:none">';
-    h+='<thead><tr style="background:#f1f8f2">';
-    h+='<th style="text-align:left;padding:5px 8px;font-size:10px;font-weight:700;color:#1b5e20">Queue</th>';
-    h+='<th style="padding:5px 8px;font-size:10px;font-weight:700;color:#1e8e3e;text-align:center;width:50px">FP</th>';
-    h+='<th style="padding:5px 8px;font-size:10px;font-weight:700;color:#e37400;text-align:center;width:50px">QA</th>';
-    h+='<th style="padding:5px 8px;font-size:10px;font-weight:700;color:#1c4587;text-align:center;width:60px">Total</th>';
-    h+='</tr></thead><tbody>';
-    laneQueues.forEach(function(q,i){
-      var bg=i%2===0?'white':'#f8fff8';
-      var shortName=q.name.replace(/\(Lane Line\)/gi,'').replace(/sc3_full_scene_/gi,'').replace(/_/g,' ').trim();
-      h+='<tr style="background:'+bg+';border-bottom:1px solid #e8f5e9">';
-      h+='<td style="padding:5px 8px;font-size:11px;font-weight:600;color:#333" title="'+q.name+'">'+shortName+'</td>';
-      h+='<td style="padding:5px 8px;text-align:center;font-weight:800;color:#1e8e3e">'+(q.fp||0)+'</td>';
-      h+='<td style="padding:5px 8px;text-align:center;font-weight:800;color:#e37400">'+(q.qa||0)+'</td>';
-      h+='<td style="padding:5px 8px;text-align:center;font-weight:800;color:#1c4587">'+(q.fp+q.qa)+'</td>';
-      h+='</tr>';
-    });
-    h+='</tbody></table></div>';
-  }
-
-  if(lidarQueues.length){
-    h+='<div>';
-    h+='<div style="font-size:11px;font-weight:800;color:#006064;background:#e0f7fa;padding:5px 10px;border-radius:6px 6px 0 0;border:1px solid #80cbc4">🔵 Lidar Queues</div>';
-    h+='<table style="width:100%;border-collapse:collapse;border:1px solid #80cbc4;border-top:none">';
-    h+='<thead><tr style="background:#f0fdff">';
-    h+='<th style="text-align:left;padding:5px 8px;font-size:10px;font-weight:700;color:#006064">Queue</th>';
-    h+='<th style="padding:5px 8px;font-size:10px;font-weight:700;color:#1e8e3e;text-align:center;width:50px">FP</th>';
-    h+='<th style="padding:5px 8px;font-size:10px;font-weight:700;color:#e37400;text-align:center;width:50px">QA</th>';
-    h+='<th style="padding:5px 8px;font-size:10px;font-weight:700;color:#1c4587;text-align:center;width:60px">Total</th>';
-    h+='</tr></thead><tbody>';
-    lidarQueues.forEach(function(q,i){
-      var bg=i%2===0?'white':'#f0fdff';
-      var shortName=q.name.replace(/\(Lidar\)v4-/gi,'').replace(/sc3_full_scene_/gi,'').replace(/_/g,' ').trim();
-      h+='<tr style="background:'+bg+';border-bottom:1px solid #e0f7fa">';
-      h+='<td style="padding:5px 8px;font-size:11px;font-weight:600;color:#333" title="'+q.name+'">'+shortName+'</td>';
-      h+='<td style="padding:5px 8px;text-align:center;font-weight:800;color:#1e8e3e">'+(q.fp||0)+'</td>';
-      h+='<td style="padding:5px 8px;text-align:center;font-weight:800;color:#e37400">'+(q.qa||0)+'</td>';
-      h+='<td style="padding:5px 8px;text-align:center;font-weight:800;color:#1c4587">'+(q.fp+q.qa)+'</td>';
-      h+='</tr>';
-    });
-    h+='</tbody></table></div>';
-  }
-
-  h+='</div>';
-}
     h+='<div class="att-msg-preview"><pre class="att-msg-pre">'+msg+'</pre></div>';
   h+='</div>';
   return h;
@@ -2618,7 +2557,104 @@ function renderAttendanceSimple(r,dateISO){
   if(!visible.length){shtml('attendanceArea','<div class="empty">No data for this date.</div>');return;}
   var html='';
   if(_attShift==='All'&&visible.length>1){var tp=0,tt=0;visible.forEach(function(s){tp+=(shifts[s].present||[]).length;tt+=shifts[s].total||0;});var tpct=tt>0?Math.round(tp/tt*100):0;var tc=tpct>=90?'var(--green)':tpct>=70?'var(--orange)':'var(--red)';html+='<div style="background:white;border-radius:12px;border:1px solid var(--border);padding:14px 22px;margin-bottom:16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:18px;flex-wrap:wrap"><span style="font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">All Shifts</span><span style="font-size:32px;font-weight:800;color:'+tc+'">'+tp+'</span><span style="font-size:18px;color:var(--border)">/</span><span style="font-size:22px;font-weight:700;color:var(--gray)">'+tt+'</span><span style="margin-left:auto;font-size:22px;font-weight:800;color:'+tc+'">'+tpct+'%</span></div>';}
-  visible.forEach(function(sh){html+=_buildAttCard(sh,shifts[sh],dateISO,false);});
+  visible.forEach(function(sh){
+  html+=_buildAttCard(sh,shifts[sh],dateISO,false);
+  
+  // Queue Breakdown تحت كل شيفت
+  var sd=shifts[sh];
+  if(sd.queueStats && Object.keys(sd.queueStats).length){
+    var laneQueues=[], lidarQueues=[];
+    Object.keys(sd.queueStats).forEach(function(k){
+      var q=sd.queueStats[k];
+      if(q.isLidar) lidarQueues.push(q);
+      else laneQueues.push(q);
+    });
+    laneQueues.sort(function(a,b){return (b.fp+b.qa)-(a.fp+a.qa);});
+    lidarQueues.sort(function(a,b){return (b.fp+b.qa)-(a.fp+a.qa);});
+
+    html+='<div style="background:white;border-radius:14px;border:1px solid var(--border);margin-bottom:22px;overflow:hidden;box-shadow:var(--shadow)">';
+    
+    // Header
+    html+='<div style="background:var(--blue);padding:14px 22px;display:flex;align-items:center;gap:10px">';
+    html+='<span style="font-size:20px">📊</span>';
+    html+='<span style="color:white;font-size:16px;font-weight:800;letter-spacing:.3px">Queue Breakdown — '+sh+' Shift</span>';
+    html+='</div>';
+
+    html+='<div style="padding:18px 22px;display:grid;grid-template-columns:1fr 1fr;gap:18px">';
+
+    // Lane Table
+    if(laneQueues.length){
+      html+='<div>';
+      html+='<div style="background:#1e8e3e;padding:10px 16px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between">';
+      html+='<span style="color:white;font-size:14px;font-weight:800">🟢 Lane Queues</span>';
+      html+='<span style="background:rgba(255,255,255,.2);color:white;font-size:12px;font-weight:700;padding:2px 10px;border-radius:10px">'+laneQueues.length+' queues</span>';
+      html+='</div>';
+      html+='<table style="width:100%;border-collapse:collapse;border:2px solid #c3e6cb;border-top:none">';
+      html+='<thead><tr style="background:#f1f8f2">';
+      html+='<th style="text-align:left;padding:10px 14px;font-size:12px;font-weight:800;color:#1b5e20;letter-spacing:.3px">QUEUE NAME</th>';
+      html+='<th style="padding:10px 14px;font-size:12px;font-weight:800;color:#1e8e3e;text-align:center;width:60px">FP</th>';
+      html+='<th style="padding:10px 14px;font-size:12px;font-weight:800;color:#e37400;text-align:center;width:60px">QA</th>';
+      html+='<th style="padding:10px 14px;font-size:12px;font-weight:800;color:#1c4587;text-align:center;width:70px">TOTAL</th>';
+      html+='</tr></thead><tbody>';
+      var lTotFP=0,lTotQA=0;
+      laneQueues.forEach(function(q,i){
+        var bg=i%2===0?'white':'#f8fff8';
+        var shortName=q.name.replace(/\(Lane Line\)/gi,'').replace(/sc3_full_scene_/gi,'').replace(/_/g,' ').trim();
+        lTotFP+=q.fp||0; lTotQA+=q.qa||0;
+        html+='<tr style="background:'+bg+';border-bottom:1px solid #e8f5e9">';
+        html+='<td style="padding:10px 14px;font-size:13px;font-weight:700;color:#222" title="'+q.name+'">'+shortName+'</td>';
+        html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#1e8e3e">'+(q.fp||0)+'</td>';
+        html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#e37400">'+(q.qa||0)+'</td>';
+        html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#1c4587">'+(q.fp+q.qa)+'</td>';
+        html+='</tr>';
+      });
+      html+='<tr style="background:#e8f5e9;border-top:2px solid #c3e6cb">';
+      html+='<td style="padding:10px 14px;font-size:13px;font-weight:800;color:#1b5e20">TOTAL</td>';
+      html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#1e8e3e">'+lTotFP+'</td>';
+      html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#e37400">'+lTotQA+'</td>';
+      html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#1c4587">'+(lTotFP+lTotQA)+'</td>';
+      html+='</tr>';
+      html+='</tbody></table></div>';
+    }
+
+    // Lidar Table
+    if(lidarQueues.length){
+      html+='<div>';
+      html+='<div style="background:#007b83;padding:10px 16px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between">';
+      html+='<span style="color:white;font-size:14px;font-weight:800">🔵 Lidar Queues</span>';
+      html+='<span style="background:rgba(255,255,255,.2);color:white;font-size:12px;font-weight:700;padding:2px 10px;border-radius:10px">'+lidarQueues.length+' queues</span>';
+      html+='</div>';
+      html+='<table style="width:100%;border-collapse:collapse;border:2px solid #80cbc4;border-top:none">';
+      html+='<thead><tr style="background:#f0fdff">';
+      html+='<th style="text-align:left;padding:10px 14px;font-size:12px;font-weight:800;color:#006064;letter-spacing:.3px">QUEUE NAME</th>';
+      html+='<th style="padding:10px 14px;font-size:12px;font-weight:800;color:#1e8e3e;text-align:center;width:60px">FP</th>';
+      html+='<th style="padding:10px 14px;font-size:12px;font-weight:800;color:#e37400;text-align:center;width:60px">QA</th>';
+      html+='<th style="padding:10px 14px;font-size:12px;font-weight:800;color:#1c4587;text-align:center;width:70px">TOTAL</th>';
+      html+='</tr></thead><tbody>';
+      var liTotFP=0,liTotQA=0;
+      lidarQueues.forEach(function(q,i){
+        var bg=i%2===0?'white':'#f0fdff';
+        var shortName=q.name.replace(/\(Lidar\)v4-/gi,'').replace(/\(Lidar\)/gi,'').replace(/sc3_full_scene_/gi,'').replace(/_/g,' ').trim();
+        liTotFP+=q.fp||0; liTotQA+=q.qa||0;
+        html+='<tr style="background:'+bg+';border-bottom:1px solid #e0f7fa">';
+        html+='<td style="padding:10px 14px;font-size:13px;font-weight:700;color:#222" title="'+q.name+'">'+shortName+'</td>';
+        html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#1e8e3e">'+(q.fp||0)+'</td>';
+        html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#e37400">'+(q.qa||0)+'</td>';
+        html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#1c4587">'+(q.fp+q.qa)+'</td>';
+        html+='</tr>';
+      });
+      html+='<tr style="background:#e0f7fa;border-top:2px solid #80cbc4">';
+      html+='<td style="padding:10px 14px;font-size:13px;font-weight:800;color:#006064">TOTAL</td>';
+      html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#1e8e3e">'+liTotFP+'</td>';
+      html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#e37400">'+liTotQA+'</td>';
+      html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#1c4587">'+(liTotFP+liTotQA)+'</td>';
+      html+='</tr>';
+      html+='</tbody></table></div>';
+    }
+
+    html+='</div></div>';
+  }
+});
   shtml('attendanceArea',html);_wireAttCards('attendanceArea',false);
 }
 
