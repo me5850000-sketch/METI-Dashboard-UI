@@ -2555,109 +2555,130 @@ function renderAttendanceSimple(r,dateISO){
   var shifts=r.shifts||{};var SHIFT_ORD=['Morning','Night','Over Night'];
   var visible=_attShift==='All'?SHIFT_ORD.filter(function(s){return shifts[s];}):([_attShift].filter(function(s){return shifts[s];}));
   if(!visible.length){shtml('attendanceArea','<div class="empty">No data for this date.</div>');return;}
-  var html='';
-  if(_attShift==='All'&&visible.length>1){var tp=0,tt=0;visible.forEach(function(s){tp+=(shifts[s].present||[]).length;tt+=shifts[s].total||0;});var tpct=tt>0?Math.round(tp/tt*100):0;var tc=tpct>=90?'var(--green)':tpct>=70?'var(--orange)':'var(--red)';html+='<div style="background:white;border-radius:12px;border:1px solid var(--border);padding:14px 22px;margin-bottom:16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:18px;flex-wrap:wrap"><span style="font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">All Shifts</span><span style="font-size:32px;font-weight:800;color:'+tc+'">'+tp+'</span><span style="font-size:18px;color:var(--border)">/</span><span style="font-size:22px;font-weight:700;color:var(--gray)">'+tt+'</span><span style="margin-left:auto;font-size:22px;font-weight:800;color:'+tc+'">'+tpct+'%</span></div>';}
-  visible.forEach(function(sh){
-  html+=_buildAttCard(sh,shifts[sh],dateISO,false);
   
-  // Queue Breakdown تحت كل شيفت
-  var sd=shifts[sh];
-  if(sd.queueStats && Object.keys(sd.queueStats).length){
-    var laneQueues=[], lidarQueues=[];
-    Object.keys(sd.queueStats).forEach(function(k){
-      var q=sd.queueStats[k];
-      if(q.isLidar) lidarQueues.push(q);
-      else laneQueues.push(q);
-    });
-    laneQueues.sort(function(a,b){return (b.fp+b.qa)-(a.fp+a.qa);});
-    lidarQueues.sort(function(a,b){return (b.fp+b.qa)-(a.fp+a.qa);});
-
-    html+='<div style="background:white;border-radius:14px;border:1px solid var(--border);margin-bottom:22px;overflow:hidden;box-shadow:var(--shadow)">';
-    
-    // Header
-    html+='<div style="background:var(--blue);padding:14px 22px;display:flex;align-items:center;gap:10px">';
-    html+='<span style="font-size:20px">📊</span>';
-    html+='<span style="color:white;font-size:16px;font-weight:800;letter-spacing:.3px">Queue Breakdown — '+sh+' Shift</span>';
-    html+='</div>';
-
-    html+='<div style="padding:18px 22px;display:grid;grid-template-columns:1fr 1fr;gap:18px">';
-
-    // Lane Table
-    if(laneQueues.length){
-      html+='<div>';
-      html+='<div style="background:#1e8e3e;padding:10px 16px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between">';
-      html+='<span style="color:white;font-size:14px;font-weight:800">🟢 Lane Queues</span>';
-      html+='<span style="background:rgba(255,255,255,.2);color:white;font-size:12px;font-weight:700;padding:2px 10px;border-radius:10px">'+laneQueues.length+' queues</span>';
-      html+='</div>';
-      html+='<table style="width:100%;border-collapse:collapse;border:2px solid #c3e6cb;border-top:none">';
-      html+='<thead><tr style="background:#f1f8f2">';
-      html+='<th style="text-align:left;padding:10px 14px;font-size:12px;font-weight:800;color:#1b5e20;letter-spacing:.3px">QUEUE NAME</th>';
-      html+='<th style="padding:10px 14px;font-size:12px;font-weight:800;color:#1e8e3e;text-align:center;width:60px">FP</th>';
-      html+='<th style="padding:10px 14px;font-size:12px;font-weight:800;color:#e37400;text-align:center;width:60px">QA</th>';
-      html+='<th style="padding:10px 14px;font-size:12px;font-weight:800;color:#1c4587;text-align:center;width:70px">TOTAL</th>';
-      html+='</tr></thead><tbody>';
-      var lTotFP=0,lTotQA=0;
-      laneQueues.forEach(function(q,i){
-        var bg=i%2===0?'white':'#f8fff8';
-        var shortName=q.name.replace(/\(Lane Line\)/gi,'').replace(/sc3_full_scene_/gi,'').replace(/_/g,' ').trim();
-        lTotFP+=q.fp||0; lTotQA+=q.qa||0;
-        html+='<tr style="background:'+bg+';border-bottom:1px solid #e8f5e9">';
-        html+='<td style="padding:10px 14px;font-size:13px;font-weight:700;color:#222" title="'+q.name+'">'+shortName+'</td>';
-        html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#1e8e3e">'+(q.fp||0)+'</td>';
-        html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#e37400">'+(q.qa||0)+'</td>';
-        html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#1c4587">'+(q.fp+q.qa)+'</td>';
-        html+='</tr>';
-      });
-      html+='<tr style="background:#e8f5e9;border-top:2px solid #c3e6cb">';
-      html+='<td style="padding:10px 14px;font-size:13px;font-weight:800;color:#1b5e20">TOTAL</td>';
-      html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#1e8e3e">'+lTotFP+'</td>';
-      html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#e37400">'+lTotQA+'</td>';
-      html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#1c4587">'+(lTotFP+lTotQA)+'</td>';
-      html+='</tr>';
-      html+='</tbody></table></div>';
-    }
-
-    // Lidar Table
-    if(lidarQueues.length){
-      html+='<div>';
-      html+='<div style="background:#007b83;padding:10px 16px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between">';
-      html+='<span style="color:white;font-size:14px;font-weight:800">🔵 Lidar Queues</span>';
-      html+='<span style="background:rgba(255,255,255,.2);color:white;font-size:12px;font-weight:700;padding:2px 10px;border-radius:10px">'+lidarQueues.length+' queues</span>';
-      html+='</div>';
-      html+='<table style="width:100%;border-collapse:collapse;border:2px solid #80cbc4;border-top:none">';
-      html+='<thead><tr style="background:#f0fdff">';
-      html+='<th style="text-align:left;padding:10px 14px;font-size:12px;font-weight:800;color:#006064;letter-spacing:.3px">QUEUE NAME</th>';
-      html+='<th style="padding:10px 14px;font-size:12px;font-weight:800;color:#1e8e3e;text-align:center;width:60px">FP</th>';
-      html+='<th style="padding:10px 14px;font-size:12px;font-weight:800;color:#e37400;text-align:center;width:60px">QA</th>';
-      html+='<th style="padding:10px 14px;font-size:12px;font-weight:800;color:#1c4587;text-align:center;width:70px">TOTAL</th>';
-      html+='</tr></thead><tbody>';
-      var liTotFP=0,liTotQA=0;
-      lidarQueues.forEach(function(q,i){
-        var bg=i%2===0?'white':'#f0fdff';
-        var shortName=q.name.replace(/\(Lidar\)v4-/gi,'').replace(/\(Lidar\)/gi,'').replace(/sc3_full_scene_/gi,'').replace(/_/g,' ').trim();
-        liTotFP+=q.fp||0; liTotQA+=q.qa||0;
-        html+='<tr style="background:'+bg+';border-bottom:1px solid #e0f7fa">';
-        html+='<td style="padding:10px 14px;font-size:13px;font-weight:700;color:#222" title="'+q.name+'">'+shortName+'</td>';
-        html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#1e8e3e">'+(q.fp||0)+'</td>';
-        html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#e37400">'+(q.qa||0)+'</td>';
-        html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#1c4587">'+(q.fp+q.qa)+'</td>';
-        html+='</tr>';
-      });
-      html+='<tr style="background:#e0f7fa;border-top:2px solid #80cbc4">';
-      html+='<td style="padding:10px 14px;font-size:13px;font-weight:800;color:#006064">TOTAL</td>';
-      html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#1e8e3e">'+liTotFP+'</td>';
-      html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#e37400">'+liTotQA+'</td>';
-      html+='<td style="padding:10px 14px;text-align:center;font-size:15px;font-weight:800;color:#1c4587">'+(liTotFP+liTotQA)+'</td>';
-      html+='</tr>';
-      html+='</tbody></table></div>';
-    }
-
-    html+='</div></div>';
+  var attHtml='';
+  var queueHtml='';
+  
+  // ── BLOCK 1: All Attendance Cards ──
+  if(_attShift==='All'&&visible.length>1){
+    var tp=0,tt=0;
+    visible.forEach(function(s){tp+=(shifts[s].present||[]).length;tt+=shifts[s].total||0;});
+    var tpct=tt>0?Math.round(tp/tt*100):0;
+    var tc=tpct>=90?'var(--green)':tpct>=70?'var(--orange)':'var(--red)';
+    attHtml+='<div style="background:white;border-radius:12px;border:1px solid var(--border);padding:14px 22px;margin-bottom:16px;box-shadow:var(--shadow);display:flex;align-items:center;gap:18px;flex-wrap:wrap">'
+      +'<span style="font-size:12px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.5px">All Shifts</span>'
+      +'<span style="font-size:32px;font-weight:800;color:'+tc+'">'+tp+'</span>'
+      +'<span style="font-size:18px;color:var(--border)">/</span>'
+      +'<span style="font-size:22px;font-weight:700;color:var(--gray)">'+tt+'</span>'
+      +'<span style="margin-left:auto;font-size:22px;font-weight:800;color:'+tc+'">'+tpct+'%</span>'
+      +'</div>';
   }
-});
-  shtml('attendanceArea',html);_wireAttCards('attendanceArea',false);
-}
+  
+  visible.forEach(function(sh){
+    // Attendance card
+    attHtml+=_buildAttCard(sh,shifts[sh],dateISO,false);
+    
+    // Queue Breakdown للشيفت ده — نحتفظ بيه منفصل
+    var sd=shifts[sh];
+    if(sd.queueStats && Object.keys(sd.queueStats).length){
+      var laneQueues=[], lidarQueues=[];
+      Object.keys(sd.queueStats).forEach(function(k){
+        var q=sd.queueStats[k];
+        if(q.isLidar) lidarQueues.push(q);
+        else laneQueues.push(q);
+      });
+      laneQueues.sort(function(a,b){return (b.fp+b.qa)-(a.fp+a.qa);});
+      lidarQueues.sort(function(a,b){return (b.fp+b.qa)-(a.fp+a.qa);});
 
+      // ── Shift label separator ──
+      var shBg=sh==='Morning'?'#e65100':sh==='Night'?'#283593':'#1b5e20';
+      queueHtml+='<div style="display:flex;align-items:center;gap:8px;margin:10px 0 8px">'
+        +'<div style="flex:1;height:1px;background:var(--border)"></div>'
+        +'<span style="background:'+shBg+';color:white;font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px">'+sh+'</span>'
+        +'<div style="flex:1;height:1px;background:var(--border)"></div>'
+        +'</div>';
+
+      queueHtml+='<div style="background:white;border-radius:14px;border:1px solid var(--border);margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow)">';
+      queueHtml+='<div style="padding:18px 22px;display:grid;grid-template-columns:1fr 1fr;gap:18px">';
+
+      if(laneQueues.length){
+        queueHtml+='<div>';
+        queueHtml+='<div style="background:#1e8e3e;padding:10px 16px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between">';
+        queueHtml+='<span style="color:white;font-size:14px;font-weight:800">Lane Queues</span>';
+        queueHtml+='<span style="background:rgba(255,255,255,.2);color:white;font-size:12px;font-weight:700;padding:2px 10px;border-radius:10px">'+laneQueues.length+' queues</span>';
+        queueHtml+='</div>';
+        queueHtml+='<table style="width:100%;border-collapse:collapse;border:2px solid #c3e6cb;border-top:none">';
+        queueHtml+='<thead><tr style="background:#f1f8f2">';
+        queueHtml+='<th style="text-align:left;padding:10px 14px;font-size:12px;font-weight:800;color:#1b5e20">QUEUE NAME</th>';
+        queueHtml+='<th style="padding:10px 14px;font-size:12px;font-weight:800;color:#1e8e3e;text-align:center;width:60px">FP</th>';
+        queueHtml+='<th style="padding:10px 14px;font-size:12px;font-weight:800;color:#e37400;text-align:center;width:60px">QA</th>';
+        queueHtml+='</tr></thead><tbody>';
+        var lTotFP=0,lTotQA=0;
+        laneQueues.forEach(function(q,i){
+          var bg=i%2===0?'white':'#f8fff8';
+          var shortName=q.name.replace(/\(Lane Line\)/gi,'').replace(/sc3_full_scene_/gi,'').replace(/_/g,' ').trim();
+          lTotFP+=q.fp||0; lTotQA+=q.qa||0;
+          queueHtml+='<tr style="background:'+bg+';border-bottom:1px solid #e8f5e9">';
+          queueHtml+='<td style="padding:8px 14px;font-size:12px;font-weight:700;color:#222" title="'+q.name+'">'+shortName+'</td>';
+          queueHtml+='<td style="padding:8px 14px;text-align:center;font-size:14px;font-weight:800;color:#1e8e3e">'+(q.fp||0)+'</td>';
+          queueHtml+='<td style="padding:8px 14px;text-align:center;font-size:14px;font-weight:800;color:#e37400">'+(q.qa||0)+'</td>';
+          queueHtml+='</tr>';
+        });
+        queueHtml+='<tr style="background:#e8f5e9;border-top:2px solid #c3e6cb">';
+        queueHtml+='<td style="padding:8px 14px;font-size:12px;font-weight:800;color:#1b5e20">TOTAL</td>';
+        queueHtml+='<td style="padding:8px 14px;text-align:center;font-size:14px;font-weight:800;color:#1e8e3e">'+lTotFP+'</td>';
+        queueHtml+='<td style="padding:8px 14px;text-align:center;font-size:14px;font-weight:800;color:#e37400">'+lTotQA+'</td>';
+        queueHtml+='</tr>';
+        queueHtml+='</tbody></table></div>';
+      }
+
+      if(lidarQueues.length){
+        queueHtml+='<div>';
+        queueHtml+='<div style="background:#007b83;padding:10px 16px;border-radius:10px 10px 0 0;display:flex;align-items:center;justify-content:space-between">';
+        queueHtml+='<span style="color:white;font-size:14px;font-weight:800">Lidar Queues</span>';
+        queueHtml+='<span style="background:rgba(255,255,255,.2);color:white;font-size:12px;font-weight:700;padding:2px 10px;border-radius:10px">'+lidarQueues.length+' queues</span>';
+        queueHtml+='</div>';
+        queueHtml+='<table style="width:100%;border-collapse:collapse;border:2px solid #80cbc4;border-top:none">';
+        queueHtml+='<thead><tr style="background:#f0fdff">';
+        queueHtml+='<th style="text-align:left;padding:10px 14px;font-size:12px;font-weight:800;color:#006064">QUEUE NAME</th>';
+        queueHtml+='<th style="padding:10px 14px;font-size:12px;font-weight:800;color:#1e8e3e;text-align:center;width:60px">FP</th>';
+        queueHtml+='<th style="padding:10px 14px;font-size:12px;font-weight:800;color:#e37400;text-align:center;width:60px">QA</th>';
+        queueHtml+='</tr></thead><tbody>';
+        var liTotFP=0,liTotQA=0;
+        lidarQueues.forEach(function(q,i){
+          var bg=i%2===0?'white':'#f0fdff';
+          var shortName=q.name.replace(/\(Lidar\)v4-/gi,'').replace(/\(Lidar\)/gi,'').replace(/sc3_full_scene_/gi,'').replace(/_/g,' ').trim();
+          liTotFP+=q.fp||0; liTotQA+=q.qa||0;
+          queueHtml+='<tr style="background:'+bg+';border-bottom:1px solid #e0f7fa">';
+          queueHtml+='<td style="padding:8px 14px;font-size:12px;font-weight:700;color:#222" title="'+q.name+'">'+shortName+'</td>';
+          queueHtml+='<td style="padding:8px 14px;text-align:center;font-size:14px;font-weight:800;color:#1e8e3e">'+(q.fp||0)+'</td>';
+          queueHtml+='<td style="padding:8px 14px;text-align:center;font-size:14px;font-weight:800;color:#e37400">'+(q.qa||0)+'</td>';
+          queueHtml+='</tr>';
+        });
+        queueHtml+='<tr style="background:#e0f7fa;border-top:2px solid #80cbc4">';
+        queueHtml+='<td style="padding:8px 14px;font-size:12px;font-weight:800;color:#006064">TOTAL</td>';
+        queueHtml+='<td style="padding:8px 14px;text-align:center;font-size:14px;font-weight:800;color:#1e8e3e">'+liTotFP+'</td>';
+        queueHtml+='<td style="padding:8px 14px;text-align:center;font-size:14px;font-weight:800;color:#e37400">'+liTotQA+'</td>';
+        queueHtml+='</tr>';
+        queueHtml+='</tbody></table></div>';
+      }
+
+      queueHtml+='</div></div>';
+    }
+  });
+
+  // ── BLOCK 2: Queue Separator + All Queue Breakdowns ──
+  var queueBlock='';
+  if(queueHtml){
+    queueBlock='<div style="margin:6px 0 12px;padding:10px 16px;background:var(--blue-bg);border-radius:10px;border:1.5px solid var(--blue-lt);text-align:center">'
+      +'<span style="font-size:12px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.8px">No. of Labelers by Queue</span>'
+      +'</div>'
+      +queueHtml;
+  }
+
+  shtml('attendanceArea', attHtml + queueBlock);
+  _wireAttCards('attendanceArea',false);
+}
 function loadAttDetails(){
   var dateISO=DP.getVal('attDate2')||todayISO();
   if(!gid('attDate2').value)DP.setVal('attDate2',dateISO,false);
