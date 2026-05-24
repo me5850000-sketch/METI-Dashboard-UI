@@ -2596,7 +2596,7 @@ function renderAttendanceSimple(r,dateISO){
       var shBg=sh==='Morning'?'#e65100':sh==='Night'?'#283593':'#1b5e20';
       queueHtml+='<div style="display:flex;align-items:center;gap:8px;margin:10px 0 8px">'
         +'<div style="flex:1;height:1px;background:var(--border)"></div>'
-        +'<span style="background:'+shColor+';color:white;font-size:15px;font-weight:800;padding:6px 20px;border-radius:20px;letter-spacing:.3px">'+sh+' Shift</span>'
+        +'<span style="background:'+(sh==='Morning'?'#e65100':sh==='Night'?'#283593':'#1b5e20')+';color:white;font-size:15px;font-weight:800;padding:6px 20px;border-radius:20px;letter-spacing:.3px">'+sh+' Shift</span>'
         +'<div style="flex:1;height:1px;background:var(--border)"></div>'
         +'</div>';
 
