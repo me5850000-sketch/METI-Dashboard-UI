@@ -2522,12 +2522,64 @@ h+=(sd.bufferStats && sd.bufferStats.total > 0 ?
   +'</div></div>'
   : '')
   if(sd.queueStats && Object.keys(sd.queueStats).length){
-  h+='<div style="padding:10px 20px 14px;display:flex;gap:8px;flex-wrap:wrap;border-top:1px solid var(--border);margin-top:4px">';
-  h+='<span style="font-size:10px;font-weight:800;color:var(--gray);text-transform:uppercase;width:100%;margin-bottom:4px">📊 Queue Stats</span>';
-  if(sd.queueStats.LaneFP)  h+='<span style="background:#e8f5e9;color:#1e8e3e;font-size:12px;font-weight:700;padding:4px 12px;border-radius:8px">Lane FP: '+sd.queueStats.LaneFP+'</span>';
-  if(sd.queueStats.LaneQA)  h+='<span style="background:#fff3cd;color:#e37400;font-size:12px;font-weight:700;padding:4px 12px;border-radius:8px">Lane QA: '+sd.queueStats.LaneQA+'</span>';
-  if(sd.queueStats.LidarFP) h+='<span style="background:#e0f7fa;color:#007b83;font-size:12px;font-weight:700;padding:4px 12px;border-radius:8px">Lidar FP: '+sd.queueStats.LidarFP+'</span>';
-  if(sd.queueStats.LidarQA) h+='<span style="background:#f3e5f5;color:#7b1fa2;font-size:12px;font-weight:700;padding:4px 12px;border-radius:8px">Lidar QA: '+sd.queueStats.LidarQA+'</span>';
+  var laneQueues=[], lidarQueues=[];
+  Object.keys(sd.queueStats).forEach(function(k){
+    var q=sd.queueStats[k];
+    if(q.isLidar) lidarQueues.push(q);
+    else laneQueues.push(q);
+  });
+  laneQueues.sort(function(a,b){return (b.fp+b.qa)-(a.fp+a.qa);});
+  lidarQueues.sort(function(a,b){return (b.fp+b.qa)-(a.fp+a.qa);});
+
+  h+='<div style="padding:12px 20px 16px;border-top:1px solid var(--border);margin-top:4px">';
+  h+='<div style="font-size:10px;font-weight:800;color:var(--gray);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">📊 Queue Breakdown</div>';
+
+  if(laneQueues.length){
+    h+='<div style="margin-bottom:10px">';
+    h+='<div style="font-size:11px;font-weight:800;color:#1b5e20;background:#e8f5e9;padding:5px 10px;border-radius:6px 6px 0 0;border:1px solid #c3e6cb">🟢 Lane Queues</div>';
+    h+='<table style="width:100%;border-collapse:collapse;border:1px solid #c3e6cb;border-top:none">';
+    h+='<thead><tr style="background:#f1f8f2">';
+    h+='<th style="text-align:left;padding:5px 8px;font-size:10px;font-weight:700;color:#1b5e20">Queue</th>';
+    h+='<th style="padding:5px 8px;font-size:10px;font-weight:700;color:#1e8e3e;text-align:center;width:50px">FP</th>';
+    h+='<th style="padding:5px 8px;font-size:10px;font-weight:700;color:#e37400;text-align:center;width:50px">QA</th>';
+    h+='<th style="padding:5px 8px;font-size:10px;font-weight:700;color:#1c4587;text-align:center;width:60px">Total</th>';
+    h+='</tr></thead><tbody>';
+    laneQueues.forEach(function(q,i){
+      var bg=i%2===0?'white':'#f8fff8';
+      var shortName=q.name.replace(/\(Lane Line\)/gi,'').replace(/sc3_full_scene_/gi,'').replace(/_/g,' ').trim();
+      h+='<tr style="background:'+bg+';border-bottom:1px solid #e8f5e9">';
+      h+='<td style="padding:5px 8px;font-size:11px;font-weight:600;color:#333" title="'+q.name+'">'+shortName+'</td>';
+      h+='<td style="padding:5px 8px;text-align:center;font-weight:800;color:#1e8e3e">'+(q.fp||0)+'</td>';
+      h+='<td style="padding:5px 8px;text-align:center;font-weight:800;color:#e37400">'+(q.qa||0)+'</td>';
+      h+='<td style="padding:5px 8px;text-align:center;font-weight:800;color:#1c4587">'+(q.fp+q.qa)+'</td>';
+      h+='</tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+
+  if(lidarQueues.length){
+    h+='<div>';
+    h+='<div style="font-size:11px;font-weight:800;color:#006064;background:#e0f7fa;padding:5px 10px;border-radius:6px 6px 0 0;border:1px solid #80cbc4">🔵 Lidar Queues</div>';
+    h+='<table style="width:100%;border-collapse:collapse;border:1px solid #80cbc4;border-top:none">';
+    h+='<thead><tr style="background:#f0fdff">';
+    h+='<th style="text-align:left;padding:5px 8px;font-size:10px;font-weight:700;color:#006064">Queue</th>';
+    h+='<th style="padding:5px 8px;font-size:10px;font-weight:700;color:#1e8e3e;text-align:center;width:50px">FP</th>';
+    h+='<th style="padding:5px 8px;font-size:10px;font-weight:700;color:#e37400;text-align:center;width:50px">QA</th>';
+    h+='<th style="padding:5px 8px;font-size:10px;font-weight:700;color:#1c4587;text-align:center;width:60px">Total</th>';
+    h+='</tr></thead><tbody>';
+    lidarQueues.forEach(function(q,i){
+      var bg=i%2===0?'white':'#f0fdff';
+      var shortName=q.name.replace(/\(Lidar\)v4-/gi,'').replace(/sc3_full_scene_/gi,'').replace(/_/g,' ').trim();
+      h+='<tr style="background:'+bg+';border-bottom:1px solid #e0f7fa">';
+      h+='<td style="padding:5px 8px;font-size:11px;font-weight:600;color:#333" title="'+q.name+'">'+shortName+'</td>';
+      h+='<td style="padding:5px 8px;text-align:center;font-weight:800;color:#1e8e3e">'+(q.fp||0)+'</td>';
+      h+='<td style="padding:5px 8px;text-align:center;font-weight:800;color:#e37400">'+(q.qa||0)+'</td>';
+      h+='<td style="padding:5px 8px;text-align:center;font-weight:800;color:#1c4587">'+(q.fp+q.qa)+'</td>';
+      h+='</tr>';
+    });
+    h+='</tbody></table></div>';
+  }
+
   h+='</div>';
 }
     h+='<div class="att-msg-preview"><pre class="att-msg-pre">'+msg+'</pre></div>';
