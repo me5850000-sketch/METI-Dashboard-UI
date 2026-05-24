@@ -479,6 +479,8 @@ body.dark #pgAttendance .mod-btn[style*="background:var(--blue)"]{background:#1c
   #advFilters .filter-lbl{font-size:9px!important;width:38px!important;}
   #advFilters #modBtns,#advFilters #unitBtns,#advFilters #shiftBtns{gap:4px!important;margin-bottom:5px!important;}
 #labTabsRow { flex-wrap: wrap !important; overflow-x: visible !important; }
+  #attQueueGrid { grid-template-columns: 1fr !important; }
+#labTabsRow .lab-tab { flex-shrink: 0; font-size: 12px !important; padding: 8px 10px !important; }}
 #labTabsRow .lab-tab { flex-shrink: 0; font-size: 12px !important; padding: 8px 10px !important; }}
 @media(min-width:769px) and (max-width:1024px){.sidebar{width:200px}.main{margin-left:200px}.content{padding:16px 20px}
   .cards{grid-template-columns:repeat(2,1fr)!important;gap:12px!important}.grid2{grid-template-columns:1fr!important}
@@ -2594,12 +2596,12 @@ function renderAttendanceSimple(r,dateISO){
       var shBg=sh==='Morning'?'#e65100':sh==='Night'?'#283593':'#1b5e20';
       queueHtml+='<div style="display:flex;align-items:center;gap:8px;margin:10px 0 8px">'
         +'<div style="flex:1;height:1px;background:var(--border)"></div>'
-        +'<span style="background:'+shBg+';color:white;font-size:11px;font-weight:700;padding:3px 12px;border-radius:20px">'+sh+'</span>'
+        +'<span style="background:'+shColor+';color:white;font-size:15px;font-weight:800;padding:6px 20px;border-radius:20px;letter-spacing:.3px">'+sh+' Shift</span>'
         +'<div style="flex:1;height:1px;background:var(--border)"></div>'
         +'</div>';
 
       queueHtml+='<div style="background:white;border-radius:14px;border:1px solid var(--border);margin-bottom:14px;overflow:hidden;box-shadow:var(--shadow)">';
-      queueHtml+='<div style="padding:18px 22px;display:grid;grid-template-columns:1fr 1fr;gap:18px">';
+      queueHtml+='<div id="attQueueGrid" style="padding:18px 22px;display:grid;grid-template-columns:1fr 1fr;gap:18px">';
 
       if(laneQueues.length){
         queueHtml+='<div>';
@@ -2671,7 +2673,7 @@ function renderAttendanceSimple(r,dateISO){
   var queueBlock='';
   if(queueHtml){
     queueBlock='<div style="margin:6px 0 12px;padding:10px 16px;background:var(--blue-bg);border-radius:10px;border:1.5px solid var(--blue-lt);text-align:center">'
-      +'<span style="font-size:12px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.8px">No. of Labelers by Queue</span>'
+      +'<span style="font-size:16px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.8px">📊 No. of Labelers by Queue</span>'
       +'</div>'
       +queueHtml;
   }
