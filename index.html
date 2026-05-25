@@ -883,6 +883,9 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
               <button class="mod-btn att-shift-btn" data-attshift="Morning">Morning</button>
               <button class="mod-btn att-shift-btn" data-attshift="Night">Night</button>
               <button class="mod-btn att-shift-btn" data-attshift="Over Night">Over Night</button>
+              <label style="margin-left:12px">Queue Date</label>
+              <div class="dp-wrap" id="dpWrap-queueDate"><input type="text" class="dp-input" id="queueDate" readonly placeholder="Same as Att." autocomplete="off"><span class="dp-icon">📅</span></div>
+              <button class="fbtn fbtn-ghost" id="btnClearQueueDate" style="font-size:12px;padding:6px 10px">✕</button>
             </div>
           </div>
           <div id="attendanceArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
@@ -1023,7 +1026,7 @@ pingSession: function(t) { this.execute('pingSession', [t]); },
       getUsers: function(t) { this.execute('getUsers', [t]); },
       upsertUser: function(t, p) { this.execute('upsertUser', [t, p]); },
       deleteUser: function(t, u) { this.execute('deleteUser', [t, u]); },
-      getAttendance: function(t, d, s) { this.execute('getAttendance', [t, d, s]); },
+      getAttendance: function(t, d, s, qd) { this.execute('getAttendance', [t, d, s, qd]); },
       getTargets: function(t) { this.execute('getTargets', [t]); },
       getBestQtcData: function(t) { this.execute('getBestQtcData', [t]); },
       setTarget: function(t, k, v) { this.execute('setTarget', [t, k, v]); }
@@ -2545,12 +2548,15 @@ function loadAttendance(){
   var cacheKey=dateISO+'|'+_attShift;
   if(_lastAttDate===cacheKey&&_lastAttR){renderAttendanceSimple(_lastAttR,dateISO);return;}
   shtml('attendanceArea','<div class="loading"><div class="spin"></div> Loading...</div>');
-  google.script.run.withSuccessHandler(function(r){if(r.err){shtml('attendanceArea','<div class="empty">'+r.err+'</div>');return;}_lastAttR=r;_lastAttDate=cacheKey;renderAttendanceSimple(r,dateISO);}).withFailureHandler(function(e){shtml('attendanceArea','<div class="empty">'+e.message+'</div>');}).getAttendance(TOKEN,dateISO,_attShift==='All'?null:_attShift);
+  google.script.run.withSuccessHandler(function(r){if(r.err){shtml('attendanceArea','<div class="empty">'+r.err+'</div>');return;}_lastAttR=r;_lastAttDate=cacheKey;renderAttendanceSimple(r,dateISO);}).withFailureHandler(function(e){shtml('attendanceArea','<div class="empty">'+e.message+'</div>');var queueDateISO=DP.getVal('queueDate')||dateISO;
+}).getAttendance(TOKEN,dateISO,_attShift==='All'?null:_attShift,queueDateISO);
 }
 
 function initAttendancePage(){
   var di=gid('attDate');if(di&&!di._dpWired){di.addEventListener('click',function(){DP.open('attDate');});di._dpWired=true;}
   document.querySelectorAll('.att-shift-btn').forEach(function(b){b.addEventListener('click',function(){_attShift=b.getAttribute('data-attshift');_lastAttDate='';loadAttendance();});});
+  var qdi=gid('queueDate');if(qdi&&!qdi._dpWired){qdi.addEventListener('click',function(){DP.open('queueDate');});qdi._dpWired=true;}
+var clrQ=gid('btnClearQueueDate');if(clrQ)clrQ.addEventListener('click',function(){DP.vals['queueDate']='';gid('queueDate').value='';_lastAttDate='';loadAttendance();});
 }
 
 function renderAttendanceSimple(r,dateISO){
