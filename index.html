@@ -2549,7 +2549,7 @@ function loadAttendance(){
   if(_lastAttDate===cacheKey&&_lastAttR){renderAttendanceSimple(_lastAttR,dateISO);return;}
   shtml('attendanceArea','<div class="loading"><div class="spin"></div> Loading...</div>');
   google.script.run.withSuccessHandler(function(r){if(r.err){shtml('attendanceArea','<div class="empty">'+r.err+'</div>');return;}_lastAttR=r;_lastAttDate=cacheKey;renderAttendanceSimple(r,dateISO);}).withFailureHandler(function(e){shtml('attendanceArea','<div class="empty">'+e.message+'</div>');var queueDateISO=DP.getVal('queueDate')||dateISO;
-}).getAttendance(TOKEN,dateISO,_attShift==='All'?null:_attShift,queueDateISO);
+}).getAttendance(TOKEN,dateISO,_attShift==='All'?null:_attShift,DP.getVal('queueDate')||dateISO);
 }
 
 function initAttendancePage(){
