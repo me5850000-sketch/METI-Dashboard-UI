@@ -883,9 +883,6 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
               <button class="mod-btn att-shift-btn" data-attshift="Morning">Morning</button>
               <button class="mod-btn att-shift-btn" data-attshift="Night">Night</button>
               <button class="mod-btn att-shift-btn" data-attshift="Over Night">Over Night</button>
-              <label style="margin-left:12px">Queue Date</label>
-              <div class="dp-wrap" id="dpWrap-queueDate"><input type="text" class="dp-input" id="queueDate" readonly placeholder="Same as Att." autocomplete="off"><span class="dp-icon">📅</span></div>
-              <button class="fbtn fbtn-ghost" id="btnClearQueueDate" style="font-size:12px;padding:6px 10px">✕</button>
             </div>
           </div>
           <div id="attendanceArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
@@ -1471,9 +1468,14 @@ laneQ.sort(function(a,b){return b.tot-a.tot;});
 lidarQ.sort(function(a,b){return b.tot-a.tot;});
 
 if(laneQ.length || lidarQ.length){
-  html+='<div class="sec-hdr" style="margin-top:8px">By Queue Name'
-    +(activeSFilter?' — '+activeSFilter:'')
-    +(activeRFilter?' — '+activeRFilter:'')+'</div>';
+  html+='<div style="margin:10px 0 12px;padding:8px 16px;background:var(--blue-bg);border-radius:10px;border:1.5px solid var(--blue-lt);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">'
+    +'<div style="display:flex;align-items:center;gap:10px">'
+    +'<span style="font-size:16px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.8px">📊 No. of Labelers by Queue</span>'
+    +'<label style="font-size:10px;font-weight:800;color:var(--blue);text-transform:uppercase;margin-left:auto">Queue Date:</label>'
+    +'<div class="dp-wrap" id="dpWrap-homeQueueDate" style="min-width:120px"><input type="text" class="dp-input" id="homeQueueDate" readonly placeholder="All Dates"><span class="dp-icon">📅</span></div>'
+    +'<button class="fbtn fbtn-ghost" id="btnClearHomeQueueDate" style="font-size:11px;padding:5px 10px;margin:0">✕</button>'
+    +'</div>'
+    +'</div>';
   
   html+='<div id="queueTablesGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:20px">';
   
@@ -2676,16 +2678,23 @@ function renderAttendanceSimple(r,dateISO){
   });
 
   // ── BLOCK 2: Queue Separator + All Queue Breakdowns ──
-  var queueBlock='';
+ var queueBlock='';
   if(queueHtml){
-    queueBlock='<div style="margin:6px 0 12px;padding:10px 16px;background:var(--blue-bg);border-radius:10px;border:1.5px solid var(--blue-lt);text-align:center">'
+    queueBlock='<div style="margin:6px 0 12px;padding:10px 16px;background:var(--blue-bg);border-radius:10px;border:1.5px solid var(--blue-lt);display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">'
       +'<span style="font-size:16px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.8px">📊 No. of Labelers by Queue</span>'
+      +'<div style="display:flex;align-items:center;gap:8px">'
+      +'<label style="font-size:11px;font-weight:800;color:var(--blue);text-transform:uppercase">Queue Date:</label>'
+      +'<div class="dp-wrap" id="dpWrap-queueDate"><input type="text" class="dp-input" id="queueDate" readonly placeholder="Same as Att." autocomplete="off"><span class="dp-icon">📅</span></div>'
+      +'<button class="fbtn fbtn-ghost" id="btnClearQueueDate" style="font-size:12px;padding:6px 10px">✕</button>'
+      +'</div>'
       +'</div>'
       +queueHtml;
   }
 
   shtml('attendanceArea', attHtml + queueBlock);
   _wireAttCards('attendanceArea',false);
+  var qdi2=gid('queueDate');if(qdi2&&!qdi2._dpWired){qdi2.addEventListener('click',function(){DP.open('queueDate');});qdi2._dpWired=true;}
+  var clrQ2=gid('btnClearQueueDate');if(clrQ2)clrQ2.addEventListener('click',function(){DP.vals['queueDate']='';gid('queueDate').value='';_lastAttDate='';loadAttendance();});
 }
 function loadAttDetails(){
   var dateISO=DP.getVal('attDate2')||todayISO();
