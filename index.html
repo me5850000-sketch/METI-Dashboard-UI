@@ -2551,7 +2551,15 @@ function loadAttendance(){
   if(_lastAttDate===cacheKey&&_lastAttR){renderAttendanceSimple(_lastAttR,dateISO);return;}
   shtml('attendanceArea','<div class="loading"><div class="spin"></div> Loading...</div>');
   google.script.run.withSuccessHandler(function(r){if(r.err){shtml('attendanceArea','<div class="empty">'+r.err+'</div>');return;}_lastAttR=r;_lastAttDate=cacheKey;renderAttendanceSimple(r,dateISO);}).withFailureHandler(function(e){shtml('attendanceArea','<div class="empty">'+e.message+'</div>');var queueDateISO=DP.getVal('queueDate')||dateISO;
-}).getAttendance(TOKEN,dateISO,_attShift==='All'?null:_attShift,DP.getVal('queueDate')||dateISO);
+var qSelEl = gid('queueDateSelect');
+  var selectedQueueSheet = qSelEl && qSelEl.value ? qSelEl.value : null;
+  // تحويل "25-05-2026" لـ "2026-05-25" للـ API
+  var queueDateParam = null;
+  if(selectedQueueSheet){
+    var qp = selectedQueueSheet.split('-').map(function(x){ return x.trim(); });
+    queueDateParam = qp[2] + '-' + qp[1] + '-' + ('0'+qp[0]).slice(-2);
+  }
+}).getAttendance(TOKEN,dateISO,_attShift==='All'?null:_attShift,queueDateParam||dateISO);
 }
 
 function initAttendancePage(){
@@ -2684,17 +2692,44 @@ function renderAttendanceSimple(r,dateISO){
       +'<span style="font-size:16px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:.8px">📊 No. of Labelers by Queue</span>'
       +'<div style="display:flex;align-items:center;gap:8px">'
       +'<label style="font-size:11px;font-weight:800;color:var(--blue);text-transform:uppercase">Queue Date:</label>'
-      +'<div class="dp-wrap" id="dpWrap-queueDate"><input type="text" class="dp-input" id="queueDate" readonly placeholder="Same as Att." autocomplete="off"><span class="dp-icon">📅</span></div>'
-      +'<button class="fbtn fbtn-ghost" id="btnClearQueueDate" style="font-size:12px;padding:6px 10px">✕</button>'
+      +'<select id="queueDateSelect" class="sel-inp" style="min-width:180px;font-size:13px;font-weight:700;padding:7px 12px;border-radius:8px;border:1.5px solid var(--border);background:white;color:var(--dark)">'
+      +'<option value="">Same as Attendance</option>'
+      +'</select>'
       +'</div>'
       +'</div>'
       +queueHtml;
   }
 
   shtml('attendanceArea', attHtml + queueBlock);
-  _wireAttCards('attendanceArea',false);
-  var qdi2=gid('queueDate');if(qdi2&&!qdi2._dpWired){qdi2.addEventListener('click',function(){DP.open('queueDate');});qdi2._dpWired=true;}
-  var clrQ2=gid('btnClearQueueDate');if(clrQ2)clrQ2.addEventListener('click',function(){DP.vals['queueDate']='';gid('queueDate').value='';_lastAttDate='';loadAttendance();});
+_wireAttCards('attendanceArea',false);
+  
+  // تحميل شيتات القوائم في الـ Dropdown
+  var qSel = gid('queueDateSelect');
+  if(qSel && !qSel._loaded) {
+    qSel._loaded = true;
+    google.script.run
+      .withSuccessHandler(function(r){
+        var sel = gid('queueDateSelect');
+        if(!sel || !r.sheets) return;
+        r.sheets.forEach(function(name){
+          var opt = document.createElement('option');
+          opt.value = name;
+          // تحويل الاسم من "25-05-2026" لـ "May 25, 2026"
+          var parts = name.split('-').map(function(x){ return x.trim(); });
+          var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+          var friendly = months[parseInt(parts[1])-1] + ' ' + parseInt(parts[0]) + ', ' + parts[2];
+          opt.textContent = friendly;
+          sel.appendChild(opt);
+        });
+      })
+      .withFailureHandler(function(){})
+      .getQueueSheets(TOKEN);
+    
+    qSel.addEventListener('change', function(){
+      _lastAttDate = ''; // reset cache
+      loadAttendance();
+    });
+  }
 }
 function loadAttDetails(){
   var dateISO=DP.getVal('attDate2')||todayISO();
