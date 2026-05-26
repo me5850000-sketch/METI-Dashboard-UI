@@ -5154,9 +5154,10 @@ function fetchLabProdLive() {
   var btn = gid('lpLiveBtn');
   if (btn) { btn.innerHTML='⏳ Fetching...'; btn.disabled=true; }
 
-  var today = todayISO();
-  var startDate = parseInt(today.replace(/-/g,'').substring(0,6)+'01');
-  var endDate   = parseInt(today.replace(/-/g,''));
+  var fromISO = DP.getVal('lpFrom') || todayISO();
+var toISO   = DP.getVal('lpTo')   || todayISO();
+var startDate = parseInt(fromISO.replace(/-/g,''));
+var endDate   = parseInt(toISO.replace(/-/g,''));
 
   var payload = {
     dataRequest: [{
