@@ -740,7 +740,6 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
         <div class="nav-item" id="nav-qtc" data-page="qtc">Top QTC</div>
         <div class="nav-item" id="nav-qtcstats" data-page="qtcstats">QTC Stats</div>
         <div class="nav-item" id="nav-labprod" data-page="labprod">Labeling Production</div>
-<div class="nav-item" id="nav-labstats" data-page="labstats">Labeling Stats</div>
         <div class="nav-section admin-only" style="display:none">Admin</div>
 <div class="nav-item" id="nav-attendance" data-page="attendance" style="display:none">Attendance</div>
 <div class="nav-item" id="nav-attdetails" data-page="attdetails" style="display:none">Details of Attendance</div>
@@ -910,9 +909,6 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
         <div id="pgLabProd" style="display:none">
   <div id="labProdArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
 </div>
-<div id="pgLabStats" style="display:none">
-  <div id="labStatsArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
-</div>
         <div id="pgUsers" style="display:none">
           <div class="sec-toolbar">
             <div class="sec-hdr" style="margin:0;flex:1">All Dashboard Users</div>
@@ -931,9 +927,6 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
       <button class="bn-item" id="bn-qtc" data-page="qtc"><span class="bn-icon">⭐</span><span>QTC</span></button>
       <button class="bn-item" id="bn-labprod" data-page="labprod">
   <span class="bn-icon">📊</span><span>Prod</span>
-</button>
-<button class="bn-item" id="bn-labstats" data-page="labstats">
-  <span class="bn-icon">📈</span><span>Stats</span>
 </button>
       <button class="bn-item" id="bn-menu" data-action="menu"><span class="bn-icon">☰</span><span>Menu</span></button>
     </nav>
@@ -1288,7 +1281,7 @@ if (addBtn) addBtn.style.display = hasRole(SESSION.role, ['admin','sm','ssv','sv
 <script>
 // ══ NAVIGATION ══
 var PAGES={home:{pg:'pgHome',title:'Home',sub:'Overview & Statistics'},detailsofdata:{pg:'pgDetailsOfData',title:'Details of Data',sub:'Raw Data — Every Task'},labelers:{pg:'pgLabelers',title:'Top Labelers',sub:'Leaderboard by Shift'},qtc:{pg:'pgQtc',title:'Top QTC',sub:'QTC Performance'},qtcstats:{pg:'pgQtcStats',title:'QTC Stats',sub:'Individual QTC Performance'},attendance:{pg:'pgAttendance',title:'Attendance',sub:'Daily Attendance Summary'},attdetails:{pg:'pgAttDetails',title:'Details of Attendance',sub:'Full Names — Present & Absent'},otdetails: { pg: 'pgOtDetails', title: 'Details of OT', sub: 'Overtime Records' },users:{pg:'pgUsers',title:'Users',sub:'Manage Dashboard Users'},labprod:{pg:'pgLabProd',title:'Labeling Production',sub:'Daily Task Tracking — Live & Historical'},
-labstats:{pg:'pgLabStats',title:'Labeling Stats',sub:'Dynamic Task Analytics — DataStudio Live'}};
+labprod:{pg:'pgLabProd',title:'Labeling Production',sub:'Daily Task Tracking — Live & Historical'}};
 
 function navTo(page){
   if(page==='data'&&SESSION&&!hasRole(SESSION.role,ROLES_VIEW_DATA))return;
@@ -1324,7 +1317,6 @@ var pagesWithGlobalFilter = ['home', 'detailsofdata', 'labelers', 'qtc', 'qtcsta
   if(page==='otdetails') loadOtDetails();
   if(page==='qtcstats')initQtcStats();
   if(page==='labprod') loadLabProd();
-if(page==='labstats') loadLabStats();
   var navLP = gid('nav-labprod');
 if(navLP) navLP.style.display = '';
 }
