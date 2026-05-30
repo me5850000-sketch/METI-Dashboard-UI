@@ -2550,16 +2550,14 @@ function loadAttendance(){
   var cacheKey=dateISO+'|'+_attShift;
   if(_lastAttDate===cacheKey&&_lastAttR){renderAttendanceSimple(_lastAttR,dateISO);return;}
   shtml('attendanceArea','<div class="loading"><div class="spin"></div> Loading...</div>');
-  google.script.run.withSuccessHandler(function(r){if(r.err){shtml('attendanceArea','<div class="empty">'+r.err+'</div>');return;}_lastAttR=r;_lastAttDate=cacheKey;renderAttendanceSimple(r,dateISO);}).withFailureHandler(function(e){shtml('attendanceArea','<div class="empty">'+e.message+'</div>');var queueDateISO=DP.getVal('queueDate')||dateISO;
-var qSelEl = gid('queueDateSelect');
+  var qSelEl = gid('queueDateSelect');
   var selectedQueueSheet = qSelEl && qSelEl.value ? qSelEl.value : null;
-  // تحويل "25-05-2026" لـ "2026-05-25" للـ API
   var queueDateParam = null;
   if(selectedQueueSheet){
     var qp = selectedQueueSheet.split('-').map(function(x){ return x.trim(); });
     queueDateParam = qp[2] + '-' + qp[1] + '-' + ('0'+qp[0]).slice(-2);
   }
-}).getAttendance(TOKEN,dateISO,_attShift==='All'?null:_attShift,queueDateParam||dateISO);
+  google.script.run.withSuccessHandler(function(r){if(r.err){shtml('attendanceArea','<div class="empty">'+r.err+'</div>');return;}_lastAttR=r;_lastAttDate=cacheKey;renderAttendanceSimple(r,dateISO);}).withFailureHandler(function(e){shtml('attendanceArea','<div class="empty">'+e.message+'</div>');}).getAttendance(TOKEN,dateISO,_attShift==='All'?null:_attShift,queueDateParam||dateISO);
 }
 
 function initAttendancePage(){
