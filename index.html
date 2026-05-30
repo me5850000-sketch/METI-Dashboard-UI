@@ -2493,7 +2493,8 @@ function _genMsg(sh, sdata, dateISO) {
     lines.push('Overshift = 0');
   }
 
-  return lines.join('\n');
+  lines.push('\n@201211331239 @201028103736');
+return lines.join('\n');
 }
 function _buildAttCard(sh,sd,dateISO,isDetails){
   var present=sd.present||[],absent=sd.absent||[],total=sd.total||0;
