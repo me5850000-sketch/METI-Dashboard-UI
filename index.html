@@ -2493,7 +2493,9 @@ function _genMsg(sh, sdata, dateISO) {
     lines.push('Overshift = 0');
   }
 
-  lines.push('\n@201211331239 @201028103736');
+  lines.push('\n');
+lines.push('@201211331239');
+lines.push('@201028103736');
 return lines.join('\n');
 }
 function _buildAttCard(sh,sd,dateISO,isDetails){
