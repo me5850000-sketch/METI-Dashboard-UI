@@ -3713,7 +3713,7 @@ window.forceSyncAttendance = function(btn) {
 '<span style="font-size:14px;font-weight:700;color:var(--blue)">📍 ' + un + '</span>' +
 (unitNotSub.length > 0
   ? '<span style="background:#fce8e6;color:#c5221f;font-size:11px;font-weight:700;padding:2px 10px;border-radius:5px;border:1px solid #f5c6cb">⚠️ ' + unitNotSub.length + ' Not Submitted</span>' +
-    '<button onclick="exportNotSubmitted(' + JSON.stringify(unitNotSub).replace(/"/g, '&quot;') + ',\'' + un + '\',\'' + sh + '\')" style="background:#1e8e3e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-left:6px">📥 Export</button>'
+    '<button class="ns-export-btn" data-people="' + encodeURIComponent(JSON.stringify(unitNotSub)) + '" data-unit="' + encodeURIComponent(un) + '" data-shift="' + encodeURIComponent(sh) + '" style="background:#1e8e3e;color:white;border:none;border-radius:5px;padding:3px 10px;font-size:11px;font-weight:700;cursor:pointer;margin-left:6px">📥 Export</button>'
   : '') +
 '</div>' +
         '<div style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">' +
@@ -3801,12 +3801,9 @@ window.forceSyncAttendance = function(btn) {
   var pcRaw = (p.pc || '-').toString();
   var pcShort = pcRaw.split('-').pop(); // يأخذ الجزء الأخير بعد آخر شرطة
 
- var safeNS = (p.name||'').replace(/'/g,"&#39;").replace(/"/g,'&quot;');
-var safeUbNS = fmtUbkey(p.yubikey||'');
-var safePcNS = (p.pc||'-').toString().split('-').pop();
+var nsData = { name: p.name||'', pc: p.pc||'-', location: un, shift: sh, yubikey: p.yubikey||'', email: '', phone: '' };
 html +=
-    '<tr style="background:#fff0f0;border-bottom:1px solid #f5c6cb;border-left:4px solid #c5221f;cursor:pointer" ' +
-    'onclick="window._openAttPopupWithData({name:\'' + safeNS + '\',pc:\'' + safePcNS + '\',location:\'' + un + '\',shift:\'' + sh + '\',yubikey:\'' + safeUbNS + '\',email:\'\',phone:\'\'},\'Not Submitted\',\'#c5221f\')">' +
+    '<tr class="ns-row-item" data-nsjson="' + encodeURIComponent(JSON.stringify(nsData)) + '" style="background:#fff0f0;border-bottom:1px solid #f5c6cb;border-left:4px solid #c5221f;cursor:pointer">' +
     '<td style="padding:8px 12px;text-align:center">' +
     '<span style="display:inline-flex;width:22px;height:22px;border-radius:50%;background:#c5221f;' +
     'color:white;font-size:13px;font-weight:900;align-items:center;justify-content:center;line-height:1">!</span>' +
