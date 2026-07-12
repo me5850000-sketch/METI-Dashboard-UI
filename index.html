@@ -3524,24 +3524,37 @@ Object.keys(shifts).forEach(function (sh) {
   grand.lifp += d.lifp; grand.liqa += d.liqa; grand.total += d.total;
 });
 
-// تحديد حالة زرار التحميل الاحترافي
+// ── تحميل بيانات الـ Attendance تلقائيًا لو لسه مش متحمّلة (بدل زرار يدوي بيوديك لصفحة تانية) ──
 var attendanceBtnHtml = "";
 if (!attSrc) {
-  attendanceBtnHtml = 
-    '<div id="attWarningContainer" style="flex:1; display:flex; justify-content:center; padding:5px 0;">' +
-      '<button onclick="forceSyncAttendance(this)" style="' +
-        'background: linear-gradient(135deg, #e37400 0%, #ff9800 100%);' +
-        'color: white; border: none; padding: 12px 28px; border-radius: 12px;' +
-        'font-size: 15px; font-weight: 800; cursor: pointer; box-shadow: 0 6px 20px rgba(227,116,0,0.4);' +
-        'display: flex; align-items: center; gap: 10px; transition: all 0.3s ease;' +
-        'animation: pulse-border 2s infinite; border: 2px solid rgba(255,255,255,0.3);">' +
-        '<span style="font-size:22px;">⚠️</span>' +
-        '<span>اضغط هنا أولاً لتفعيل بيانات الـ Attendance</span>' +
-      '</button>' +
-    '</div>' +
-    '<style>' +
-      '@keyframes pulse-border { 0% { transform: scale(1); } 50% { transform: scale(1.05); } 100% { transform: scale(1); } }' +
-    '</style>';
+  attendanceBtnHtml =
+    '<div id="attWarningContainer" style="flex:1; display:flex; align-items:center; justify-content:center; gap:8px; padding:5px 0; color:var(--gray); font-size:13px; font-weight:700">' +
+      '<div class="spin" style="width:14px;height:14px;border-width:2px;flex-shrink:0"></div>' +
+      '<span>جارٍ تحميل بيانات الحضور تلقائيًا...</span>' +
+    '</div>';
+
+  // نمنع تكرار النداء لو الصفحة اتعمل لها render أكتر من مرة قبل ما النداء الأول يخلص
+  if (!window._dodAutoAttFetching) {
+    window._dodAutoAttFetching = true;
+    var _dodAttDate = (typeof getFilterISO === 'function' ? getFilterISO(true) : null) || todayISO();
+
+    google.script.run
+      .withSuccessHandler(function (r) {
+        window._dodAutoAttFetching = false;
+        if (r && !r.err) {
+          _attShift2Cache = r;
+          _lastAttDate2 = _dodAttDate + '|' + _attShift2;
+        }
+        // إعادة رسم الصفحة تلقائيًا بمجرد وصول بيانات الحضور، من غير أي تدخل من اليوزر
+        if (gid('pgDetailsOfData') && gid('pgDetailsOfData').style.display !== 'none') {
+          renderDetailsOfData();
+        }
+      })
+      .withFailureHandler(function () {
+        window._dodAutoAttFetching = false;
+      })
+      .getAttendance(TOKEN, _dodAttDate, _attShift2 === 'All' ? null : _attShift2);
+  }
 }
 
 var html =
