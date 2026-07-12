@@ -4275,14 +4275,23 @@ renderStats = function(data, user){
   }
 };
 
+// ⚠️ RACE-CONDITION GUARD: لو المستخدم غيّر التاريخ بسرعة (From ثم To مثلاً)، ممكن
+// يبقى فيه أكتر من طلب getStats شغال في نفس الوقت. من غير الحماية دي، رد الطلب
+// الأقدم لو وصل متأخر بيكتب فوق نتيجة الطلب الأحدث ببيانات لتاريخ قديم — وده كان
+// بيدي إحساس إن "التاريخ اتغيّر بس البيانات مبتتحدّثش صح". كل دالة هنا بتاخد رقم
+// تسلسلي، ولو الرد رجع وهو مش آخر رقم اتبعت، بيتجاهل.
+var _reqSeq = { stats: 0, data: 0, labelers: 0 };
+
 // ══ 6. Home / Data / Labelers — فلترة الشيفت حسب الدور ══
 var _origLoadStats = loadStats;
 loadStats = function(){
   if(!TOKEN || !SESSION){ return; }
   var from = getFilterISO(true), to = getFilterISO(false);
+  var mySeq = ++_reqSeq.stats;
   shtml('statsArea','<div class="loading"><div class="spin"></div> Loading stats...</div>');
   google.script.run
     .withSuccessHandler(function(r){
+      if(mySeq !== _reqSeq.stats) return; // رد قديم اتأخر — اتجاهله
       if(r.err){ shtml('statsArea','<div class="empty">Error: '+r.err+'</div>'); return; }
       var role = SESSION && SESSION.role;
       var data = r.data || [];
@@ -4315,9 +4324,11 @@ loadStats = function(){
 var _origLoadData = loadData;
 loadData = function(){
   var from = getFilterISO(true), to = getFilterISO(false);
+  var mySeq = ++_reqSeq.data;
   shtml('dataArea','<div class="loading"><div class="spin"></div> Loading data...</div>');
   google.script.run
     .withSuccessHandler(function(r){
+      if(mySeq !== _reqSeq.data) return; // رد قديم اتأخر — اتجاهله
       if(r.err){ shtml('dataArea','<div class="empty">'+r.err+'</div>'); return; }
       r.data.sort(function(a,b){ return new Date(b[F.date]||0)-new Date(a[F.date]||0); });
       // فلترة حسب الشيفت لو الدور يحتاج ذلك
@@ -4340,9 +4351,11 @@ loadData = function(){
 var _origLoadLabelers = loadLabelers;
 loadLabelers = function(){
   var from = getFilterISO(true), to = getFilterISO(false);
+  var mySeq = ++_reqSeq.labelers;
   shtml('labelersArea','<div class="loading"><div class="spin"></div> Loading Labeler Leaderboard...</div>');
   google.script.run
     .withSuccessHandler(function(r){
+      if(mySeq !== _reqSeq.labelers) return; // رد قديم اتأخر — اتجاهله
       if(r.err){ shtml('labelersArea','<div class="empty">'+r.err+'</div>'); return; }
       var role = SESSION && SESSION.role;
       var data = r.data;
