@@ -969,7 +969,7 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
 // الطلبات المتزامنة لنفس المفتاح في طلب واحد بس.
 var _RPC_CACHE = {}; // key -> { ts, data }
 var _RPC_INFLIGHT = {}; // key -> [callbacks]
-var _RPC_CACHEABLE = { getStats: true, getQtcStats: true, getBestQtcData: true };
+var _RPC_CACHEABLE = { getStats: true, getQtcStats: true, getBestQtcData: true, getAttendance: true };
 var _RPC_CACHE_TTL = 20000; // 20 ثانية
 
 function _rpcKey(fn, args) { return fn + '|' + JSON.stringify(args); }
@@ -1135,13 +1135,13 @@ var SHARED={
     if(gid('gFromTime')) gid('gFromTime').value = this.fromTime;
     if(gid('gToTime')) gid('gToTime').value = this.toTime;
     // 🆕 مزامنة تاريخ صفحة الـ Attendance / Details of Attendance مع تاريخ "From"
-    // بتاع الفلتر العام، عشان يفضلوا دايمًا على نفس التاريخ من غير ما تضطر تظبطهم لوحدهم.
-    // ⚠️ trig=true (بعد ما كانت false) عشان بيانات الأتيند فعلاً تتحمّل تلقائي لنفس
-    // التاريخ ده — مش بس شكل الخانة يتغيّر — لأن "Not Submitted" في Details of Data
-    // بتعتمد على الأتيند بتاع نفس اليوم بالظبط.
+    // بتاع الفلتر العام (شكليًا بس هنا) — التحميل الفعلي لبيانات الأتيند (المطلوب
+    // لقسم "Not Submitted") بيحصل في reloadActive()/navTo() بس لما صفحة "Details of
+    // Data" (أو الأتيند نفسها) هي الظاهرة فعليًا، مش في كل مرة الفلتر بيتغيّر مهما
+    // كانت الصفحة — عشان منبعتش طلبات شبكة زيادة من غير داعي في صفحات زي Home/Labelers/QTC.
     if(this.from){
-      DP.setVal('attDate', this.from, true);
-      DP.setVal('attDate2', this.from, true);
+      DP.setVal('attDate', this.from, false);
+      DP.setVal('attDate2', this.from, false);
     }
   },
   reloadActive:function(){
@@ -1163,7 +1163,7 @@ var SHARED={
     if (!activePage) return;
 
     if (activePage === 'home') loadStats();
-    else if (activePage === 'detailsofdata') loadData();
+    else if (activePage === 'detailsofdata') { loadData(); loadAttendance(); loadAttDetails(); }
     else if (activePage === 'labelers') loadLabelers();
     else if (activePage === 'qtc') loadQtc();
     else if (activePage === 'qtcstats') initQtcStats();
@@ -1345,6 +1345,7 @@ var pagesWithGlobalFilter = ['home', 'detailsofdata', 'labelers', 'qtc', 'qtcsta
   } else {
     renderDetailsOfData();
   }
+  loadAttendance(); loadAttDetails(); // Not Submitted محتاجة داتا الأتيند لنفس التاريخ
 }
   if(page==='users')loadUsers();
   if(page==='labelers')loadLabelers();
@@ -3233,18 +3234,6 @@ var st=sessionStorage.getItem('dk_tok'),su=sessionStorage.getItem('dk_usr');
     SHARED.syncAll();SHARED.reloadActive();
   });
 
-  // ══ AUTO SYNC: لما تختار تاريخ من الـ Date Picker يتطبق تلقائياً ══
-  ['gFrom','gTo'].forEach(function(id){
-    var el=gid(id);
-    if(el){
-      el.addEventListener('change',function(){
-        SHARED.from=DP.getVal('gFrom');
-        SHARED.to=DP.getVal('gTo');
-        SHARED.syncAll();
-        if(SESSION)SHARED.reloadActive();
-      });
-    }
-  });
   if(btnGClear) btnGClear.addEventListener('click',function(){
     applyShiftDefaults(SESSION&&SESSION.shift);SHARED.reloadActive();
   });
