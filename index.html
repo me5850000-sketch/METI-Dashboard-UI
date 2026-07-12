@@ -1132,6 +1132,12 @@ var SHARED={
     DP.vals['gTo'] = this.to; if(gid('gTo')) gid('gTo').value = DP.fmtDisplay(this.to);
     if(gid('gFromTime')) gid('gFromTime').value = this.fromTime;
     if(gid('gToTime')) gid('gToTime').value = this.toTime;
+    // 🆕 مزامنة تاريخ صفحة الـ Attendance / Details of Attendance مع تاريخ "From"
+    // بتاع الفلتر العام، عشان يفضلوا دايمًا على نفس التاريخ من غير ما تضطر تظبطهم لوحدهم
+    if(this.from){
+      DP.setVal('attDate', this.from, false);
+      DP.setVal('attDate2', this.from, false);
+    }
   },
   reloadActive:function(){
     // امسح الـ cache عشان كل الصفحات تتحدث
@@ -1139,13 +1145,25 @@ var SHARED={
     dataAll = [];
     _lastAttR = null; _lastAttDate = '';
     _attShift2Cache = null; _lastAttDate2 = '';
-    
-    // حدث الصفحة الحالية
-    if(gid('pgHome').style.display!=='none')loadStats();
-    else if(gid('pgData').style.display!=='none')loadData();
-    else if(gid('pgLabelers').style.display!=='none')loadLabelers();
-    else if(gid('pgQtc').style.display!=='none')loadQtc();
-    else if(gid('pgQtcStats').style.display!=='none')initQtcStats();
+
+    // 🔧 بنحدد الصفحة النشطة فعليًا (زي ما بيحصل في doSilentReload) بدل ما نتأكد
+    // من IDs غلط زي 'pgData' وهي مش الصفحة اللي بتتعرض فعليًا (كان ده سبب إن
+    // الفلتر العام كان شغال في الـ Home بس ومش بيرجّع نتيجة في باقي الصفحات)
+    var activePage = null;
+    var pagesKeys = Object.keys(PAGES);
+    for (var i = 0; i < pagesKeys.length; i++) {
+      var pg = gid(PAGES[pagesKeys[i]].pg);
+      if (pg && pg.style.display !== 'none') { activePage = pagesKeys[i]; break; }
+    }
+    if (!activePage) return;
+
+    if (activePage === 'home') loadStats();
+    else if (activePage === 'detailsofdata') loadData();
+    else if (activePage === 'labelers') loadLabelers();
+    else if (activePage === 'qtc') loadQtc();
+    else if (activePage === 'qtcstats') initQtcStats();
+    else if (activePage === 'attendance') loadAttendance();
+    else if (activePage === 'attdetails') loadAttDetails();
   }
 };
 
