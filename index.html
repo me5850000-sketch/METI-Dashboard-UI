@@ -1135,10 +1135,13 @@ var SHARED={
     if(gid('gFromTime')) gid('gFromTime').value = this.fromTime;
     if(gid('gToTime')) gid('gToTime').value = this.toTime;
     // 🆕 مزامنة تاريخ صفحة الـ Attendance / Details of Attendance مع تاريخ "From"
-    // بتاع الفلتر العام، عشان يفضلوا دايمًا على نفس التاريخ من غير ما تضطر تظبطهم لوحدهم
+    // بتاع الفلتر العام، عشان يفضلوا دايمًا على نفس التاريخ من غير ما تضطر تظبطهم لوحدهم.
+    // ⚠️ trig=true (بعد ما كانت false) عشان بيانات الأتيند فعلاً تتحمّل تلقائي لنفس
+    // التاريخ ده — مش بس شكل الخانة يتغيّر — لأن "Not Submitted" في Details of Data
+    // بتعتمد على الأتيند بتاع نفس اليوم بالظبط.
     if(this.from){
-      DP.setVal('attDate', this.from, false);
-      DP.setVal('attDate2', this.from, false);
+      DP.setVal('attDate', this.from, true);
+      DP.setVal('attDate2', this.from, true);
     }
   },
   reloadActive:function(){
@@ -2602,7 +2605,15 @@ function loadAttendance(){
     var qp = selectedQueueSheet.split('-').map(function(x){ return x.trim(); });
     queueDateParam = qp[2] + '-' + qp[1] + '-' + ('0'+qp[0]).slice(-2);
   }
-  google.script.run.withSuccessHandler(function(r){if(r.err){shtml('attendanceArea','<div class="empty">'+r.err+'</div>');return;}_lastAttR=r;_lastAttDate=cacheKey;renderAttendanceSimple(r,dateISO);}).withFailureHandler(function(e){shtml('attendanceArea','<div class="empty">'+e.message+'</div>');}).getAttendance(TOKEN,dateISO,_attShift==='All'?null:_attShift,queueDateParam||dateISO);
+  google.script.run.withSuccessHandler(function(r){if(r.err){shtml('attendanceArea','<div class="empty">'+r.err+'</div>');return;}_lastAttR=r;_lastAttDate=cacheKey;renderAttendanceSimple(r,dateISO);_refreshNotSubmittedIfVisible();}).withFailureHandler(function(e){shtml('attendanceArea','<div class="empty">'+e.message+'</div>');}).getAttendance(TOKEN,dateISO,_attShift==='All'?null:_attShift,queueDateParam||dateISO);
+}
+
+// 🆕 لو المستخدم واقف في صفحة "Details of Data"، اللي فيها قسم "Not Submitted" اللي
+// بيعتمد على بيانات الأتيند (_lastAttR / _attShift2Cache)، لازم نعيد رسمه لما الأتيند
+// يوصل — لأنه غالبًا بيوصل بعد ما داتا الـ Details of Data خلصت تحميل وترندرت.
+function _refreshNotSubmittedIfVisible(){
+  var pg = gid('pgDetailsOfData');
+  if(pg && pg.style.display !== 'none' && typeof renderDetailsOfData === 'function') renderDetailsOfData();
 }
 
 function initAttendancePage(){
@@ -2781,7 +2792,7 @@ function loadAttDetails(){
   var cacheKey=dateISO+'|'+_attShift2;
   if(_lastAttDate2===cacheKey&&_attShift2Cache){renderAttDetailsPage(_attShift2Cache,dateISO);return;}
   shtml('attDetailsArea','<div class="loading"><div class="spin"></div> Loading...</div>');
-  google.script.run.withSuccessHandler(function(r){if(r.err){shtml('attDetailsArea','<div class="empty">'+r.err+'</div>');return;}_attShift2Cache=r;_lastAttDate2=cacheKey;renderAttDetailsPage(r,dateISO);}).withFailureHandler(function(e){shtml('attDetailsArea','<div class="empty">'+e.message+'</div>');}).getAttendance(TOKEN,dateISO,_attShift2==='All'?null:_attShift2);
+  google.script.run.withSuccessHandler(function(r){if(r.err){shtml('attDetailsArea','<div class="empty">'+r.err+'</div>');return;}_attShift2Cache=r;_lastAttDate2=cacheKey;renderAttDetailsPage(r,dateISO);_refreshNotSubmittedIfVisible();}).withFailureHandler(function(e){shtml('attDetailsArea','<div class="empty">'+e.message+'</div>');}).getAttendance(TOKEN,dateISO,_attShift2==='All'?null:_attShift2);
 }
 
 function initAttDetailsPage(){
@@ -3516,7 +3527,15 @@ renderDetailsOfData = function () {
   // ── بناء خريطة "مسبمتش": shift → unit → [employees] ──
   var notSubmittedMap = {};
   var totalNotSub = 0;
-  var attSrc = _attShift2Cache || _lastAttR;
+  // ⚠️ استخدام الكاش بس لو فعلاً لنفس التاريخ المختار حاليًا في الفلتر (SHARED.from).
+  // قبل كده كان بياخد أي كاش موجود (حتى لو ليوم تاني) من غير ما يتأكد، فكان ممكن
+  // يورّي "Not Submitted" غلط بهدوء من غير أي تنبيه.
+  var _curDate = SHARED && SHARED.from;
+  var _attCacheDate  = (_lastAttDate2 || '').split('|')[0];
+  var _attCacheDate2 = (_lastAttDate  || '').split('|')[0];
+  var attSrc = (_attShift2Cache && _attCacheDate === _curDate) ? _attShift2Cache
+             : (_lastAttR && _attCacheDate2 === _curDate) ? _lastAttR
+             : null;
 
   if (attSrc && attSrc.shifts) {
     Object.keys(attSrc.shifts).forEach(function (sh) {
