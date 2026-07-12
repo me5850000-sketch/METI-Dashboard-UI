@@ -82,21 +82,7 @@ body{background:var(--bg);min-height:100vh;font-size:14px;color:var(--dark)}
 .content{padding:24px 28px;flex:1}
 
 /* ══ GLOBAL FILTER BAR ══ */
-.global-filter-bar {
-  background: white;
-  padding: 12px 28px;
-  border-bottom: 1px solid var(--border);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  position: sticky;
-  top: 68px; /* Below topbar */
-  z-index: 150;
-  box-shadow: 0 4px 15px rgba(28,69,135,.05);
-  flex-wrap: wrap;
-}
 .global-filter-bar label{font-size:11px;font-weight:800;color:var(--blue);text-transform:uppercase;letter-spacing:0.5px}
-body.dark .global-filter-bar { background: #1e2130; border-color: #2d3250; }
 
 /* ══ COMPONENTS ══ */
 .shift-banner{background:var(--blue-bg);border:1.5px solid var(--blue-lt);border-radius:10px;padding:10px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px;font-size:13px;font-weight:700;color:var(--blue)}
@@ -999,19 +985,6 @@ var google = {
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
-    if (false && data && data.err === 'SESSION_CONFLICT' && SESSION) {
-
-      bd.style.cssText = 'position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;';
-      bd.innerHTML =
-        '<div style="background:white;border-radius:16px;padding:32px;max-width:380px;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)">' +
-        '<div style="font-size:48px;margin-bottom:16px">🔐</div>' +
-        '<div style="font-size:18px;font-weight:800;color:#c5221f;margin-bottom:10px">Someone Logged In On The Same Account</div>' +
-'<div style="font-size:14px;color:#5f6368;margin-bottom:24px;line-height:1.6">Your account has been accessed from another device.<br>You have been automatically signed out for security.</div>' +
-'<button onclick="sessionStorage.clear();document.body.innerHTML=\'\';location.reload();" style="width:100%;padding:12px;background:#1c4587;color:white;border:none;border-radius:9px;font-size:15px;font-weight:700;cursor:pointer">OK — Back to Login</button>' +
-        '</div>';
-      document.body.appendChild(bd);
-      return;
-    }
     if (s) s(data);
   })
   .catch(function(e) { console.error(e); if (f) f(e); });
@@ -1068,6 +1041,8 @@ function tryParse(s){try{return JSON.parse(s);}catch(e){return null;}}
 function todayISO(){var d=new Date();return d.getFullYear()+'-'+('0'+(d.getMonth()+1)).slice(-2)+'-'+('0'+d.getDate()).slice(-2);}
 function nShift(s){return s.replace(/\s*\(.*?\)/g,'').replace(/\s*12\s*H/gi,'').trim();}
 function titleCase(s){if(!s)return '-';s=s.trim();return s.indexOf(' ')!==-1?s.split(' ').map(function(w){return w.length?w[0].toUpperCase()+w.slice(1).toLowerCase():'';}).join(' '):s[0].toUpperCase()+s.slice(1).toLowerCase();}
+// ⚠️ تنقية أي نص قادم من المستخدمين (اسم/إيميل) قبل إدراجه في innerHTML، عشان نمنع XSS
+function esc(s){if(s===null||s===undefined)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
 function toAMPM(t){if(!t||t.length<5)return t||'-';var p=t.substring(0,5).split(':'),h=parseInt(p[0]),m=p[1];return(h===0?12:(h>12?h-12:h))+':'+m+' '+(h>=12?'PM':'AM');}
 function fmtUbkey(raw){if(!raw)return '-';raw=raw.toString().trim();var local=raw.replace(/@meti\.ai$/i,'').replace(/^me/i,'').replace(/\D/g,'');return local?'me'+('000000'+local).slice(-6)+'@meti.ai':raw;}
 function shiftBadge(s){if(s==='Morning')return 'b-morning';if(s==='Night')return 'b-night';if(s==='Over Night')return 'b-overnight';if(s==='Over Shift'||s==='Over Shift (M)'||s==='Over Shift (N)'||s==='Over Shift (ON)')return 'b-overshift';return '';}
@@ -2352,7 +2327,7 @@ function buildQtcSearchHtml(sel){
     qtcStatsList.forEach(function(u){
       if(isQR&&u.name.trim().toLowerCase()!==myNL)return;
       var isSel=sel&&u.teamsName===sel;
-      html+='<button class="mod-btn qtc-stat-btn" data-tname="'+encodeURIComponent(u.teamsName)+'" data-uname="'+encodeURIComponent(u.name)+'" data-shift="'+encodeURIComponent(u.shift||'')+'" style="'+(isSel?'background:var(--blue);color:white;border-color:var(--blue)':'')+'"><strong>'+titleCase(u.name)+'</strong>'+(u.shift?'<span class="badge '+shiftBadge(u.shift)+'" style="margin-left:6px;font-size:10px">'+u.shift+'</span>':'')+'</button>';
+      html+='<button class="mod-btn qtc-stat-btn" data-tname="'+encodeURIComponent(u.teamsName)+'" data-uname="'+encodeURIComponent(u.name)+'" data-shift="'+encodeURIComponent(u.shift||'')+'" style="'+(isSel?'background:var(--blue);color:white;border-color:var(--blue)':'')+'"><strong>'+esc(titleCase(u.name))+'</strong>'+(u.shift?'<span class="badge '+shiftBadge(u.shift)+'" style="margin-left:6px;font-size:10px">'+esc(u.shift)+'</span>':'')+'</button>';
     });
   }
   html+='</div></div>';
@@ -2977,99 +2952,6 @@ window._openAttPopupWithData=function(p,statusLabel,statusBg){
 </script>
 
 <script>
-  // ══ OT DETAILS PAGE ══
-function loadOtDetails() {
-  var dateISO = DP.getVal('otDate') || todayISO();
-  if (!DP.getVal('otDate')) DP.setVal('otDate', dateISO, false);
-
-  shtml('otDetailsArea', '<div class="loading"><div class="spin"></div> Loading OT Details...</div>');
-  
-  google.script.run
-    .withSuccessHandler(function(r) {
-      btn.innerHTML = origText;
-      btn.disabled = false;
-      if (r.err) {
-        if (newWin) newWin.close();
-        toast(r.err, 'err');
-        return;
-      }
-      if (newWin) newWin.location.href = r.url;
-      else window.open(r.url, '_blank');
-      toast('Sheet created ✅', 'ok');
-    })
-    .withFailureHandler(function(e) {
-      btn.innerHTML = origText;
-      btn.disabled = false;
-      if (newWin) newWin.close();
-      toast('Error: ' + e.message, 'err');
-    })
-    .createNotSubmittedSheet(TOKEN, rows, unit, shift);
-}
-
-function renderOtDetails(data) {
-  var area = gid('otDetailsArea');
-  if (!area) return;
-  
-  // بنجيب التاريخ الحالي عشان نثبته في المربع وميفضاش
-  var dateISO = DP.getVal('otDate') || todayISO();
-  var displayDate = DP.fmtDisplay(dateISO); 
-
-  if (!data || !data.length) {
-    area.innerHTML = '<div class="filter-bar"><label style="margin-right:10px">Date</label><div class="dp-wrap" id="dpWrap-otDate"><input type="text" class="dp-input" id="otDate" readonly value="'+displayDate+'"><span class="dp-icon">📅</span></div></div><div class="empty">No OT records found for this date.</div>';
-    gid('otDate').addEventListener('click', function(){ DP.open('otDate'); });
-    return;
-  }
-
-  var overCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('over') !== -1; }).length;
-  var compCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('comp') !== -1; }).length;
-
-  var displayDate = DP.fmtDisplay(DP.getVal('otDate') || todayISO());
-  var html = '<div class="filter-bar"><label style="margin-right:10px">Date</label>'
-    + '<div class="dp-wrap" id="dpWrap-otDate"><input type="text" class="dp-input" id="otDate" readonly value="'+displayDate+'"><span class="dp-icon">📅</span></div>'
-    + '</div>';
-  html += '<div class="cards" style="grid-template-columns: repeat(3, 1fr); margin-bottom:15px">'
-    + mkCard('Total Records', data.length, 'blue')
-    + mkCard('Overtime', overCount, 'green')
-    + mkCard('Compensation', compCount, 'red')
-    + '</div>';
-
-  html += '<div class="tbl-card"><table><thead><tr><th>#</th><th class="left">Name</th><th>PC</th><th>OT Shift</th><th>Hours</th><th>State</th></tr></thead><tbody>';
-
-  data.forEach(function(r, i) {
-    var isComp = (r.state||'').toLowerCase().indexOf('comp') !== -1;
-    var stBadge = isComp ? 'b-inactive' : 'b-active';
-    html += '<tr class="clickable data-row" data-ot="'+encodeURIComponent(JSON.stringify(r))+'">'
-      + '<td>'+(i+1)+'</td>'
-      + '<td class="left bold">'+titleCase(r.name)+'</td>'
-      + '<td style="font-weight:800;color:var(--blue);font-size:14px;white-space:nowrap">'+(r.pc||'-').toString().toUpperCase()+'</td>'
-      + '<td><span class="badge '+shiftBadge(r.otShift)+'">'+(r.otShift||'-')+'</span></td>'
-      + '<td><span style="background:var(--orange-lt);padding:2px 8px;border-radius:5px;font-weight:700">'+(r.hours||'-')+'</span></td>'
-      + '<td><span class="badge '+stBadge+'">'+(r.state||'-')+'</span></td></tr>';
-  });
-  html += '</tbody></table></div>';
-  
-  area.innerHTML = html;
-  
-  // إعادة تفعيل زرار التاريخ بعد ما اترسم
-  gid('otDate').addEventListener('click', function(){ DP.open('otDate'); });
-
-  // تشغيل المودال لما تدوس على الصف
-  area.querySelectorAll('tr.data-row').forEach(function(tr){
-    tr.addEventListener('click', function(){ openOtModal(JSON.parse(decodeURIComponent(tr.getAttribute('data-ot')))); });
-  });
-}
-
-function openOtModal(r) {
-  gid('detailTitle').textContent = titleCase(r.name);
-  var html = '<div class="detail-grid">'
-    + '<div class="detail-item"><div class="detail-lbl">Original Shift</div><div class="detail-val">'+(r.shift||'-')+'</div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">Over Time Shift</div><div class="detail-val"><span class="badge '+shiftBadge(r.otShift)+'" style="font-size:13px;padding:4px 14px">'+(r.otShift||'-').toUpperCase()+'</span></div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">Original Floor</div><div class="detail-val" style="font-size:18px;font-weight:800;color:var(--blue)">'+(r.floor||'-')+'</div></div>'
-    + '<div class="detail-item"><div class="detail-lbl">Over Time Floor</div><div class="detail-val" style="font-size:18px;font-weight:800;color:var(--blue)">'+(r.otFloor||'-')+'</div></div>'
-    + '</div>';
-  shtml('detailBody', html);
-  gid('detailBd').classList.add('show');
-}
 // ══ USERS ══
 function loadUsers() {
   if (!SESSION || !hasRole(SESSION.role, ['admin','sm','ssv','sv'])) return;
@@ -3113,10 +2995,10 @@ function renderUsers(users, pending) {
     '</tr></thead><tbody>' +
     sorted.map(function(u) {
       return '<tr>' +
-        '<td class="left bold">'+titleCase(u.name||'-')+'</td>' +
-        '<td class="left" style="font-size:12px;color:var(--gray)">'+(u.email||'-')+'</td>' +
+        '<td class="left bold">'+esc(titleCase(u.name||'-'))+'</td>' +
+        '<td class="left" style="font-size:12px;color:var(--gray)">'+esc(u.email||'-')+'</td>' +
         '<td><span class="badge b-'+(u.role||'qtc')+'">'+(u.role||'-').toUpperCase()+'</span></td>' +
-        '<td>'+(u.shift?'<span class="badge '+shiftBadge(u.shift)+'">'+u.shift+'</span>':
+        '<td>'+(u.shift?'<span class="badge '+shiftBadge(u.shift)+'">'+esc(u.shift)+'</span>':
           '<span style="color:var(--gray);font-size:12px">All</span>')+'</td>' +
         '<td><span class="badge '+(u.active!==false?'b-active':'b-inactive')+'">' +
         (u.active!==false?'Active':'Inactive')+'</span></td>' +
@@ -3136,9 +3018,9 @@ function renderUsers(users, pending) {
         '</tr></thead><tbody>' +
         pending.map(function(p) {
           return '<tr>' +
-            '<td class="left bold">'+titleCase(p.name||'-')+'</td>' +
-            '<td class="left" style="font-size:12px;color:var(--gray)">'+(p.email||'-')+'</td>' +
-            '<td>'+(p.shift?'<span class="badge '+shiftBadge(p.shift)+'">'+p.shift+'</span>':'—')+'</td>' +
+            '<td class="left bold">'+esc(titleCase(p.name||'-'))+'</td>' +
+            '<td class="left" style="font-size:12px;color:var(--gray)">'+esc(p.email||'-')+'</td>' +
+            '<td>'+(p.shift?'<span class="badge '+shiftBadge(p.shift)+'">'+esc(p.shift)+'</span>':'—')+'</td>' +
             '<td style="display:flex;gap:6px;align-items:center">' +
             '<button class="fbtn fbtn-primary" style="padding:6px 14px;font-size:12px" ' +
             'onclick="openApproveModal('+p.id+',\''+encodeURIComponent(p.name)+'\')">✓ Approve</button>' +
@@ -3429,7 +3311,7 @@ function openApproveModal(rowId, encodedName) {
   bd.className = 'modal-backdrop show';
   bd.innerHTML =
     '<div class="modal" style="width:420px">' +
-    '<div class="modal-hdr"><h3>Approve: ' + titleCase(name) + '</h3>' +
+    '<div class="modal-hdr"><h3>Approve: ' + esc(titleCase(name)) + '</h3>' +
     '<button class="modal-close" onclick="closeApproveModal()">✕</button></div>' +
     '<div class="inp-wrap"><label>Role</label>' +
     '<select id="apRole" class="sel-inp">' +
@@ -4534,10 +4416,10 @@ if (isFullAdmin) {
 }
 var canDel = isFullAdmin;
       return '<tr>'+
-        '<td class="left bold">'+titleCase(u.name||'-')+'</td>'+
-        '<td class="left" style="font-size:12px;color:var(--gray)">'+(u.email||'-')+'</td>'+
+        '<td class="left bold">'+esc(titleCase(u.name||'-'))+'</td>'+
+        '<td class="left" style="font-size:12px;color:var(--gray)">'+esc(u.email||'-')+'</td>'+
         '<td><span class="badge b-'+(u.role||'qtc')+'">'+((u.role||'-')==='ssv'?'SSV':(u.role||'-').toUpperCase())+'</span></td>'+
-        '<td>'+(u.shift?'<span class="badge '+shiftBadge(u.shift)+'">'+u.shift+'</span>':'<span style="color:var(--gray);font-size:12px">All</span>')+'</td>'+
+        '<td>'+(u.shift?'<span class="badge '+shiftBadge(u.shift)+'">'+esc(u.shift)+'</span>':'<span style="color:var(--gray);font-size:12px">All</span>')+'</td>'+
         '<td><span class="badge '+(u.active!==false?'b-active':'b-inactive')+'">'+(u.active!==false?'Active':'Inactive')+'</span></td>'+
         '<td>'+
         (canEdit?'<button class="icon-btn ib-edit" data-uid="'+encodeURIComponent(JSON.stringify(u))+'">✏️</button>':'')+
@@ -4555,9 +4437,9 @@ var canDel = isFullAdmin;
         filteredPending.map(function(p){
           var canApprove = hasRole(role, ROLES_APPROVE_USERS);
           return '<tr>'+
-            '<td class="left bold">'+titleCase(p.name||'-')+'</td>'+
-            '<td class="left" style="font-size:12px;color:var(--gray)">'+(p.email||'-')+'</td>'+
-            '<td>'+(p.shift?'<span class="badge '+shiftBadge(p.shift)+'">'+p.shift+'</span>':'—')+'</td>'+
+            '<td class="left bold">'+esc(titleCase(p.name||'-'))+'</td>'+
+            '<td class="left" style="font-size:12px;color:var(--gray)">'+esc(p.email||'-')+'</td>'+
+            '<td>'+(p.shift?'<span class="badge '+shiftBadge(p.shift)+'">'+esc(p.shift)+'</span>':'—')+'</td>'+
             '<td style="display:flex;gap:6px;align-items:center">'+
             (canApprove
               ? '<button class="fbtn fbtn-primary" style="padding:6px 14px;font-size:12px" '+
@@ -4596,7 +4478,7 @@ openApproveModal = function(rowId, encodedName){
   bd.id = 'approveBd'; bd.className = 'modal-backdrop show';
   bd.innerHTML =
     '<div class="modal" style="width:420px">'+
-    '<div class="modal-hdr"><h3>Approve: '+titleCase(name)+'</h3>'+
+    '<div class="modal-hdr"><h3>Approve: '+esc(titleCase(name))+'</h3>'+
     '<button class="modal-close" onclick="closeApproveModal()">✕</button></div>'+
     '<div class="inp-wrap"><label>Role</label>'+
     '<select id="apRole" class="sel-inp">'+
