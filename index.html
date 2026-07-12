@@ -368,15 +368,9 @@ body.dark #qtcMiniPopupInner [style*="color:#e37400"] { color: #ffb74d !importan
 body.dark #qtcMiniPopupInner [style*="color:#007b83"] { color: #4dd0e1 !important; }
 body.dark #qtcMiniPopupInner [style*="color:#7b1fa2"] { color: #ce93d8 !important; }
 body.dark #qtcMiniPopupInner [style*="color:white"] { color: white !important; }  
-  att-card-details.open {
-  max-height: 200px !important;
-  opacity: 1 !important;
-  border-top-width: 1px !important;
-}
 body.dark #pgAttendance .filter-bar{background:#1e2130!important;border-color:#2d3250!important}
 body.dark #pgAttendance .mod-btn{background:#252840!important;color:#9aa0b4!important;border-color:#2d3250!important}
 body.dark #pgAttendance .mod-btn[style*="background:var(--blue)"]{background:#1c4587!important;color:white!important}
-  }
 /* ══ LAB BEST BANNER ══ */
 .lab-best-banner{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-bottom:14px}
 .lab-mini-card-stats{overflow:hidden;transition:max-height .25s ease,opacity .25s ease;max-height:200px;opacity:1}
@@ -464,14 +458,14 @@ body.dark #pgAttendance .mod-btn[style*="background:var(--blue)"]{background:#1c
   .modal-wide{width:100%!important}.detail-grid{grid-template-columns:1fr!important;gap:10px!important}
   .login-box{width:92%!important;padding:28px 18px 24px!important}
   .bottom-nav{display:flex!important}.toast{bottom:74px!important;right:10px!important;left:10px!important;text-align:center}
-}#advFilters .filter-bar{padding:8px 10px!important;gap:5px!important;}
+  #advFilters .filter-bar{padding:8px 10px!important;gap:5px!important;}
   #advFilters .mod-btn{padding:4px 9px!important;font-size:11px!important;border-radius:6px!important;}
   #advFilters .filter-lbl{font-size:9px!important;width:38px!important;}
   #advFilters #modBtns,#advFilters #unitBtns,#advFilters #shiftBtns{gap:4px!important;margin-bottom:5px!important;}
-#labTabsRow { flex-wrap: wrap !important; overflow-x: visible !important; }
+  #labTabsRow { flex-wrap: wrap !important; overflow-x: visible !important; }
   #attQueueGrid { grid-template-columns: 1fr !important; }
-#labTabsRow .lab-tab { flex-shrink: 0; font-size: 12px !important; padding: 8px 10px !important; }}
-#labTabsRow .lab-tab { flex-shrink: 0; font-size: 12px !important; padding: 8px 10px !important; }}
+  #labTabsRow .lab-tab { flex-shrink: 0; font-size: 12px !important; padding: 8px 10px !important; }
+}
 @media(min-width:769px) and (max-width:1024px){.sidebar{width:200px}.main{margin-left:200px}.content{padding:16px 20px}
   .cards{grid-template-columns:repeat(2,1fr)!important;gap:12px!important}.grid2{grid-template-columns:1fr!important}
   .target-cards{grid-template-columns:1fr 1fr;gap:14px}.modal{width:500px!important}.modal-wide{width:90%!important}
@@ -497,7 +491,6 @@ body.dark #pgAttendance .mod-btn[style*="background:var(--blue)"]{background:#1c
     font-size: 9px !important;
     padding: 1px 4px !important;
   }
-}
 }
 
 /* ══ ADVANCED FILTERS ══ */
@@ -969,6 +962,17 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
 // BRIDGE: replaces google.script.run
 // Calls your deployed Apps Script via fetch()
 // ═══════════════════════════════════════════════
+// ── كاش بسيط + تجميع الطلبات المتكررة لنفس الداتا (getStats/getQtcStats) ──
+// أكتر من صفحة (Home, Data, QTC, Labelers...) بتنادي getStats بنفس from/to قريب من
+// بعض، فبدل ما كل صفحة تعمل طلب شبكة منفصل، بنكاش النتيجة لفترة قصيرة وبنجمع
+// الطلبات المتزامنة لنفس المفتاح في طلب واحد بس.
+var _RPC_CACHE = {}; // key -> { ts, data }
+var _RPC_INFLIGHT = {}; // key -> [callbacks]
+var _RPC_CACHEABLE = { getStats: true, getQtcStats: true, getBestQtcData: true };
+var _RPC_CACHE_TTL = 20000; // 20 ثانية
+
+function _rpcKey(fn, args) { return fn + '|' + JSON.stringify(args); }
+
 var google = {
   script: {
     run: {
@@ -977,17 +981,55 @@ var google = {
       withFailureHandler: function(cb) { this._f = cb; return this; },
       execute: function(fn, args) {
   var s = this._s, f = this._f;
-  
+  var cacheable = _RPC_CACHEABLE[fn] === true;
+  var key = cacheable ? _rpcKey(fn, args) : null;
+
+  // 1) لو النتيجة في الكاش ولسه صالحة، رجعها فورًا من غير ما تعمل طلب شبكة
+  if (cacheable) {
+    var hit = _RPC_CACHE[key];
+    if (hit && (Date.now() - hit.ts) < _RPC_CACHE_TTL) {
+      setTimeout(function() { if (s) s(hit.data); }, 0);
+      return;
+    }
+    // 2) لو في طلب شغال بالفعل لنفس المفتاح، اضمّ الـ callback بتاعك عليه
+    //    بدل ما تعمل طلب شبكة إضافي
+    if (_RPC_INFLIGHT[key]) {
+      _RPC_INFLIGHT[key].push({ s: s, f: f });
+      return;
+    }
+    _RPC_INFLIGHT[key] = [{ s: s, f: f }];
+  }
+
+  // ── إلغاء أي طلب سابق لسه شغال لنفس الـ action غير القابل للكاش (زي لما
+  // اليوزر يغيّر الفلتر بسرعة قبل ما الطلب القديم يخلص) ──
+  var controller = null;
+  if (_abortableActions.indexOf(fn) !== -1) {
+    if (_currentAbort && _currentAbort[fn]) { try { _currentAbort[fn].abort(); } catch(e){} }
+    if (!_currentAbort) _currentAbort = {};
+    controller = ('AbortController' in window) ? new AbortController() : null;
+    if (controller) _currentAbort[fn] = controller;
+  }
+
   fetch(APPS_SCRIPT_URL, {
     method: 'POST',
     mode: 'cors',
-    body: JSON.stringify({ fn: fn, args: args })
+    body: JSON.stringify({ fn: fn, args: args }),
+    signal: controller ? controller.signal : undefined
   })
   .then(function(r) { return r.json(); })
   .then(function(data) {
-    if (s) s(data);
+    if (cacheable && data && !data.err) _RPC_CACHE[key] = { ts: Date.now(), data: data };
+    var waiters = cacheable ? _RPC_INFLIGHT[key] : [{ s: s, f: f }];
+    if (cacheable) delete _RPC_INFLIGHT[key];
+    (waiters || []).forEach(function(w) { if (w.s) w.s(data); });
   })
-  .catch(function(e) { console.error(e); if (f) f(e); });
+  .catch(function(e) {
+    if (e && e.name === 'AbortError') { if (cacheable) delete _RPC_INFLIGHT[key]; return; } // طلب اتلغى عمدًا، مش خطأ حقيقي
+    console.error(e);
+    var waiters = cacheable ? _RPC_INFLIGHT[key] : [{ s: s, f: f }];
+    if (cacheable) delete _RPC_INFLIGHT[key];
+    (waiters || []).forEach(function(w) { if (w.f) w.f(e); });
+  });
 },
       login: function(id, pwd) { this.execute('login', [id, pwd]); },
 pingSession: function(t) { this.execute('pingSession', [t]); },
