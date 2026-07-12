@@ -1046,6 +1046,7 @@ getAttendance: function(t, d, s, qd) { this.execute('getAttendance', [t, d, s, q
       getQueueSheets: function(t) { this.execute('getQueueSheets', [t]); },
       getTargets: function(t) { this.execute('getTargets', [t]); },
       getBestQtcData: function(t) { this.execute('getBestQtcData', [t]); },
+      createNotSubmittedSheet: function(t, rows, unit, shift) { this.execute('createNotSubmittedSheet', [t, rows, unit, shift]); },
       setTarget: function(t, k, v) { this.execute('setTarget', [t, k, v]); }
     }
   }
@@ -4582,53 +4583,53 @@ switchUserTab = function(tab){
 };
 
 console.log('✅ METI Permissions Patch v2 Loaded');
- function exportNotSubmitted(people, unit, shift) {
-  var btn = event.currentTarget || event.target;
-  var origText = btn.innerHTML;
-  btn.innerHTML = '⏳ Generating...';
-  btn.disabled = true;
 
-  try {
-    // 1. تجهيز العناوين
-    var csvContent = "\uFEFF"; // إضافة BOM لدعم اللغة العربية في Excel
-    csvContent += "Employee Name,PC Number,Yubikey Email,Unit,Shift\n";
+// ── زرار "📥 Export" جنب Not Submitted: كان ظاهر بس مش متوصّل بأي حاجة.
+// دلوقتي بيعمل Google Sheet جديد فعليًا عن طريق createNotSubmittedSheet في الباك إند ──
+(function() {
+  var area = gid('dodArea');
+  if (!area) return;
+  area.addEventListener('click', function(e) {
+    var btn = e.target.closest('.ns-export-btn');
+    if (!btn) return;
+    e.stopPropagation(); // منع فتح/قفل الـ accordion اللي الزرار جواه
 
-    // 2. تحويل مصفوفة الموظفين لسطور CSV
-    people.forEach(function(p) {
-      var name = titleCase(p.name || '-').replace(/,/g, ""); // إزالة الفواصل من الاسم عشان ملف الـ CSV
-      var pc = (p.pc || '-').toString().split('-').pop();
-      var ub = fmtUbkey(p.yubikey || '');
-      
-      csvContent += name + "," + pc + "," + ub + "," + unit + "," + shift + "\n";
+    var people, unit, shift;
+    try {
+      people = JSON.parse(decodeURIComponent(btn.getAttribute('data-people')) || '[]');
+      unit   = decodeURIComponent(btn.getAttribute('data-unit') || '');
+      shift  = decodeURIComponent(btn.getAttribute('data-shift') || '');
+    } catch (err) { toast('Export data error', 'err'); return; }
+
+    if (!people.length) { toast('No employees to export', 'err'); return; }
+
+    var rows = people.map(function(p) {
+      var name = titleCase(p.name || '-');
+      var pc   = (p.pc || '-').toString().split('-').pop();
+      var ub   = fmtUbkey(p.yubikey || '');
+      return [name, pc, ub, unit, shift];
     });
 
-    // 3. إنشاء رابط تحميل وهمي
-    var blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    var url = URL.createObjectURL(blob);
-    var link = document.createElement("a");
-    
-    // 4. تسمية الملف بتاريخ اليوم
-    var dateStr = new Date().toLocaleDateString().replace(/\//g, '-');
-    link.setAttribute("href", url);
-    link.setAttribute("download", "Not_Submitted_" + unit + "_" + dateStr + ".csv");
-    
-    // 5. تنفيذ عملية التحميل
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    var origText = btn.innerHTML;
+    btn.innerHTML = '⏳ Creating...';
+    btn.disabled = true;
 
-    // 6. إرجاع الزرار لحالته
-    toast('Downloaded Successfully! ✅', 'ok');
-    btn.innerHTML = origText;
-    btn.disabled = false;
-
-  } catch (e) {
-    toast('Export Failed', 'err');
-    btn.innerHTML = origText;
-    btn.disabled = false;
-    console.error(e);
-  }
-}
+    google.script.run
+      .withSuccessHandler(function(r) {
+        btn.innerHTML = origText;
+        btn.disabled = false;
+        if (!r || r.err) { toast(r && r.err ? r.err : 'Export failed', 'err'); return; }
+        toast('Sheet created ✅', 'ok');
+        window.open(r.url, '_blank');
+      })
+      .withFailureHandler(function(err) {
+        btn.innerHTML = origText;
+        btn.disabled = false;
+        toast(err && err.message ? err.message : 'Export failed', 'err');
+      })
+      .createNotSubmittedSheet(TOKEN, rows, unit, shift);
+  });
+})();
 
 // ══ AUTO RELOAD ══
 var _arEnabled = false;
