@@ -3505,6 +3505,7 @@ renderDetailsOfData = function () {
       present.forEach(function (p) {
         var ub = fmtUbkey(p.yubikey || '');
         if (!ub || ub === '-') return;                           // مفيش فلاشة مسجلة → skip
+        if (!p.hasQueue) return;                                 // مفيش كيو متسجل له في التاسك أساسًا → مش "Not Submitted"
         if (submittedYubikeys[ub.toLowerCase()]) return;         // سبمت → skip
         var un = (p.location || 'Unknown').trim();
         if (!notSubmittedMap[sh])     notSubmittedMap[sh]     = {};
@@ -3749,7 +3750,8 @@ html +=
     '<td style="padding:8px 12px;text-align:center;font-family:var(--mono);font-size:11px;color:#c5221f">' +
     (ub && ub !== '-' ? ub : '-') + '</td>' +
     '<td colspan="5" style="padding:8px 12px;text-align:center;font-size:12px;font-weight:700;' +
-    'color:#c5221f;background:#fff5f5;letter-spacing:.3px">Not Submitted</td>' +
+    'color:#c5221f;background:#fff5f5;letter-spacing:.3px">Not Submitted' +
+    (p.taskAssigned ? ' — ' + p.taskAssigned : '') + '</td>' +
     '</tr>';
 });
 
@@ -4613,18 +4615,41 @@ console.log('✅ METI Permissions Patch v2 Loaded');
     var origText = btn.innerHTML;
     btn.innerHTML = '⏳ Creating...';
     btn.disabled = true;
+    btn.style.opacity = '0.75';
+
+    // ── مهلة أمان: لو الطلب طوّل أكتر من 20 ثانية، رجّع الزرار لحالته
+    // وقول لليوزر إنه ممكن يحاول تاني، بدل ما يفضل معلّق "Creating..." للأبد ──
+    var settled = false;
+    var timeoutId = setTimeout(function() {
+      if (settled) return;
+      settled = true;
+      btn.innerHTML = origText;
+      btn.disabled = false;
+      btn.style.opacity = '1';
+      toast('الطلب طوّل قوي، حاول تاني ⏱️', 'err');
+    }, 20000);
+
+    function resetBtn() {
+      btn.innerHTML = origText;
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
 
     google.script.run
       .withSuccessHandler(function(r) {
-        btn.innerHTML = origText;
-        btn.disabled = false;
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        resetBtn();
         if (!r || r.err) { toast(r && r.err ? r.err : 'Export failed', 'err'); return; }
-        toast('Sheet created ✅', 'ok');
+        if (r.warn) { toast(r.warn, 'err'); } else { toast('Sheet created ✅', 'ok'); }
         window.open(r.url, '_blank');
       })
       .withFailureHandler(function(err) {
-        btn.innerHTML = origText;
-        btn.disabled = false;
+        if (settled) return;
+        settled = true;
+        clearTimeout(timeoutId);
+        resetBtn();
         toast(err && err.message ? err.message : 'Export failed', 'err');
       })
       .createNotSubmittedSheet(TOKEN, rows, unit, shift);
