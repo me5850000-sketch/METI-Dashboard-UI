@@ -1072,6 +1072,7 @@ var weekTargetState={weeks:[],selectedIdx:0,allData:[]};
 var qtcStatsList=[];
 var _attShift='All',_attShift2='All';
 var _lastAttR=null,_lastAttDate='';
+var _dodDataLoading=false; // true وقت ما getStats بتاعة Details of Data لسه شغالة
 var _attShift2Cache=null,_lastAttDate2='';
 </script>
 
@@ -2613,6 +2614,7 @@ function loadAttendance(){
 // بيعتمد على بيانات الأتيند (_lastAttR / _attShift2Cache)، لازم نعيد رسمه لما الأتيند
 // يوصل — لأنه غالبًا بيوصل بعد ما داتا الـ Details of Data خلصت تحميل وترندرت.
 function _refreshNotSubmittedIfVisible(){
+  if(_dodDataLoading) return; // لسه بيحمّل الداتا الأساسية — هيترندر لوحده لما يخلص، مينفعش نرندر بيانات فاضية دلوقتي
   var pg = gid('pgDetailsOfData');
   if(pg && pg.style.display !== 'none' && typeof renderDetailsOfData === 'function') renderDetailsOfData();
 }
@@ -4333,10 +4335,16 @@ var _origLoadData = loadData;
 loadData = function(){
   var from = getFilterISO(true), to = getFilterISO(false);
   var mySeq = ++_reqSeq.data;
+  _dodDataLoading = true;
   shtml('dataArea','<div class="loading"><div class="spin"></div> Loading data...</div>');
+  var dodEl = gid('dodArea');
+  if(dodEl && gid('pgDetailsOfData') && gid('pgDetailsOfData').style.display !== 'none'){
+    dodEl.innerHTML = '<div class="loading"><div class="spin"></div> Loading...</div>';
+  }
   google.script.run
     .withSuccessHandler(function(r){
       if(mySeq !== _reqSeq.data) return; // رد قديم اتأخر — اتجاهله
+      _dodDataLoading = false;
       if(r.err){ shtml('dataArea','<div class="empty">'+r.err+'</div>'); return; }
       r.data.sort(function(a,b){ return new Date(b[F.date]||0)-new Date(a[F.date]||0); });
       // فلترة حسب الشيفت لو الدور يحتاج ذلك
@@ -4351,7 +4359,7 @@ loadData = function(){
       dataAll = r.data; dataPage = 1; renderDataFiltered();
       if(gid('pgDetailsOfData') && gid('pgDetailsOfData').style.display !== 'none') renderDetailsOfData();
     })
-    .withFailureHandler(function(e){ shtml('dataArea','<div class="empty">'+e.message+'</div>'); })
+    .withFailureHandler(function(e){ _dodDataLoading = false; shtml('dataArea','<div class="empty">'+e.message+'</div>'); })
     .getStats(TOKEN, from, to);
 };
 
