@@ -1281,6 +1281,8 @@ function navTo(page){
   if(page==='data'&&SESSION&&!hasRole(SESSION.role,ROLES_VIEW_DATA))return;
   if(page==='users'&&SESSION&&!hasRole(SESSION.role,ROLES_MANAGE_USERS))return;
   
+  sessionStorage.setItem('dk_page', page);
+  
   // Toggle Global Filter Bar visibility
 var pagesWithGlobalFilter = ['home', 'detailsofdata', 'labelers', 'qtc', 'qtcstats'];
   var gf = gid('globalFilterBar');
@@ -1310,6 +1312,7 @@ var pagesWithGlobalFilter = ['home', 'detailsofdata', 'labelers', 'qtc', 'qtcsta
   if(page==='attdetails')loadAttDetails();
   if(page==='otdetails') loadOtDetails();
   if(page==='qtcstats')initQtcStats();
+  if(page==='home')loadStats();
 }
 </script>
 
@@ -3240,8 +3243,8 @@ window.onload=function(){
   if(localStorage.getItem('meti_dark')==='1'){document.body.classList.add('dark');var btn=gid('darkToggle');if(btn)btn.innerHTML='☀️';}
 
   // Session restore
-  var st=sessionStorage.getItem('dk_tok'),su=sessionStorage.getItem('dk_usr');
-  if(st&&su){TOKEN=st;SESSION=tryParse(su);if(SESSION){showDash();applyShiftDefaults(SESSION.shift);loadStats();}}
+var st=sessionStorage.getItem('dk_tok'),su=sessionStorage.getItem('dk_usr');
+  if(st&&su){TOKEN=st;SESSION=tryParse(su);if(SESSION){showDash();applyShiftDefaults(SESSION.shift);var savedPage=sessionStorage.getItem('dk_page')||'home';navTo(savedPage);}}
 
   buildTimeSelects();
   SHARED.from=todayISO();SHARED.to=todayISO();
