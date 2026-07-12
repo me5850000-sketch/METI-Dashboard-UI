@@ -382,7 +382,7 @@ body.dark #pgAttendance .mod-btn[style*="background:var(--blue)"]{background:#1c
 }
 @keyframes fadeUp{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
 @keyframes spin{to{transform:rotate(360deg)}}
-@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.4;transform:scale(1.3)}}
+@keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.65;transform:scale(1.12)}}
 @keyframes slideUpModal{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
 
 @media(max-width:768px){/* إصلاح زرار Filter */
@@ -755,7 +755,7 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
           <div style="font-size:12px;color:var(--gray)" id="topClock"></div>
           <button id="darkToggle" onclick="toggleDark()" style="background:none;border:1.5px solid var(--border);border-radius:20px;padding:4px 10px;font-size:12px;font-weight:700;cursor:pointer;color:var(--gray)">🌙</button>
           <div style="display:flex;align-items:center;gap:4px;font-size:12px;color:var(--green);font-weight:700">
-            <span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2s infinite"></span>LIVE
+            <span style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block;animation:pulse 2.6s ease-in-out infinite"></span>LIVE
           </div>
           <div id="netStatus" style="display:flex;align-items:center;gap:5px;padding:4px 10px;border-radius:20px;font-size:12px;font-weight:700;background:var(--green-lt);color:var(--green);border:1.5px solid var(--green)">
             <span id="netDot" style="width:7px;height:7px;border-radius:50%;background:var(--green);display:inline-block"></span>
@@ -882,6 +882,7 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
               <button class="mod-btn att-shift-btn2" data-attshift2="Night">Night</button>
               <button class="mod-btn att-shift-btn2" data-attshift2="Over Night">Over Night</button>
             </div>
+            <button id="btnExportAttendance" style="margin-left:auto;background:var(--orange);color:white;border:none;border-radius:8px;padding:8px 16px;font-size:13px;font-weight:700;cursor:pointer;box-shadow:var(--shadow);display:flex;align-items:center;gap:6px;white-space:nowrap">📥 Export Attendance</button>
           </div>
           <div id="attDetailsArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
         </div>
@@ -1047,6 +1048,7 @@ getAttendance: function(t, d, s, qd) { this.execute('getAttendance', [t, d, s, q
       getTargets: function(t) { this.execute('getTargets', [t]); },
       getBestQtcData: function(t) { this.execute('getBestQtcData', [t]); },
       createNotSubmittedSheet: function(t, rows, unit, shift) { this.execute('createNotSubmittedSheet', [t, rows, unit, shift]); },
+      createAttendanceExportSheet: function(t, rows, dateStr) { this.execute('createAttendanceExportSheet', [t, rows, dateStr]); },
       setTarget: function(t, k, v) { this.execute('setTarget', [t, k, v]); }
     }
   }
@@ -4684,6 +4686,93 @@ console.log('✅ METI Permissions Patch v2 Loaded');
         toast(err && err.message ? err.message : 'Export failed', 'err');
       })
       .createNotSubmittedSheet(TOKEN, rows, unit, shift);
+  });
+})();
+
+// ── زرار "📥 Export Attendance" البرتقالي في صفحة Details of Attendance:
+// بيجيب كل الحاضرين والغايبين لكل الشيفتات في التاريخ المختار (مش بس اللي متفلتر
+// أو الكروت المفتوحة قدامك)، وبيعمل بيهم Google Sheet جديد ──
+(function() {
+  var btn = gid('btnExportAttendance');
+  if (!btn) return;
+
+  btn.addEventListener('click', function() {
+    var dateISO = DP.getVal('attDate2') || todayISO();
+
+    var origText = btn.innerHTML;
+    btn.innerHTML = '⏳ Loading...';
+    btn.disabled = true;
+    btn.style.opacity = '0.75';
+
+    var settled = false;
+    var timeoutId = setTimeout(function() {
+      if (settled) return;
+      settled = true;
+      resetBtn();
+      toast('الطلب طوّل قوي، حاول تاني ⏱️', 'err');
+    }, 20000);
+
+    function resetBtn() {
+      btn.innerHTML = origText;
+      btn.disabled = false;
+      btn.style.opacity = '1';
+    }
+
+    // بنجيب الداتا بـ shift=null عمدًا عشان نضمن رجوع كل الشيفتات مع بعض،
+    // بغض النظر عن فلتر الشيفت الحالي في الصفحة أو أي كروت مقفولة
+    google.script.run
+      .withSuccessHandler(function(r) {
+        if (settled) return;
+        if (!r || r.err) {
+          settled = true; clearTimeout(timeoutId); resetBtn();
+          toast(r && r.err ? r.err : 'Failed to load attendance data', 'err');
+          return;
+        }
+
+        var shifts = r.shifts || {};
+        var rows = [];
+        Object.keys(shifts).forEach(function(sh) {
+          var sd = shifts[sh] || {};
+          var present = sd.present || [], absent = sd.absent || [];
+          present.forEach(function(p) {
+            var rawSt = (p.type || p.status || '').toString().trim().toUpperCase();
+            rows.push([titleCase(p.name || '-'), (p.pc || '-'), (p.location || '-'), sh, rawSt || 'Present', fmtUbkey(p.yubikey || '')]);
+          });
+          absent.forEach(function(p) {
+            rows.push([titleCase(p.name || '-'), (p.pc || '-'), (p.location || '-'), sh, 'Absent', fmtUbkey(p.yubikey || '')]);
+          });
+        });
+
+        if (!rows.length) {
+          settled = true; clearTimeout(timeoutId); resetBtn();
+          toast('No attendance data for this date', 'err');
+          return;
+        }
+
+        var dp = dateISO.split('-'); // yyyy-mm-dd -> dd-MM-yyyy
+        var dateStr = dp[2] + '-' + dp[1] + '-' + dp[0];
+
+        btn.innerHTML = '⏳ Creating...';
+
+        google.script.run
+          .withSuccessHandler(function(r2) {
+            settled = true; clearTimeout(timeoutId); resetBtn();
+            if (!r2 || r2.err) { toast(r2 && r2.err ? r2.err : 'Export failed', 'err'); return; }
+            if (r2.warn) { toast(r2.warn, 'err'); } else { toast('Sheet created ✅', 'ok'); }
+            window.open(r2.url, '_blank');
+          })
+          .withFailureHandler(function(err) {
+            settled = true; clearTimeout(timeoutId); resetBtn();
+            toast(err && err.message ? err.message : 'Export failed', 'err');
+          })
+          .createAttendanceExportSheet(TOKEN, rows, dateStr);
+      })
+      .withFailureHandler(function(err) {
+        if (settled) return;
+        settled = true; clearTimeout(timeoutId); resetBtn();
+        toast(err && err.message ? err.message : 'Failed to load attendance data', 'err');
+      })
+      .getAttendance(TOKEN, dateISO, null);
   });
 })();
 
