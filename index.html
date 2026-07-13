@@ -4666,11 +4666,12 @@ console.log('✅ METI Permissions Patch v2 Loaded');
 
     if (!people.length) { toast('No employees to export', 'err'); return; }
 
-    var rows = people.map(function(p) {
+var rows = people.map(function(p) {
       var name = titleCase(p.name || '-');
       var pc   = (p.pc || '-').toString().split('-').pop();
       var ub   = fmtUbkey(p.yubikey || '');
-      return [name, pc, ub, unit, shift];
+      var tl   = titleCase(p.tl || '-');
+      return [name, pc, ub, unit, shift, tl];
     });
 
     var origText = btn.innerHTML;
