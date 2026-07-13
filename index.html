@@ -4678,6 +4678,11 @@ console.log('✅ METI Permissions Patch v2 Loaded');
     btn.disabled = true;
     btn.style.opacity = '0.75';
 
+    // ── نفتح تاب فاضي دلوقتي (جوه الـ click مباشرة) عشان المتصفح
+    // يعتبره نتيجة ضغطة يوزر ومايحظروش كـ popup ──
+    var exportWin = window.open('', '_blank');
+    if (exportWin) { try { exportWin.document.write('جاري تجهيز الشيت...'); } catch (e) {} }
+
     // ── مهلة أمان: لو الطلب طوّل أكتر من 20 ثانية، رجّع الزرار لحالته
     // وقول لليوزر إنه ممكن يحاول تاني، بدل ما يفضل معلّق "Creating..." للأبد ──
     var settled = false;
@@ -4688,6 +4693,7 @@ console.log('✅ METI Permissions Patch v2 Loaded');
       btn.disabled = false;
       btn.style.opacity = '1';
       toast('الطلب طوّل قوي، حاول تاني ⏱️', 'err');
+      if (exportWin) { try { exportWin.close(); } catch (e) {} }
     }, 20000);
 
     function resetBtn() {
@@ -4702,9 +4708,13 @@ console.log('✅ METI Permissions Patch v2 Loaded');
         settled = true;
         clearTimeout(timeoutId);
         resetBtn();
-        if (!r || r.err) { toast(r && r.err ? r.err : 'Export failed', 'err'); return; }
+        if (!r || r.err) {
+          toast(r && r.err ? r.err : 'Export failed', 'err');
+          if (exportWin) { try { exportWin.close(); } catch (e) {} }
+          return;
+        }
         if (r.warn) { toast(r.warn, 'err'); } else { toast('Sheet created ✅', 'ok'); }
-        window.open(r.url, '_blank');
+        if (exportWin) { exportWin.location = r.url; } else { window.open(r.url, '_blank'); }
       })
       .withFailureHandler(function(err) {
         if (settled) return;
@@ -4712,6 +4722,7 @@ console.log('✅ METI Permissions Patch v2 Loaded');
         clearTimeout(timeoutId);
         resetBtn();
         toast(err && err.message ? err.message : 'Export failed', 'err');
+        if (exportWin) { try { exportWin.close(); } catch (e) {} }
       })
       .createNotSubmittedSheet(TOKEN, rows, unit, shift);
   });
