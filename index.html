@@ -765,14 +765,14 @@ body.dark #dodArea .card-drill { background: #1e2130 !important; border-color: #
       </div>
 
       <div class="global-filter-bar" id="globalFilterBar" style="display:none;">
-          <div style="display:flex; align-items:center; gap:12px; flex-wrap:wrap; width: 100%;">
+          <div style="display:flex; align-items:center; justify-content:center; gap:12px; flex-wrap:wrap; width: 100%;">
             <label style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;">From</label>
             <div class="dp-wrap" id="dpWrap-gFrom"><input type="text" class="dp-input" id="gFrom" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
             <select class="fb-time" id="gFromTime"></select>
             <label style="font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;margin-left:8px;">To</label>
             <div class="dp-wrap" id="dpWrap-gTo"><input type="text" class="dp-input" id="gTo" readonly placeholder="Select date"><span class="dp-icon">📅</span></div>
             <select class="fb-time" id="gToTime"></select>
-            <button class="fbtn fbtn-primary" id="btnGlobalFilter" style="margin-left:auto;">Filter</button>
+            <button class="fbtn fbtn-primary" id="btnGlobalFilter" style="margin-left:16px;">Filter</button>
             <button class="fbtn fbtn-ghost" id="btnGlobalClear">✕ Clear</button>
             <!-- Auto Reload Toggle -->
 <div id="autoReloadWrap" style="display:flex;align-items:center;gap:8px;padding:4px 12px;background:var(--gray-lt);border-radius:20px;border:1.5px solid var(--border)">
@@ -3201,12 +3201,19 @@ window.onload=function(){
   if(localStorage.getItem('meti_dark')==='1'){document.body.classList.add('dark');var btn=gid('darkToggle');if(btn)btn.innerHTML='☀️';}
 
   // Session restore
-var st=sessionStorage.getItem('dk_tok'),su=sessionStorage.getItem('dk_usr');
-  if(st&&su){TOKEN=st;SESSION=tryParse(su);if(SESSION){showDash();applyShiftDefaults(SESSION.shift);var savedPage=sessionStorage.getItem('dk_page')||'home';navTo(savedPage);}}
+  var _sessionRestored = false;
+  var st=sessionStorage.getItem('dk_tok'),su=sessionStorage.getItem('dk_usr');
+  if(st&&su){TOKEN=st;SESSION=tryParse(su);if(SESSION){_sessionRestored=true;showDash();applyShiftDefaults(SESSION.shift);var savedPage=sessionStorage.getItem('dk_page')||'home';navTo(savedPage);}}
 
   buildTimeSelects();
-  SHARED.from=todayISO();SHARED.to=todayISO();
-  SHARED.syncAll();
+  // 🔧 لو مفيش جلسة متسترجعة (يعني لسه في صفحة اللوجين)، نحط تاريخ افتراضي بسيط.
+  // قبل كده كان بيحصل هنا SHARED.from/to = today دايمًا، حتى لو applyShiftDefaults فوق
+  // كان خلاص ظبط "to" ليوم بكرة لشيفت النايت (4PM → 12:30AM تاني يوم)، فكان بيدهسه
+  // ويرجّعه لنفس اليوم بهدوء من غير أي تنبيه.
+  if(!_sessionRestored){
+    SHARED.from=todayISO();SHARED.to=todayISO();
+    SHARED.syncAll();
+  }
 
   // Date pickers
   var ad=gid('attDate');if(ad)ad.addEventListener('click',function(){DP.open('attDate');});
