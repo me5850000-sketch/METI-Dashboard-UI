@@ -1178,6 +1178,7 @@ function doLogin() {
                 hide('loginScreen');
 show('dashScreen');
 showDash();
+applyShiftDefaults(SESSION.shift);
 loadStats();
 if (res.kicked) {
   setTimeout(function() {
@@ -2646,9 +2647,9 @@ function renderAttendanceSimple(r,dateISO){
           queueHtml+='</tr>';
         });
         queueHtml+='<tr style="background:var(--ok-bg);border-top:2px solid #c3e6cb">';
-        queueHtml+='<td style="padding:8px 14px;font-size:12px;font-weight:800;color:#1b5e20">TOTAL</td>';
-        queueHtml+='<td style="padding:8px 14px;text-align:center;font-size:14px;font-weight:800;color:var(--ok-text)">'+lTotFP+'</td>';
-        queueHtml+='<td style="padding:8px 14px;text-align:center;font-size:14px;font-weight:800;color:var(--warn-text)">'+lTotQA+'</td>';
+        queueHtml+='<td style="padding:8px 14px;font-size:12px;font-weight:800;color:#1b5e20;background:var(--ok-bg)">TOTAL</td>';
+        queueHtml+='<td style="padding:8px 14px;text-align:center;font-size:14px;font-weight:800;color:var(--ok-text);background:var(--ok-bg)">'+lTotFP+'</td>';
+        queueHtml+='<td style="padding:8px 14px;text-align:center;font-size:14px;font-weight:800;color:var(--warn-text);background:var(--ok-bg)">'+lTotQA+'</td>';
         queueHtml+='</tr>';
         queueHtml+='</tbody></table></div>';
       }
@@ -2677,9 +2678,9 @@ function renderAttendanceSimple(r,dateISO){
           queueHtml+='</tr>';
         });
         queueHtml+='<tr style="background:var(--info-bg);border-top:2px solid #80cbc4">';
-        queueHtml+='<td style="padding:8px 14px;font-size:12px;font-weight:800;color:#006064">TOTAL</td>';
-        queueHtml+='<td style="padding:8px 14px;text-align:center;font-size:14px;font-weight:800;color:var(--ok-text)">'+liTotFP+'</td>';
-        queueHtml+='<td style="padding:8px 14px;text-align:center;font-size:14px;font-weight:800;color:var(--warn-text)">'+liTotQA+'</td>';
+        queueHtml+='<td style="padding:8px 14px;font-size:12px;font-weight:800;color:#006064;background:var(--info-bg)">TOTAL</td>';
+        queueHtml+='<td style="padding:8px 14px;text-align:center;font-size:14px;font-weight:800;color:var(--ok-text);background:var(--info-bg)">'+liTotFP+'</td>';
+        queueHtml+='<td style="padding:8px 14px;text-align:center;font-size:14px;font-weight:800;color:var(--warn-text);background:var(--info-bg)">'+liTotQA+'</td>';
         queueHtml+='</tr>';
         queueHtml+='</tbody></table></div>';
       }
@@ -3140,12 +3141,18 @@ document.addEventListener('mousedown',function(e){if(CFP.col&&!e.target.closest(
 window.onload=function(){
   if(localStorage.getItem('meti_dark')==='1'){document.body.classList.add('dark');var btn=gid('darkToggle');if(btn)btn.innerHTML='☀️';}
 
+  // 🔧 لازم الـ time selects (gFromTime/gToTime) تتبني الأول قبل أي حد يحاول
+  // يظبط .value بتاعها (زي applyShiftDefaults تحت في حالة session restore)،
+  // لأن قبل كده كان بيتنادى بعد الـ session restore، فكان بيحاول يحط "16:00"
+  // على <select> لسه من غير <option>s أصلاً، فالقيمة كانت بتفشل بهدوء وترجع
+  // لأول قيمة افتراضية (12:00 AM) بدل مواعيد الشيفت الصح.
+  buildTimeSelects();
+
   // Session restore
   var _sessionRestored = false;
   var st=sessionStorage.getItem('dk_tok'),su=sessionStorage.getItem('dk_usr');
   if(st&&su){TOKEN=st;SESSION=tryParse(su);if(SESSION){_sessionRestored=true;showDash();applyShiftDefaults(SESSION.shift);var savedPage=sessionStorage.getItem('dk_page')||'home';navTo(savedPage);}}
 
-  buildTimeSelects();
   // 🔧 لو مفيش جلسة متسترجعة (يعني لسه في صفحة اللوجين)، نحط تاريخ افتراضي بسيط.
   // قبل كده كان بيحصل هنا SHARED.from/to = today دايمًا، حتى لو applyShiftDefaults فوق
   // كان خلاص ظبط "to" ليوم بكرة لشيفت النايت (4PM → 12:30AM تاني يوم)، فكان بيدهسه
@@ -3746,13 +3753,13 @@ html +=
 
       // ── صف الـ TOTAL ──
       html +=
-        '<tr style="background:var(--blue)">' +
-        '<td colspan="4" style="padding:9px 12px;color:white;font-size:12px;font-weight:800;text-align:left;padding-left:20px">TOTAL</td>' +
-        '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.lfp  + '</td>' +
-        '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.lqa  + '</td>' +
-        '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.lifp + '</td>' +
-        '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.liqa + '</td>' +
-        '<td style="padding:9px 12px;text-align:center;color:white;font-weight:800">' + rowTotals.total + '</td>' +
+        '<tr class="total-row" style="background:var(--blue)">' +
+        '<td colspan="4" style="padding:9px 12px;color:white;background:var(--blue);font-size:12px;font-weight:800;text-align:left;padding-left:20px">TOTAL</td>' +
+        '<td style="padding:9px 12px;text-align:center;color:white;background:var(--blue);font-weight:800">' + rowTotals.lfp  + '</td>' +
+        '<td style="padding:9px 12px;text-align:center;color:white;background:var(--blue);font-weight:800">' + rowTotals.lqa  + '</td>' +
+        '<td style="padding:9px 12px;text-align:center;color:white;background:var(--blue);font-weight:800">' + rowTotals.lifp + '</td>' +
+        '<td style="padding:9px 12px;text-align:center;color:white;background:var(--blue);font-weight:800">' + rowTotals.liqa + '</td>' +
+        '<td style="padding:9px 12px;text-align:center;color:white;background:var(--blue);font-weight:800">' + rowTotals.total + '</td>' +
         '</tr>';
 
       html += '</tbody></table></div>';
