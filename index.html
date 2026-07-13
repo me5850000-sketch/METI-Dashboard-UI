@@ -265,8 +265,8 @@ body.dark #dodArea [style*="background:white"]{background:#1e2130!important}
 body.dark #dodArea [style*="background:#f8f9ff"]{background:#252840!important}
 body.dark #dodArea [style*="background:#fff8c5"]{background:#3d3200!important}
 body.dark #dodArea [style*="border-bottom:1px solid #f0f0f0"]{border-color:#2d3250!important}
-body.dark #dodArea table tbody tr{background:#1e2130!important}
-body.dark #dodArea table tbody tr:nth-child(even){background:#252840!important}
+body.dark #dodArea table tbody tr:not([style*="background"]){background:#1e2130!important}
+body.dark #dodArea table tbody tr:nth-child(even):not([style*="background"]){background:#252840!important}
 body.dark #dodArea [style*="color:var(--dark)"]{color:#e8eaf0!important}
 body.dark #dodArea [style*="color:var(--gray)"]{color:#9aa0b4!important}
 
@@ -557,8 +557,8 @@ body.dark #dodArea [style*="background:#e8f5e9"] { background: #1b2e1b !importan
 body.dark #dodArea [style*="background:#e0f7fa"] { background: #0a2e30 !important; }
 body.dark #dodArea [style*="background:#fff3cd"] { background: #3d2800 !important; }
 body.dark #dodArea [style*="background:#f3e5f5"] { background: #2d1f3d !important; }
-body.dark #dodArea table tbody tr { background: #1e2130 !important; }
-body.dark #dodArea table tbody tr:nth-child(even) { background: #252840 !important; }
+body.dark #dodArea table tbody tr:not([style*="background"]) { background: #1e2130 !important; }
+body.dark #dodArea table tbody tr:nth-child(even):not([style*="background"]) { background: #252840 !important; }
 body.dark #dodArea table thead tr { background: var(--blue) !important; }
 body.dark #dodArea table tr[style*="background:var(--blue)"] { background: #1c4587 !important; }
 body.dark #dodArea [style*="color:var(--dark)"] { color: #e8eaf0 !important; }
@@ -4667,11 +4667,12 @@ console.log('✅ METI Permissions Patch v2 Loaded');
     if (!people.length) { toast('No employees to export', 'err'); return; }
 
 var rows = people.map(function(p) {
-      var name = titleCase(p.name || '-');
-      var pc   = (p.pc || '-').toString().split('-').pop();
-      var ub   = fmtUbkey(p.yubikey || '');
-      var tl   = titleCase(p.tl || '-');
-      return [name, pc, ub, unit, shift, tl];
+      var name  = titleCase(p.name || '-');
+      var pc    = (p.pc || '-').toString().split('-').pop();
+      var ub    = fmtUbkey(p.yubikey || '');
+      var tl    = titleCase(p.tl || '-');
+      var queue = (p.taskAssigned || '-').toString();
+      return [name, pc, ub, unit, shift, tl, queue];
     });
 
     var origText = btn.innerHTML;
