@@ -957,26 +957,40 @@ var google = {
     if (controller) _currentAbort[fn] = controller;
   }
 
-  fetch(APPS_SCRIPT_URL, {
-    method: 'POST',
-    mode: 'cors',
-    body: JSON.stringify({ fn: fn, args: args }),
-    signal: controller ? controller.signal : undefined
-  })
-  .then(function(r) { return r.json(); })
-  .then(function(data) {
-    if (cacheable && data && !data.err) _RPC_CACHE[key] = { ts: Date.now(), data: data };
-    var waiters = cacheable ? _RPC_INFLIGHT[key] : [{ s: s, f: f }];
-    if (cacheable) delete _RPC_INFLIGHT[key];
-    (waiters || []).forEach(function(w) { if (w.s) w.s(data); });
-  })
-  .catch(function(e) {
-    if (e && e.name === 'AbortError') { if (cacheable) delete _RPC_INFLIGHT[key]; return; } // طلب اتلغى عمدًا، مش خطأ حقيقي
-    console.error(e);
-    var waiters = cacheable ? _RPC_INFLIGHT[key] : [{ s: s, f: f }];
-    if (cacheable) delete _RPC_INFLIGHT[key];
-    (waiters || []).forEach(function(w) { if (w.f) w.f(e); });
-  });
+  var doFetch = function(attempt) {
+    fetch(APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'cors',
+      body: JSON.stringify({ fn: fn, args: args }),
+      signal: controller ? controller.signal : undefined
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (cacheable && data && !data.err) _RPC_CACHE[key] = { ts: Date.now(), data: data };
+      var waiters = cacheable ? _RPC_INFLIGHT[key] : [{ s: s, f: f }];
+      if (cacheable) delete _RPC_INFLIGHT[key];
+      (waiters || []).forEach(function(w) { if (w.s) w.s(data); });
+    })
+    .catch(function(e) {
+      if (e && e.name === 'AbortError') { if (cacheable) delete _RPC_INFLIGHT[key]; return; } // طلب اتلغى عمدًا، مش خطأ حقيقي
+
+      // ⚡ Apps Script أحيانًا بيرفض الـ fetch بشكل عابر (CORS/redirect glitch داخلي
+      // من جوجل نفسها) حتى لو التنفيذ في السيرفر خلص بنجاح فعلاً (بيبان في الـ
+      // Network كـ POST 200 OK رغم إن الـ Promise اترفض). بدل ما نوصّل "Failed to
+      // fetch" للمستخدم من أول فشلة، بنعيد المحاولة تلقائيًا لغاية مرتين إضافيتين
+      // بفاصل بسيط بيزيد كل مرة، وبس لو المحاولات كلها فشلت بنبلّغ الـ failure handler.
+      if (attempt < 2) {
+        setTimeout(function() { doFetch(attempt + 1); }, 500 * (attempt + 1)); // 500ms ثم 1000ms
+        return;
+      }
+
+      console.error(e);
+      var waiters = cacheable ? _RPC_INFLIGHT[key] : [{ s: s, f: f }];
+      if (cacheable) delete _RPC_INFLIGHT[key];
+      (waiters || []).forEach(function(w) { if (w.f) w.f(e); });
+    });
+  };
+  doFetch(0);
 },
       login: function(id, pwd) { this.execute('login', [id, pwd]); },
 pingSession: function(t) { this.execute('pingSession', [t]); },
@@ -5101,3 +5115,4 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
 </script>
 </body>
 </html>
+s
