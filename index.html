@@ -3975,6 +3975,7 @@ function renderOtDetails(data) {
       + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;padding:9px 12px;text-align:center;width:40px">#</th>'
       + '<th class="left" style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;padding:9px 12px">Name ' + mkSel('name', sNames) + '</th>'
       + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;padding:9px 12px;text-align:center">PC ' + mkSel('pc', sPcs) + '</th>'
+      + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;padding:9px 12px;text-align:center">National ID</th>'
       + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;padding:9px 12px;text-align:center">Hours ' + mkSel('hours', sHrs) + '</th>'
       + '<th style="color:white;font-size:10px;font-weight:700;text-transform:uppercase;padding:9px 12px;text-align:center">State</th>'
       + '</tr></thead><tbody>';
@@ -3983,11 +3984,12 @@ function renderOtDetails(data) {
       var isComp = String(r.state||'').toLowerCase().indexOf('comp') !== -1;
       var stBadge = isComp ? 'b-inactive' : 'b-active';
       var pcFormatted = (r.pc || '-').toString().toUpperCase();
-      
+
       html += '<tr class="clickable data-row" data-ot="'+encodeURIComponent(JSON.stringify(r))+'">'
         + '<td style="color:var(--gray)">'+(i+1)+'</td>'
         + '<td class="left bold" style="color:var(--dark)">'+titleCase(r.name)+'</td>'
         + '<td class="bold" style="color:var(--blue)">'+pcFormatted+'</td>'
+        + '<td style="color:var(--dark)">'+(r.nationalId||'-')+'</td>'
         + '<td style="font-size:14px;font-weight:800;color:var(--blue)">'+(r.hours||'-')+'</td>'
         + '<td><span class="badge '+stBadge+'">'+(r.state||'-')+'</span></td></tr>';
     });
@@ -4122,6 +4124,7 @@ function openOtModal(r) {
   var html = '<div class="detail-grid">'
     + '<div class="detail-item"><div class="detail-lbl">Name</div><div class="detail-val">'+titleCase(r.name)+'</div></div>'
     + '<div class="detail-item"><div class="detail-lbl">PC</div><div class="detail-val" style="color:var(--blue); font-weight:800">'+(r.pc||'-')+'</div></div>'
+    + '<div class="detail-item"><div class="detail-lbl">National ID</div><div class="detail-val">'+(r.nationalId||'-')+'</div></div>'
     + '<div class="detail-item"><div class="detail-lbl">Original Shift</div><div class="detail-val">'+(r.shift||'-')+'</div></div>'
     + '<div class="detail-item"><div class="detail-lbl">Over time Shift</div><div class="detail-val"><span class="badge '+shiftBadge(r.otShift)+'">'+(r.otShift||'-')+'</span></div></div>'
     + '<div class="detail-item"><div class="detail-lbl">Original Floor</div><div class="detail-val">'+(r.floor||'-')+'</div></div>'
