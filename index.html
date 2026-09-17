@@ -45,11 +45,42 @@
   --row-hover:var(--blue-bg);
 }
 *{box-sizing:border-box;margin:0;padding:0;font-family:var(--font)}
-body{background:var(--bg);min-height:100vh;font-size:14px;color:var(--dark)}
+body{background:var(--bg);min-height:100vh;font-size:14px;color:var(--dark);position:relative}
+
+/* ══ خلفية moiré متحركة للداشبورد كله (خلف الـ sidebar/content) ══
+   نفس فكرة تأثير "MoireField" (خطين متطابقين من حلقات دائرية رفيعة، لما
+   يتراكبوا فوق بعض بتفرق بسيطة في القُطر والموضع بيظهر تداخل موجي/moiré)،
+   لكن بمحرك CSS خالص من غير React/JS: خلفيتين repeating-radial-gradient
+   على نفس العنصر، وanimation بتحرك بس موضع التاني منهم على مسار بطيء
+   بيفضل يتغيّر (24 ثانية مش دايرة كاملة بسيطة، فالشكل مش بيتكرر بسرعة).
+   الحبر currentColor (مربوط بـ var(--blue)) فبيتلوّن صح تلقائي في الدارك
+   مود زي باقي عناصر الصفحة، وopacity منخفضة جدًا عشان تفضل خلفية خفيفة
+   وما تلفتش النظر عن المحتوى. محترمة إعداد "تقليل الحركة" لو مفعّله. */
+body::before{
+  content:'';position:fixed;inset:-20%;z-index:0;pointer-events:none;
+  color:var(--blue);opacity:.05;
+  background-image:
+    repeating-radial-gradient(circle at 50% 46%, transparent 0px, transparent 7px, currentColor 8px, currentColor 9px, transparent 10px, transparent 18px),
+    repeating-radial-gradient(circle at 50% 46%, transparent 0px, transparent 7.3px, currentColor 8.3px, currentColor 9.3px, transparent 10.3px, transparent 18.6px);
+  background-position:50% 46%, 50% 46%;
+  -webkit-mask-image:radial-gradient(ellipse at 50% 46%, black 42%, transparent 100%);
+  mask-image:radial-gradient(ellipse at 50% 46%, black 42%, transparent 100%);
+  animation:moireDrift 24s ease-in-out infinite alternate;
+  will-change:background-position;
+}
+body>*{position:relative;z-index:1}
+@keyframes moireDrift{
+  0%{background-position:50% 46%, 46% 49%}
+  50%{background-position:50% 46%, 54% 41%}
+  100%{background-position:50% 46%, 46% 49%}
+}
+@media (prefers-reduced-motion: reduce){ body::before{animation:none} }
 
 /* ══ LOGIN ══ */
-.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0d2b6b 0%,#1c4587 50%,#2d5fa8 100%);position:relative;overflow:hidden}
+.login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0d2b6b 0%,#1c4587 50%,#2d5fa8 100%);background-size:180% 180%;position:relative;overflow:hidden;animation:loginBgDrift 30s ease-in-out infinite alternate}
 .login-screen::before{content:'';position:absolute;inset:0;background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none'%3E%3Cg fill='%23ffffff' fill-opacity='0.03'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")}
+@keyframes loginBgDrift{0%{background-position:0% 0%}100%{background-position:100% 100%}}
+@media (prefers-reduced-motion: reduce){ .login-screen{animation:none} }
 .login-box{background:var(--white);border-radius:20px;padding:44px 40px;width:380px;box-shadow:0 20px 60px rgba(0,0,0,.35);position:relative;z-index:1}
 .login-logo{text-align:center;margin-bottom:32px}
 .login-logo .logo-badge{display:inline-flex;align-items:center;justify-content:center;width:70px;height:70px;background:var(--blue-bg);border-radius:50%;margin-bottom:14px}
@@ -352,6 +383,8 @@ body.dark #pgAttendance .mod-btn[style*="background:var(--blue)"]{background:#1c
   .lab-mini-card.expanded .lab-mini-card-stats{max-height:200px;opacity:1}
 }
 @keyframes fadeUp{from{transform:translateY(12px);opacity:0}to{transform:translateY(0);opacity:1}}
+.pg-fade{animation:fadeUp .25s ease both}
+@media (prefers-reduced-motion: reduce){ .pg-fade{animation:none} }
 @keyframes spin{to{transform:rotate(360deg)}}
 @keyframes pulse{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.65;transform:scale(1.12)}}
 @keyframes slideUpModal{from{transform:translateY(30px);opacity:0}to{transform:translateY(0);opacity:1}}
@@ -1293,7 +1326,15 @@ var pagesWithGlobalFilter = ['home', 'detailsofdata', 'labelers', 'qtc', 'qtcsta
 
   Object.keys(PAGES).forEach(function(k){
     var s=k===page;
-    gid(PAGES[k].pg).style.display=s?'block':'none';
+    var pgEl=gid(PAGES[k].pg);
+    pgEl.style.display=s?'block':'none';
+    if(s){
+      // إعادة تشغيل أنيميشن الدخول (fadeUp) في كل مرة الصفحة تتفتح، حتى لو كانت
+      // الكلاس متحطة من قبل — إزالتها وإجبار reflow قبل ما نضيفها تاني
+      pgEl.classList.remove('pg-fade');
+      void pgEl.offsetWidth;
+      pgEl.classList.add('pg-fade');
+    }
     var nav=gid('nav-'+k);if(nav)nav.classList.toggle('active',s);
     var bn=gid('bn-'+k);if(bn)bn.classList.toggle('active',s);
   });
@@ -2476,34 +2517,43 @@ function _genMsg(sh, sdata, dateISO) {
     '* Empty = '      + (sdata.empty ? sdata.empty.length : 0)
   ];
 
+  // ⚠️ باگين هنا في رسالة الـ Shift Report:
+  // 1) لما مفيش أوفر تايم خالص، السطرين "Compensation = 0" و"Overshift = 0"
+  //    كانوا بيتكتبوا من غير "* " زي باقي كل أسطر الرسالة (Production/Training/Absent/Empty)،
+  //    فالرسالة كانت بتبان غير متسقة الفورمات في الحالة الأكتر شيوعًا (مفيش أوفر تايم).
+  // 2) لو فيه أوفر تايم من نوع واحد بس (مثلاً Compensation بس من غير أي Over Shift)،
+  //    السطر بتاع النوع التاني كان بيختفي تمامًا من الرسالة بدل ما يظهر "= 0" —
+  //    فالرسالة كانت أحيانًا بتفضل ناقصة سطر كامل حسب البيانات الموجودة.
   var ot = sdata.overTime || [];
+  var hasOver = false, hasComp = false;
   if (ot.length > 0) {
     var grp = {};
     ot.forEach(function(item) {
       var key = item.state + ' ' + item.hours;
       grp[key] = (grp[key] || 0) + 1;
+      if (item.state.toLowerCase().indexOf('over') !== -1) hasOver = true;
+      if (item.state.toLowerCase().indexOf('comp') !== -1) hasComp = true;
     });
    Object.keys(grp).sort(function(a, b) {
       // نحدد مين Over ومين Comp
       var isOverA = a.toLowerCase().indexOf('over') !== -1;
       var isOverB = b.toLowerCase().indexOf('over') !== -1;
-      
+
       // نخلي الـ Over Shift يظهر الأول
       if (isOverA && !isOverB) return -1;
       if (!isOverA && isOverB) return 1;
-      
+
       // لو الاتنين نفس النوع (مثلاً الاتنين Comp)، نرتبهم بعدد الساعات
       var valA = parseFloat(a.match(/(\d+(\.\d+)?)/)) || 0;
       var valB = parseFloat(b.match(/(\d+(\.\d+)?)/)) || 0;
       return valA - valB;
-      
+
     }).forEach(function(k) {
       lines.push('* ' + k + ' = ' + grp[k]);
     });
-  } else {
-    lines.push('Compensation = 0');
-    lines.push('Overshift = 0');
   }
+  if (!hasOver) lines.push('* Overshift = 0');
+  if (!hasComp) lines.push('* Compensation = 0');
 return lines.join('\n');
 }
 function _buildAttCard(sh,sd,dateISO,isDetails){
