@@ -3889,8 +3889,14 @@ function renderOtDetails(data) {
     return (a.name || '').localeCompare(b.name || '');
   });
 
-  var overCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('over') !== -1; }).length;
-  var compCount = data.filter(function(r){ return (r.state||'').toLowerCase().indexOf('comp') !== -1; }).length;
+  // ⚠️ باگ حقيقي كان هنا (مش من تعديلاتنا الأخيرة): عمود "state" جاي من الباك إند
+  // زي ما هو من خلية الشيت (getOtDetails: state: vals[i][9])، فلو الخلية فيها رقم
+  // أو تاريخ أو أي قيمة مش نص (خطأ كتابة بسيط في الشيت)، `(r.state||'').toLowerCase()`
+  // كانت بتكسر — لأن `|| ''` بيحمي بس لو القيمة falsy (فاضي/undefined)، مش لو كانت
+  // truthy لكن مش نص أصلاً (زي رقم 0.5 مثلاً). الكسار ده كان بيوقف رسم صفحة "Details
+  // of OT" بالكامل لأي تاريخ فيه صف واحد بس بقيمة غريبة، فالصفحة تبان "مش بتحمل".
+  var overCount = data.filter(function(r){ return String(r.state||'').toLowerCase().indexOf('over') !== -1; }).length;
+  var compCount = data.filter(function(r){ return String(r.state||'').toLowerCase().indexOf('comp') !== -1; }).length;
 
   var html = '<div class="filter-bar"><label style="margin-right:10px">Date</label>'
     + '<div class="dp-wrap" id="dpWrap-otDate"><input type="text" class="dp-input" id="otDate" readonly value="'+displayDate+'"><span class="dp-icon">📅</span></div>'
@@ -3925,8 +3931,8 @@ function renderOtDetails(data) {
     var icon = SH_ICON[sh] || '🔹';
     var shId = 'ot_sh_' + si;
 
-    var sOver = sData.filter(function(r){ return (r.state||'').toLowerCase().indexOf('over') !== -1; }).length;
-    var sComp = sData.filter(function(r){ return (r.state||'').toLowerCase().indexOf('comp') !== -1; }).length;
+    var sOver = sData.filter(function(r){ return String(r.state||'').toLowerCase().indexOf('over') !== -1; }).length;
+    var sComp = sData.filter(function(r){ return String(r.state||'').toLowerCase().indexOf('comp') !== -1; }).length;
 
     html += '<div style="margin-bottom:16px;border-radius:14px;overflow:hidden;box-shadow:var(--shadow);border:1px solid var(--border)">';
     
@@ -3974,7 +3980,7 @@ function renderOtDetails(data) {
       + '</tr></thead><tbody>';
 
     sData.forEach(function(r, i) {
-      var isComp = (r.state||'').toLowerCase().indexOf('comp') !== -1;
+      var isComp = String(r.state||'').toLowerCase().indexOf('comp') !== -1;
       var stBadge = isComp ? 'b-inactive' : 'b-active';
       var pcFormatted = (r.pc || '-').toString().toUpperCase();
       
@@ -4004,11 +4010,14 @@ function renderOtDetails(data) {
       // حساب الساعات
       var breakdown = {};
       data.forEach(function(r) {
-        var state = (r.state || '').toLowerCase();
+        var state = String(r.state || '').toLowerCase();
         var isOver = state.indexOf('over') !== -1;
         var isComp = state.indexOf('comp') !== -1;
-        var hrsStr = r.hours || '';
-        
+        // ⚠️ باگ: hrsStr كانت بتفضل رقم لو r.hours جاي رقم من الشيت (مش نص)،
+        // وبعدين .match()/.toLowerCase() عليها كانت بتكسر الدالة كلها لأن
+        // الأرقام مفيهاش الدوال دي. String() هنا بتضمن إنها نص دايمًا.
+        var hrsStr = String(r.hours || '');
+
         // استخراج الرقم عشان نعرف نرتبهم صح
         var numMatch = hrsStr.match(/(\d+(\.\d+)?)/);
         var num = numMatch ? parseFloat(numMatch[1]) : 0;
@@ -4075,9 +4084,9 @@ function renderOtDetails(data) {
         var d = JSON.parse(decodeURIComponent(tr.getAttribute('data-ot')));
         
         // 1. فلتر الـ State الأساسي
-        var matchState = (activeState === 'all') || 
-                         (activeState === 'over' && (d.state||'').toLowerCase().indexOf('over') !== -1) || 
-                         (activeState === 'comp' && (d.state||'').toLowerCase().indexOf('comp') !== -1);
+        var matchState = (activeState === 'all') ||
+                         (activeState === 'over' && String(d.state||'').toLowerCase().indexOf('over') !== -1) ||
+                         (activeState === 'comp' && String(d.state||'').toLowerCase().indexOf('comp') !== -1);
                          
         // 2. فلتر العواميد
         var matchName = (nameFilter === "") || ((d.name||'').trim() === nameFilter);
@@ -5165,4 +5174,4 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
 </script>
 </body>
 </html>
-
+s
