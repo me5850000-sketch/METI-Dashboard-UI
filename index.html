@@ -57,24 +57,11 @@ body{background:var(--bg);min-height:100vh;font-size:14px;color:var(--dark);posi
    مود زي باقي عناصر الصفحة، وopacity منخفضة جدًا عشان تفضل خلفية خفيفة
    وما تلفتش النظر عن المحتوى. محترمة إعداد "تقليل الحركة" لو مفعّله. */
 body::before{
-  content:'';position:fixed;inset:-20%;z-index:0;pointer-events:none;
-  color:var(--blue);opacity:.05;
-  background-image:
-    repeating-radial-gradient(circle at 50% 46%, transparent 0px, transparent 7px, currentColor 8px, currentColor 9px, transparent 10px, transparent 18px),
-    repeating-radial-gradient(circle at 50% 46%, transparent 0px, transparent 7.3px, currentColor 8.3px, currentColor 9.3px, transparent 10.3px, transparent 18.6px);
-  background-position:50% 46%, 50% 46%;
-  -webkit-mask-image:radial-gradient(ellipse at 50% 46%, black 42%, transparent 100%);
-  mask-image:radial-gradient(ellipse at 50% 46%, black 42%, transparent 100%);
-  animation:moireDrift 24s ease-in-out infinite alternate;
-  will-change:background-position;
+  content:'';position:fixed;inset:0;z-index:0;pointer-events:none;
+  background:radial-gradient(ellipse at 50% 40%, var(--blue-bg) 0%, transparent 70%);
+  opacity:.5;
 }
 body>*{position:relative;z-index:1}
-@keyframes moireDrift{
-  0%{background-position:50% 46%, 46% 49%}
-  50%{background-position:50% 46%, 54% 41%}
-  100%{background-position:50% 46%, 46% 49%}
-}
-@media (prefers-reduced-motion: reduce){ body::before{animation:none} }
 
 /* ══ LOGIN ══ */
 .login-screen{min-height:100vh;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#0d2b6b 0%,#1c4587 50%,#2d5fa8 100%);background-size:180% 180%;position:relative;overflow:hidden;animation:loginBgDrift 30s ease-in-out infinite alternate}
