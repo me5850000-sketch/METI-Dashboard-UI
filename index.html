@@ -1017,6 +1017,8 @@ pingSession: function(t) { this.execute('pingSession', [t]); },
       logout: function(t) { this.execute('logout', [t]); },registerUser: function(p) { this.execute('registerUser', [p]); },
       approveUser: function(t, id, action, rd) { this.execute('approveUser', [t, id, action, rd]); },
       getStats: function(t, f, to) { this.execute('getStats', [t, f, to]); },
+      getStats: function(t, f, to) { this.execute('getStats', [t, f, to]); },
+      getHomeBundle: function(t, f, to) { this.execute('getHomeBundle', [t, f, to]); },
       getQtcStats: function(t, f, to) { this.execute('getQtcStats', [t, f, to]); },
       getQtcUsers: function(t) { this.execute('getQtcUsers', [t]); },
       getOtDetails: function(t, d) { this.execute('getOtDetails', [t, d]); },
@@ -1351,18 +1353,21 @@ var pagesWithGlobalFilter = ['home', 'detailsofdata', 'labelers', 'qtc', 'qtcsta
 <script>
 // ══ HOME STATS ══
 function loadStats(){
-  if(TOKEN)google.script.run.withSuccessHandler(function(r){if(r&&!r.err&&r.targets)TARGETS=r.targets;}).withFailureHandler(function(){}).getTargets(TOKEN);
   var from=getFilterISO(true),to=getFilterISO(false);
   shtml('statsArea','<div class="loading"><div class="spin"></div> Loading stats...</div>');
   requestAnimationFrame(function() {
 google.script.run
     .withSuccessHandler(function(r){
       if(r.err){shtml('statsArea','<div class="empty">Error: '+r.err+'</div>');return;}
-      cachedStats=r.data;cachedUser=r.user;activeSFilter=null;activeRFilter=null;
-      renderStats(r.data,r.user);
+      if(r.targets)TARGETS=r.targets;
+      var stats=r.stats;
+      if(stats.err){shtml('statsArea','<div class="empty">Error: '+stats.err+'</div>');return;}
+      cachedStats=stats.data;cachedUser=stats.user;activeSFilter=null;activeRFilter=null;
+      renderStats(stats.data,stats.user);
+      setTimeout(function(){renderBestQtc(r.bestQtc&&r.bestQtc.length?r.bestQtc:stats.data);},0);
     })
     .withFailureHandler(function(e){shtml('statsArea','<div class="empty">'+e.message+'</div>');})
-    .getStats(TOKEN,from,to);
+    .getHomeBundle(TOKEN,from,to);
 });
 }
 function applyFilters(data){
