@@ -5417,9 +5417,9 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       var tot = 0;
       rows.forEach(function(o, i){
         tot += o.s;
-        var ek = 'e|' + sh + '|' + g[0] + '|' + o.key + '|' + o.pass;
+        var ek = 'e|' + sh + '|' + g[0] + '|' + o.key + '|' + o.pass, lk = 'l|' + sh + '|' + g[0] + '|' + o.key + '|' + o.pass;
         h += '<tr data-s="'+o.s+'" data-k="'+esc(o.key)+'"><td class="n">'+(i+1)+'</td><td class="q">'+esc(o.name)+'</td><td>'+o.pass+'</td>'
-          + '<td class="num">'+o.s+'</td><td class="pct"></td><td class="num lab"></td>'
+          + '<td class="num">'+o.s+'</td><td class="pct"></td><td><input type="number" min="0" step="1" class="wla-exp wla-labin" data-lk="'+esc(lk)+'" value="'+esc(_plan[lk] !== undefined ? _plan[lk] : '')+'" placeholder="-"></td>'
           + '<td><input type="number" min="0" step="any" class="wla-exp" data-ek="'+esc(ek)+'" value="'+esc(_plan[ek] !== undefined ? _plan[ek] : '')+'" placeholder="-"></td></tr>';
       });
       h += '<tr class="tot"><td></td><td class="q">TOTAL</td><td></td><td>'+tot+'</td><td class="t-pct"></td><td class="t-lab"></td><td class="t-exp"></td></tr>';
@@ -5432,20 +5432,34 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     var s = trs.map(function(tr){ return parseFloat(tr.getAttribute('data-s')) || 0; });
     var sum = s.reduce(function(a, b){ return a + b; }, 0);
     var ri = g.querySelector('.wla-rate'), rate = parseFloat(ri && ri.value) || 0;
-    var lab = split(total, s), tl = 0, te = 0, anyV = false;
-    var gp = g.querySelector('.wla-gp'); if (gp) gp.textContent = total + ' people';
+    // الصفوف اللي اتعدلت يدويًا ثابتة، والباقي بيتوزع على الكيوهات التانية بنسبة التاسكات
+    var ovs = trs.map(function(tr){
+      var o = _plan[tr.querySelector('.wla-labin').getAttribute('data-lk')];
+      return (o !== undefined && o !== '') ? (Math.max(0, Math.round(parseFloat(o))) || 0) : null;
+    });
+    var O = 0, freeIdx = [], freeS = [];
+    ovs.forEach(function(v, i){ if (v === null) { freeIdx.push(i); freeS.push(s[i]); } else O += v; });
+    var active = total > 0 || O > 0;
+    var fl = split(Math.max(0, total - O), freeS);
+    var lab = s.map(function(){ return 0; });
+    ovs.forEach(function(v, i){ if (v !== null) lab[i] = v; });
+    freeIdx.forEach(function(ix, j){ lab[ix] = fl[j]; });
+    var tl = 0, te = 0, anyV = false;
     trs.forEach(function(tr, i){
       var e = lab[i] * rate;
       tr.querySelector('.pct').textContent = sum > 0 ? (s[i] / sum * 100).toFixed(1) + '%' : '-';
-      tr.querySelector('.lab').textContent = total > 0 ? lab[i] : '-';
-      var ei = tr.querySelector('.wla-exp'), ov = _plan[ei.getAttribute('data-ek')], has = (ov !== undefined && ov !== '');
-      if (has) ei.value = ov; else if (document.activeElement !== ei) ei.value = (total > 0 && rate) ? fmtN(e) : '';
+      var li = tr.querySelector('.wla-labin'), hasL = ovs[i] !== null;
+      if (hasL) li.value = _plan[li.getAttribute('data-lk')]; else if (document.activeElement !== li) li.value = active ? lab[i] : '';
+      li.classList.toggle('ov', hasL);
+      var ei = tr.querySelector('.wla-exp:not(.wla-labin)'), ov = _plan[ei.getAttribute('data-ek')], has = (ov !== undefined && ov !== '');
+      if (has) ei.value = ov; else if (document.activeElement !== ei) ei.value = (active && rate) ? fmtN(e) : '';
       ei.classList.toggle('ov', has);
       if (ei.value !== '') { anyV = true; te += Math.round(parseFloat(ei.value)) || 0; }
       tl += lab[i];
     });
+    var gp = g.querySelector('.wla-gp'); if (gp) gp.textContent = tl + ' people';
     var tp = g.querySelector('.t-pct'); if (tp) tp.textContent = sum > 0 ? '100%' : '';
-    var tla = g.querySelector('.t-lab'); if (tla) tla.textContent = total > 0 ? tl : '-';
+    var tla = g.querySelector('.t-lab'); if (tla) tla.textContent = active ? tl : '-';
     var tex = g.querySelector('.t-exp'); if (tex) tex.textContent = anyV ? fmtN(te) : '-';
   }
   function calcP(p){
@@ -5475,7 +5489,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       calcG(g, ppl[g.getAttribute('data-wla-g').split('|')[1]] || 0);
       var tl = g.querySelector('.t-lab'); sum += parseInt(tl && tl.textContent, 10) || 0;
     });
-    var sv = p.querySelector('.wla-sumv'); if (sv) sv.textContent = (T > 0 || manual) ? sum : '-';
+    var sv = p.querySelector('.wla-sumv'); if (sv) sv.textContent = (T > 0 || manual || sum > 0) ? sum : '-';
     updateTop(p);
   }
   // الجداول اللي فوق بتعرض أرقام الـ Planner (Labelers + Submit for Report) ولو مفيش بتفضل الأرقام الفعلية
@@ -5487,7 +5501,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       if (!box) return { map: map, active: false };
       var tl = box.querySelector('.t-lab'); active = !!tl && tl.textContent !== '-';
       box.querySelectorAll('tr[data-k]').forEach(function(tr){
-        map[tr.getAttribute('data-k')] = { lab: parseInt(tr.querySelector('.lab').textContent, 10) || 0, rep: tr.querySelector('.wla-exp').value };
+        map[tr.getAttribute('data-k')] = { lab: parseInt(tr.querySelector('.wla-labin').value, 10) || 0, rep: tr.querySelector('.wla-exp:not(.wla-labin)').value };
       });
       return { map: map, active: active };
     }
@@ -5519,7 +5533,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       var rate = (g.querySelector('.wla-rate') || {}).value || '';
       g.querySelectorAll('tr[data-s]').forEach(function(tr){
         var c = tr.children;
-        lines.push([WLA_LETTER[sh], fmtMDY(_wla.date), title, c[1].textContent, c[2].textContent, c[3].textContent, c[4].textContent, c[5].textContent, rate, (tr.querySelector('.wla-exp') || {}).value || ''].join('\t'));
+        lines.push([WLA_LETTER[sh], fmtMDY(_wla.date), title, c[1].textContent, c[2].textContent, c[3].textContent, c[4].textContent, (tr.querySelector('.wla-labin') || {}).value || '', rate, (tr.querySelector('.wla-exp:not(.wla-labin)') || {}).value || ''].join('\t'));
       });
     });
     if (!lines.length) { toast('No planner data', 'err'); return; }
@@ -5622,12 +5636,13 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
         }
         else if (t.getAttribute('data-gk')) _plan[t.getAttribute('data-gk')] = t.value;
         else if (t.getAttribute('data-ek')) _plan[t.getAttribute('data-ek')] = t.value;
+        else if (t.getAttribute('data-lk')) _plan[t.getAttribute('data-lk')] = t.value;
         else return;
         savePlan(); calcP(p);
       });
       area.addEventListener('focusout', function(e){
         var t = e.target, p = t.closest ? t.closest('[data-wla-p]') : null;
-        if (p && t.getAttribute && t.getAttribute('data-ek')) calcP(p);
+        if (p && t.getAttribute && (t.getAttribute('data-ek') || t.getAttribute('data-lk'))) calcP(p);
       });
       area._wired = true;
     }
