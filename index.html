@@ -5408,7 +5408,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       rows.forEach(function(o, i){
         tot += o.s;
         var ek = 'e|' + sh + '|' + g[0] + '|' + o.key + '|' + o.pass;
-        h += '<tr data-s="'+o.s+'"><td class="n">'+(i+1)+'</td><td class="q">'+esc(o.name)+'</td><td>'+o.pass+'</td>'
+        h += '<tr data-s="'+o.s+'" data-k="'+esc(o.key)+'"><td class="n">'+(i+1)+'</td><td class="q">'+esc(o.name)+'</td><td>'+o.pass+'</td>'
           + '<td class="num">'+o.s+'</td><td class="pct"></td><td class="num lab"></td>'
           + '<td><input type="number" min="0" step="any" class="wla-exp" data-ek="'+esc(ek)+'" value="'+esc(_plan[ek] !== undefined ? _plan[ek] : '')+'" placeholder="-"></td></tr>';
       });
@@ -5466,6 +5466,39 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       var tl = g.querySelector('.t-lab'); sum += parseInt(tl && tl.textContent, 10) || 0;
     });
     var sv = p.querySelector('.wla-sumv'); if (sv) sv.textContent = (T > 0 || manual) ? sum : '-';
+    updateTop(p);
+  }
+  // الجداول اللي فوق بتعرض أرقام الـ Planner (Labelers + Submit for Report) ولو مفيش بتفضل الأرقام الفعلية
+  function updateTop(p){
+    var sh = p.getAttribute('data-wla-p'), d = (_wla.model || {})[sh], card = p.closest('.wla-card');
+    if (!d || !card) return;
+    function grp(g){
+      var box = p.querySelector('[data-wla-g="'+sh+'|'+g+'"]'), map = {}, active = false;
+      if (!box) return { map: map, active: false };
+      var tl = box.querySelector('.t-lab'); active = !!tl && tl.textContent !== '-';
+      box.querySelectorAll('tr[data-k]').forEach(function(tr){
+        map[tr.getAttribute('data-k')] = { lab: parseInt(tr.querySelector('.lab').textContent, 10) || 0, rep: tr.querySelector('.wla-exp').value };
+      });
+      return { map: map, active: active };
+    }
+    function put(el, v){ if (!el) return; el.textContent = fmtN(v); el.classList.toggle('z', !v); }
+    card.querySelectorAll('[data-wla-top]').forEach(function(sec){
+      var kind = sec.getAttribute('data-wla-top').split('|')[1], isLi = kind === 'Lidar';
+      var src = isLi ? d.lidar : d.lane;
+      var G = { fp: grp(isLi ? 'li-fp' : 'la-fp'), qa: grp(isLi ? 'li-qa' : 'la-qa') };
+      var T = { lfp:0, sfp:0, lqa:0, sqa:0 };
+      sec.querySelectorAll('tr[data-k]').forEach(function(tr){
+        var k = tr.getAttribute('data-k'), o = src.filter(function(x){ return x.key === k; })[0]; if (!o) return;
+        ['fp','qa'].forEach(function(ps){
+          var g = G[ps], pl = g.map[k];
+          var lab = g.active ? (pl ? pl.lab : 0) : o['l'+ps];
+          var sub = (pl && pl.rep !== '') ? (parseFloat(pl.rep) || 0) : o['s'+ps];
+          put(tr.querySelector('.c-l'+ps), lab); put(tr.querySelector('.c-s'+ps), sub);
+          T['l'+ps] += lab; T['s'+ps] += sub;
+        });
+      });
+      ['lfp','sfp','lqa','sqa'].forEach(function(c){ var el = sec.querySelector('.t-'+c); if (el) el.textContent = fmtN(T[c]); });
+    });
   }
   function calcAll(){ document.querySelectorAll('[data-wla-p]').forEach(calcP); }
   function copyPlan(sh, btn){
@@ -5486,9 +5519,9 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   }
 
   // ── render ──
-  function tableHtml(title, color, rows){
+  function tableHtml(title, color, rows, sh, kind){
     var t = { lfp:0, sfp:0, lqa:0, sqa:0 };
-    var h = '<div class="wla-sec"><div class="wla-tbar" style="background:'+color+'">'+title+'<span>'+rows.length+' queues</span></div>'
+    var h = '<div class="wla-sec" data-wla-top="'+sh+'|'+kind+'"><div class="wla-tbar" style="background:'+color+'">'+title+'<span>'+rows.length+' queues</span></div>'
           + '<div class="wla-wrap"><table class="wla-tbl"><thead><tr>'
           + '<th>#</th><th style="text-align:left">Queue</th>'
           + '<th>Num Of Labeler (FP)</th><th>Num of Submitted Tasks (FP)</th>'
@@ -5498,11 +5531,11 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     }
     rows.forEach(function(o, i){
       t.lfp += o.lfp; t.sfp += o.sfp; t.lqa += o.lqa; t.sqa += o.sqa;
-      h += '<tr><td class="n">'+(i+1)+'</td>'
+      h += '<tr data-k="'+esc(o.key)+'"><td class="n">'+(i+1)+'</td>'
         + '<td class="q">'+esc(o.name)+(o.noLab ? '<span class="wla-warn" title="في تاسكات اتسبمتت على الكيو ده، بس مفيش حد متسجل عليه في شيت الـ Queue (أو الاسم مش متطابق)">⚠</span>' : '')+'</td>'
-        + num(o.lfp) + num(o.sfp) + num(o.lqa) + num(o.sqa) + '</tr>';
+        + num(o.lfp,'c-lfp') + num(o.sfp,'c-sfp') + num(o.lqa,'c-lqa') + num(o.sqa,'c-sqa') + '</tr>';
     });
-    h += '<tr class="tot"><td></td><td class="q">TOTAL</td><td>'+t.lfp+'</td><td>'+t.sfp+'</td><td>'+t.lqa+'</td><td>'+t.sqa+'</td></tr>';
+    h += '<tr class="tot"><td></td><td class="q">TOTAL</td><td class="t-lfp">'+t.lfp+'</td><td class="t-sfp">'+t.sfp+'</td><td class="t-lqa">'+t.lqa+'</td><td class="t-sqa">'+t.sqa+'</td></tr>';
     h += '</tbody></table></div></div>';
     return h;
   }
@@ -5527,8 +5560,8 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
         + '<div class="wla-stat"><div class="l">Submitted</div><div class="v" style="color:var(--ok-text)">'+d.submitted+'</div></div>'
         + '<div class="wla-stat"><div class="l">Not Submitted</div><div class="v" style="color:var(--danger-text)">'+d.notSub+'</div></div>'
         + '</div>'
-        + tableHtml('Lidar', '#00838f', d.lidar)
-        + tableHtml('Lane Line', '#2e7d32', d.lane)
+        + tableHtml('Lidar', '#00838f', d.lidar, sh, 'Lidar')
+        + tableHtml('Lane Line', '#2e7d32', d.lane, sh, 'Lane')
         + plannerHtml(sh, d)
         + '</div>';
     });
@@ -5541,9 +5574,15 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   function copyShift(sh, btn){
     var d = (_wla.model || {})[sh]; if (!d) return;
     var lines = [], i = 0;
-    d.lidar.concat(d.lane).forEach(function(o){
-      i++;
-      lines.push([WLA_LETTER[sh], fmtMDY(_wla.date), i, o.name + (o.isLi ? ' (LIDAR)' : ' (Lane Line)'), o.lfp, o.sfp, o.lqa, o.sqa].join('\t'));
+    ['Lidar','Lane'].forEach(function(kind){
+      var sec = document.querySelector('[data-wla-top="'+sh+'|'+kind+'"]'); if (!sec) return;
+      var src = kind === 'Lidar' ? d.lidar : d.lane;
+      sec.querySelectorAll('tr[data-k]').forEach(function(tr){
+        var k = tr.getAttribute('data-k'), o = src.filter(function(x){ return x.key === k; })[0]; if (!o) return;
+        function g(c){ return tr.querySelector('.'+c).textContent; }
+        i++;
+        lines.push([WLA_LETTER[sh], fmtMDY(_wla.date), i, o.name + (kind === 'Lidar' ? ' (LIDAR)' : ' (Lane Line)'), g('c-lfp'), g('c-sfp'), g('c-lqa'), g('c-sqa')].join('\t'));
+      });
     });
     navigator.clipboard.writeText(lines.join('\n')).then(function(){
       var o = btn.innerHTML; btn.innerHTML = '✅ Copied!'; setTimeout(function(){ btn.innerHTML = o; }, 2000);
