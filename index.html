@@ -5360,19 +5360,29 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     ['la-fp','Lane Line FP','#2e7d32'],
     ['la-qa','Lane Line QA','#2e7d32']
   ];
-  function fmtN(v){ return String(Math.round(v * 100) / 100); }
-  // أكبر باقي (largest remainder): المجموع دايمًا بيساوي الرقم المدخل بالظبط
+  function fmtN(v){ return String(Math.round(v)); }
+  // توزيع الأشخاص: أي كيو فيه تاسكات لازم يكون عليه شخص واحد على الأقل، والباقي بنسبة التاسكات (أكبر باقي). المجموع = الرقم المدخل بالظبط
   function split(total, vals){
     var out = vals.map(function(){ return 0; });
-    var sum = vals.reduce(function(a, b){ return a + b; }, 0);
-    if (!(total > 0) || sum <= 0) return out;
+    var idx = [];
+    vals.forEach(function(v, i){ if (v > 0) idx.push(i); });
+    if (!(total > 0) || !idx.length) return out;
+    if (total <= idx.length) {
+      // الأشخاص أقل من عدد الكيوهات → واحد واحد للأكبر تاسكات
+      idx.sort(function(a, b){ return (vals[b] - vals[a]) || (a - b); });
+      for (var k = 0; k < total; k++) out[idx[k]] = 1;
+      return out;
+    }
+    idx.forEach(function(i){ out[i] = 1; });
+    var left = total - idx.length;
+    var sum = idx.reduce(function(a, i){ return a + vals[i]; }, 0);
     var rem = [], used = 0;
-    vals.forEach(function(v, i){
-      var x = total * v / sum, f = Math.floor(x);
-      out[i] = f; used += f; rem.push({ i: i, r: x - f });
+    idx.forEach(function(i){
+      var x = left * vals[i] / sum, fl = Math.floor(x);
+      out[i] += fl; used += fl; rem.push({ i: i, r: x - fl });
     });
     rem.sort(function(a, b){ return b.r - a.r; });
-    for (var j = 0; j < total - used; j++) out[rem[j].i]++;
+    for (var j = 0; j < left - used; j++) out[rem[j].i]++;
     return out;
   }
   function itemsFor(d, g){
@@ -5431,7 +5441,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       var ei = tr.querySelector('.wla-exp'), ov = _plan[ei.getAttribute('data-ek')], has = (ov !== undefined && ov !== '');
       if (has) ei.value = ov; else if (document.activeElement !== ei) ei.value = (total > 0 && rate) ? fmtN(e) : '';
       ei.classList.toggle('ov', has);
-      if (ei.value !== '') { anyV = true; te += parseFloat(ei.value) || 0; }
+      if (ei.value !== '') { anyV = true; te += Math.round(parseFloat(ei.value)) || 0; }
       tl += lab[i];
     });
     var tp = g.querySelector('.t-pct'); if (tp) tp.textContent = sum > 0 ? '100%' : '';
@@ -5492,7 +5502,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
         ['fp','qa'].forEach(function(ps){
           var g = G[ps], pl = g.map[k];
           var lab = g.active ? (pl ? pl.lab : 0) : o['l'+ps];
-          var sub = (pl && pl.rep !== '') ? (parseFloat(pl.rep) || 0) : o['s'+ps];
+          var sub = (pl && pl.rep !== '') ? (Math.round(parseFloat(pl.rep)) || 0) : o['s'+ps];
           put(tr.querySelector('.c-l'+ps), lab); put(tr.querySelector('.c-s'+ps), sub);
           T['l'+ps] += lab; T['s'+ps] += sub;
         });
