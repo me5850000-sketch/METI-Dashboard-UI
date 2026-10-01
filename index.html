@@ -693,6 +693,7 @@ body.dark #detailBd [style*="color:var(--blue)"] { color: #7eaaff !important; }
 <div class="nav-item" id="nav-attendance" data-page="attendance" style="display:none">Attendance</div>
 <div class="nav-item" id="nav-attdetails" data-page="attdetails" style="display:none">Details of Attendance</div>
 <div class="nav-item" id="nav-otdetails" data-page="otdetails" style="display:none">Details of OT</div>
+<div class="nav-item" id="nav-wla" data-page="wla" style="display:none">WLA</div>
 <div class="nav-item" id="nav-users" data-page="users" style="display:none">Users</div>
       </nav>
       <div class="sb-footer">
@@ -851,6 +852,21 @@ body.dark #detailBd [style*="color:var(--blue)"] { color: #7eaaff !important; }
             </div>
           </div>
           <div id="attDetailsArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
+        </div>
+<div id="pgWla" style="display:none">
+          <div class="filter-bar">
+            <label>Date</label>
+            <div class="dp-wrap" id="dpWrap-wlaDate"><input type="text" class="dp-input" id="wlaDate" readonly placeholder="Select date" autocomplete="off"><span class="dp-icon">📅</span></div>
+            <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center" id="wlaShiftBtns">
+              <label>Shift</label>
+              <button class="mod-btn wla-shift-btn" data-wlashift="All" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>
+              <button class="mod-btn wla-shift-btn" data-wlashift="Morning">Morning</button>
+              <button class="mod-btn wla-shift-btn" data-wlashift="Night">Night</button>
+              <button class="mod-btn wla-shift-btn" data-wlashift="Over Night">Over Night</button>
+            </div>
+            <button class="mod-btn" id="wlaRefresh" style="margin-left:auto">🔄 Refresh</button>
+          </div>
+          <div id="wlaArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
         </div>
 <div id="pgOtDetails" style="display:none">
           <div id="otDetailsArea"><div class="loading"><div class="spin"></div> Loading...</div></div>
@@ -5167,5 +5183,386 @@ renderAttDetailsPage = function(r, dateISO) {
 console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
 })();
 </script>
+<script>
+// ══════════════════════════════════════════════════════════
+// WLA PAGE — Labelers per Queue vs Submitted Tasks (per shift)
+// بيعتمد على نفس getAttendance + getStats الموجودين (مفيش تعديل في الباك إند)
+// ══════════════════════════════════════════════════════════
+(function(){
+  var WLA_ROLES = ['admin','sm','ssv','sv','wla'];
+  var WLA_SHIFTS = ['Morning','Night','Over Night'];
+  var WLA_LETTER = {'Morning':'M','Night':'N','Over Night':'ON'};
+  var _wlaShift = 'All';
+  var _wla = { seq:0, model:null, other:0, date:'' };
+  window._wla = _wla; // للـ debugging من الكونسول
+
+  PAGES.wla = { pg:'pgWla', title:'WLA', sub:'Labelers per Queue & Submitted Tasks' };
+
+  // ── CSS ──
+  var st = document.createElement('style');
+  st.textContent =
+    '.wla-card{background:var(--white);border:1px solid var(--border);border-radius:14px;margin-bottom:18px;overflow:hidden;box-shadow:var(--shadow)}' +
+    '.wla-hdr{display:flex;align-items:center;gap:12px;flex-wrap:wrap;padding:14px 20px;border-bottom:1px solid var(--border)}' +
+    '.wla-pill{color:#fff;font-size:15px;font-weight:800;padding:6px 20px;border-radius:20px;letter-spacing:.3px}' +
+    '.wla-date{font-size:12px;font-weight:700;color:var(--gray)}' +
+    '.wla-copy{margin-left:auto;padding:6px 14px;border-radius:7px;border:2px solid var(--border);background:var(--white);color:var(--gray);font-size:12px;font-weight:700;cursor:pointer}' +
+    '.wla-copy:hover{border-color:var(--blue);color:var(--blue)}' +
+    '.wla-stats{display:flex;gap:12px;flex-wrap:wrap;padding:14px 20px}' +
+    '.wla-stat{flex:1;min-width:130px;background:var(--gray-lt);border-radius:10px;padding:10px 14px}' +
+    '.wla-stat .l{font-size:11px;font-weight:700;color:var(--gray);text-transform:uppercase;letter-spacing:.4px}' +
+    '.wla-stat .v{font-size:24px;font-weight:800;color:var(--dark);margin-top:2px}' +
+    '.wla-stat .v small{font-size:14px;color:var(--gray);font-weight:700}' +
+    '.wla-sec{padding:0 20px 18px}' +
+    '.wla-tbar{display:flex;align-items:center;justify-content:space-between;padding:10px 16px;border-radius:10px 10px 0 0;color:#fff;font-size:14px;font-weight:800}' +
+    '.wla-tbar span{background:rgba(255,255,255,.2);font-size:12px;padding:2px 10px;border-radius:10px}' +
+    '.wla-wrap{overflow-x:auto;border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px}' +
+    '.wla-tbl{width:100%;border-collapse:collapse;min-width:640px}' +
+    '.wla-tbl th{background:var(--gray-lt);color:var(--dark);font-size:11px;font-weight:800;padding:9px 10px;text-align:center;text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border)}' +
+    '.wla-tbl td{padding:8px 10px;font-size:13px;text-align:center;color:var(--dark);border-bottom:1px solid var(--border)}' +
+    '.wla-tbl td.q{text-align:left;font-weight:600;word-break:break-all}' +
+    '.wla-tbl td.n{width:36px;color:var(--gray);font-weight:700}' +
+    '.wla-tbl td.z{color:var(--gray);opacity:.6}' +
+    '.wla-tbl td.num{font-weight:800}' +
+    '.wla-tbl tr.tot td{background:var(--blue-bg);font-weight:800;border-top:2px solid var(--border)}' +
+    '.wla-warn{color:var(--warn-text);font-weight:800;margin-left:6px;cursor:help}' +
+    '.wla-note{font-size:12px;color:var(--gray);padding:0 4px 8px}' +
+    '.wla-pgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(460px,1fr));gap:16px}' +
+    '.wla-pbox .wla-tbar{gap:10px;flex-wrap:wrap}' +
+    '.wla-plab{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700}' +
+    '.wla-ppl{width:90px}' +
+    '.wla-ppl,.wla-rate{padding:5px 8px;border:2px solid var(--border);border-radius:7px;background:var(--white);color:var(--dark);font-size:13px;font-weight:700;text-align:center;font-family:inherit}' +
+    '.wla-rate{width:80px}' +
+    '.wla-ppl:focus,.wla-rate:focus{outline:none;border-color:var(--blue)}' +
+    '.wla-tbl-p{min-width:520px}';
+  document.head.appendChild(st);
+
+  // ── helpers ──
+  function norm(s){
+    s = (s||'').toString().toLowerCase();
+    s = s.replace(/\([^)]*\)/g,' ').replace(/[_\s\-]+/g,' ').trim();
+    var prev;
+    do { prev = s; s = s.replace(/\s+(fp|qa|review)$/,'').trim(); } while (s !== prev);
+    return s;
+  }
+  function cleanName(q){
+    return (q||'').toString().replace(/^\([^)]*\)\s*/,'').replace(/[\s_]+(FP|QA)\s*$/i,'').replace(/_/g,' ').trim();
+  }
+  function fmtMDY(iso){
+    var p = (iso||'').split('-');
+    return p.length===3 ? (parseInt(p[1],10)+'/'+parseInt(p[2],10)+'/'+p[0]) : iso;
+  }
+  function num(v, cls){
+    return '<td class="num '+(v?'':'z ')+(cls||'')+'">'+v+'</td>';
+  }
+
+  // ── build model ──
+  function build(att, stats){
+    var recs = (stats && stats.data) || [];
+    var subs = {}; WLA_SHIFTS.forEach(function(s){ subs[s] = {}; });
+    var ubAll = {}, other = 0;
+
+    recs.forEach(function(r){
+      var ub = fmtUbkey(r[F.ubkey] || '');
+      if (ub && ub !== '-') ubAll[ub.toLowerCase()] = 1;
+      var sh = nShift((r[F.shift] || '').toString());
+      if (WLA_SHIFTS.indexOf(sh) === -1) { other++; return; }
+      var q = (r[F.queue] || '').toString().trim();
+      if (!q || q === '-') return;
+      var isLi = (r[F.modality] || '').toString().toLowerCase().indexOf('lidar') !== -1;
+      var pas = (r[F.pass] || '').toString().toUpperCase();
+      var k = norm(q) + '||' + (isLi ? 'li' : 'la');
+      var o = subs[sh][k] || (subs[sh][k] = { name: cleanName(q), isLi: isLi, fp: 0, qa: 0 });
+      if (pas === 'QA') o.qa++; else o.fp++;
+    });
+
+    var model = {};
+    WLA_SHIFTS.forEach(function(sh){
+      var sd = att && att.shifts && att.shifts[sh];
+      if (!sd) return;
+      var rows = {};
+      var qs = sd.queueStats || {};
+      Object.keys(qs).forEach(function(k){
+        var q = qs[k];
+        var key = norm(q.name) + '||' + (q.isLidar ? 'li' : 'la');
+        var o = rows[key] || (rows[key] = { key: key, name: q.name, isLi: !!q.isLidar, lfp:0, lqa:0, sfp:0, sqa:0, noLab:false });
+        o.lfp += q.fp || 0; o.lqa += q.qa || 0;
+      });
+      Object.keys(subs[sh]).forEach(function(k){
+        var s = subs[sh][k];
+        var o = rows[k] || (rows[k] = { key: k, name: s.name, isLi: s.isLi, lfp:0, lqa:0, sfp:0, sqa:0, noLab:true });
+        o.sfp += s.fp; o.sqa += s.qa;
+      });
+      var all = Object.keys(rows).map(function(k){ return rows[k]; });
+      function srt(a,b){ return ((b.lfp+b.lqa)-(a.lfp+a.lqa)) || (a.name < b.name ? -1 : 1); }
+      var present = sd.present || [];
+      var withQ = present.filter(function(p){ return p.hasQueue; });
+      var subN = withQ.filter(function(p){
+        var ub = fmtUbkey(p.yubikey || '');
+        return ub && ub !== '-' && ubAll[ub.toLowerCase()];
+      }).length;
+      model[sh] = {
+        present: present.length,
+        total: sd.total || (present.length + (sd.absent || []).length),
+        withQ: withQ.length,
+        submitted: subN,
+        notSub: withQ.length - subN,
+        lidar: all.filter(function(o){ return o.isLi; }).sort(srt),
+        lane:  all.filter(function(o){ return !o.isLi; }).sort(srt)
+      };
+    });
+    return { model: model, other: other };
+  }
+
+  // ── Planner: توزيع عدد الأشخاص بنسبة التاسكات + Rate ──
+  var PLAN_KEY = 'wla_plan_v1', _plan = {};
+  try { _plan = JSON.parse(localStorage.getItem(PLAN_KEY) || '{}') || {}; } catch (e) { _plan = {}; }
+  function savePlan(){ try { localStorage.setItem(PLAN_KEY, JSON.stringify(_plan)); } catch (e) {} }
+  var GRP = [
+    ['li-fp','Lidar FP','#00838f','lidar','sfp'],
+    ['li-qa','Lidar QA','#00838f','lidar','sqa'],
+    ['la-fp','Lane Line FP','#2e7d32','lane','sfp'],
+    ['la-qa','Lane Line QA','#2e7d32','lane','sqa']
+  ];
+  function fmtN(v){ return String(Math.round(v * 100) / 100); }
+  // أكبر باقي (largest remainder): المجموع دايمًا بيساوي الرقم المدخل بالظبط
+  function split(total, vals){
+    var out = vals.map(function(){ return 0; });
+    var sum = vals.reduce(function(a, b){ return a + b; }, 0);
+    if (!(total > 0) || sum <= 0) return out;
+    var rem = [], used = 0;
+    vals.forEach(function(v, i){
+      var x = total * v / sum, f = Math.floor(x);
+      out[i] = f; used += f; rem.push({ i: i, r: x - f });
+    });
+    rem.sort(function(a, b){ return b.r - a.r; });
+    for (var j = 0; j < total - used; j++) out[rem[j].i]++;
+    return out;
+  }
+  function plannerHtml(sh, d){
+    var h = '<div class="wla-sec"><div class="wla-hdr" style="padding:6px 0 12px;border:none">'
+      + '<span class="wla-pill" style="background:#455a64;font-size:13px;padding:5px 16px">Planner</span>'
+      + '<span class="wla-date">اكتب عدد الأشخاص ← بيتوزع بنسبة التاسكات المتسبمتة، واكتب الـ Rate ← Labelers × Rate</span>'
+      + '<button class="wla-copy" data-wla-copyplan="'+sh+'">📋 Copy</button></div><div class="wla-pgrid">';
+    GRP.forEach(function(g){
+      var rows = d[g[3]].filter(function(o){ return o[g[4]] > 0; });
+      var pk = 'p|' + sh + '|' + g[0];
+      h += '<div class="wla-pbox" data-wla-g="'+sh+'|'+g[0]+'" data-title="'+g[1]+'">'
+        + '<div class="wla-tbar" style="background:'+g[2]+'">'+g[1]
+        + '<label class="wla-plab">Labelers <input type="number" min="0" step="1" class="wla-ppl" data-pk="'+esc(pk)+'" value="'+esc(_plan[pk] || '')+'" placeholder="e.g. 220"></label></div>'
+        + '<div class="wla-wrap"><table class="wla-tbl wla-tbl-p"><thead><tr><th>#</th><th style="text-align:left">Queue</th><th>Submitted</th><th>Share</th><th>Labelers</th><th>Rate</th><th>Labelers × Rate</th></tr></thead><tbody>';
+      if (!rows.length) h += '<tr><td colspan="7" style="color:var(--gray);padding:16px">No submitted tasks</td></tr>';
+      var tot = 0;
+      rows.forEach(function(o, i){
+        var rk = 'r|' + sh + '|' + g[0] + '|' + o.key;
+        tot += o[g[4]];
+        h += '<tr data-s="'+o[g[4]]+'"><td class="n">'+(i+1)+'</td><td class="q">'+esc(o.name)+'</td>'
+          + '<td class="num">'+o[g[4]]+'</td><td class="pct"></td><td class="num lab"></td>'
+          + '<td><input type="number" min="0" step="any" class="wla-rate" data-rk="'+esc(rk)+'" value="'+esc(_plan[rk] || '')+'"></td>'
+          + '<td class="num exp"></td></tr>';
+      });
+      h += '<tr class="tot"><td></td><td class="q">TOTAL</td><td>'+tot+'</td><td class="t-pct"></td><td class="t-lab"></td><td></td><td class="t-exp"></td></tr>';
+      h += '</tbody></table></div></div>';
+    });
+    return h + '</div></div>';
+  }
+  function calc(g){
+    var pin = g.querySelector('.wla-ppl');
+    var total = Math.max(0, Math.round(parseFloat(pin && pin.value) || 0));
+    var trs = [].slice.call(g.querySelectorAll('tr[data-s]'));
+    var s = trs.map(function(tr){ return parseFloat(tr.getAttribute('data-s')) || 0; });
+    var sum = s.reduce(function(a, b){ return a + b; }, 0);
+    var lab = split(total, s), tl = 0, te = 0, anyRate = false;
+    trs.forEach(function(tr, i){
+      var rate = parseFloat(tr.querySelector('.wla-rate').value) || 0;
+      var e = lab[i] * rate;
+      tr.querySelector('.pct').textContent = sum > 0 ? (s[i] / sum * 100).toFixed(1) + '%' : '-';
+      tr.querySelector('.lab').textContent = total > 0 ? lab[i] : '-';
+      tr.querySelector('.exp').textContent = (total > 0 && rate) ? fmtN(e) : '-';
+      tl += lab[i]; te += e; if (rate) anyRate = true;
+    });
+    var tp = g.querySelector('.t-pct'); if (tp) tp.textContent = sum > 0 ? '100%' : '';
+    var tla = g.querySelector('.t-lab'); if (tla) tla.textContent = total > 0 ? tl : '-';
+    var tex = g.querySelector('.t-exp'); if (tex) tex.textContent = (total > 0 && anyRate) ? fmtN(te) : '-';
+  }
+  function calcAll(){ document.querySelectorAll('[data-wla-g]').forEach(calc); }
+  function copyPlan(sh, btn){
+    var lines = [];
+    document.querySelectorAll('[data-wla-g]').forEach(function(g){
+      var key = g.getAttribute('data-wla-g').split('|');
+      if (key[0] !== sh) return;
+      var title = g.getAttribute('data-title');
+      g.querySelectorAll('tr[data-s]').forEach(function(tr){
+        var c = tr.children;
+        lines.push([WLA_LETTER[sh], fmtMDY(_wla.date), title, c[1].textContent, c[2].textContent, c[3].textContent, c[4].textContent, tr.querySelector('.wla-rate').value || '', c[6].textContent].join('\t'));
+      });
+    });
+    if (!lines.length) { toast('No planner data', 'err'); return; }
+    navigator.clipboard.writeText(lines.join('\n')).then(function(){
+      var o = btn.innerHTML; btn.innerHTML = '✅ Copied!'; setTimeout(function(){ btn.innerHTML = o; }, 2000);
+    }).catch(function(){ toast('Copy failed', 'err'); });
+  }
+
+  // ── render ──
+  function tableHtml(title, color, rows){
+    var t = { lfp:0, sfp:0, lqa:0, sqa:0 };
+    var h = '<div class="wla-sec"><div class="wla-tbar" style="background:'+color+'">'+title+'<span>'+rows.length+' queues</span></div>'
+          + '<div class="wla-wrap"><table class="wla-tbl"><thead><tr>'
+          + '<th>#</th><th style="text-align:left">Queue</th>'
+          + '<th>Num Of Labeler (FP)</th><th>Num of Submitted Tasks (FP)</th>'
+          + '<th>Num Of Labeler (QA)</th><th>Num of Submitted Tasks (QA)</th></tr></thead><tbody>';
+    if (!rows.length) {
+      h += '<tr><td colspan="6" style="color:var(--gray);padding:18px">No queues</td></tr>';
+    }
+    rows.forEach(function(o, i){
+      t.lfp += o.lfp; t.sfp += o.sfp; t.lqa += o.lqa; t.sqa += o.sqa;
+      h += '<tr><td class="n">'+(i+1)+'</td>'
+        + '<td class="q">'+esc(o.name)+(o.noLab ? '<span class="wla-warn" title="في تاسكات اتسبمتت على الكيو ده، بس مفيش حد متسجل عليه في شيت الـ Queue (أو الاسم مش متطابق)">⚠</span>' : '')+'</td>'
+        + num(o.lfp) + num(o.sfp) + num(o.lqa) + num(o.sqa) + '</tr>';
+    });
+    h += '<tr class="tot"><td></td><td class="q">TOTAL</td><td>'+t.lfp+'</td><td>'+t.sfp+'</td><td>'+t.lqa+'</td><td>'+t.sqa+'</td></tr>';
+    h += '</tbody></table></div></div>';
+    return h;
+  }
+
+  function render(){
+    var m = _wla.model || {};
+    var vis = (_wlaShift === 'All') ? WLA_SHIFTS.filter(function(s){ return m[s]; })
+                                    : [_wlaShift].filter(function(s){ return m[s]; });
+    if (!vis.length) { shtml('wlaArea', '<div class="empty">No data for this date.</div>'); return; }
+    var COL = { 'Morning':'var(--morning-text)', 'Night':'var(--indigo-text)', 'Over Night':'#1b5e20' };
+    var h = '';
+    vis.forEach(function(sh){
+      var d = m[sh];
+      var pct = d.total > 0 ? Math.round(d.present / d.total * 100) : 0;
+      h += '<div class="wla-card">'
+        + '<div class="wla-hdr"><span class="wla-pill" style="background:'+COL[sh]+'">'+sh+' Shift</span>'
+        + '<span class="wla-date">'+fmtMDY(_wla.date)+'</span>'
+        + '<button class="wla-copy" data-wla-copy="'+sh+'">📋 Copy</button></div>'
+        + '<div class="wla-stats">'
+        + '<div class="wla-stat"><div class="l">Attendance</div><div class="v">'+d.present+' <small>/ '+d.total+' · '+pct+'%</small></div></div>'
+        + '<div class="wla-stat"><div class="l">Yubikey on Queue</div><div class="v">'+d.withQ+'</div></div>'
+        + '<div class="wla-stat"><div class="l">Submitted</div><div class="v" style="color:var(--ok-text)">'+d.submitted+'</div></div>'
+        + '<div class="wla-stat"><div class="l">Not Submitted</div><div class="v" style="color:var(--danger-text)">'+d.notSub+'</div></div>'
+        + '</div>'
+        + tableHtml('Lidar', '#00838f', d.lidar)
+        + tableHtml('Lane Line', '#2e7d32', d.lane)
+        + plannerHtml(sh, d)
+        + '</div>';
+    });
+    if (_wla.other > 0) h += '<div class="wla-note">ℹ️ '+_wla.other+' task(s) تحت "Over Shift" مش محسوبين في الجداول دي.</div>';
+    shtml('wlaArea', h);
+    calcAll();
+  }
+
+  // ── copy (A: shift · B: date · C: # · D: queue · E..H: numbers — نفس ترتيب الشيت) ──
+  function copyShift(sh, btn){
+    var d = (_wla.model || {})[sh]; if (!d) return;
+    var lines = [], i = 0;
+    d.lidar.concat(d.lane).forEach(function(o){
+      i++;
+      lines.push([WLA_LETTER[sh], fmtMDY(_wla.date), i, o.name + (o.isLi ? ' (LIDAR)' : ' (Lane Line)'), o.lfp, o.sfp, o.lqa, o.sqa].join('\t'));
+    });
+    navigator.clipboard.writeText(lines.join('\n')).then(function(){
+      var o = btn.innerHTML; btn.innerHTML = '✅ Copied!'; setTimeout(function(){ btn.innerHTML = o; }, 2000);
+    }).catch(function(){ toast('Copy failed', 'err'); });
+  }
+
+  // ── load ──
+  window.loadWla = function(force){
+    var di = gid('wlaDate');
+    if (di && !di._dpWired) { di.addEventListener('click', function(){ DP.open('wlaDate'); }); di._dpWired = true; }
+    var area = gid('wlaArea');
+    if (area && !area._wired) {
+      area.addEventListener('click', function(e){
+        var b = e.target.closest('[data-wla-copy]'); if (b) { copyShift(b.getAttribute('data-wla-copy'), b); return; }
+        var p = e.target.closest('[data-wla-copyplan]'); if (p) copyPlan(p.getAttribute('data-wla-copyplan'), p);
+      });
+      area.addEventListener('input', function(e){
+        var t = e.target, g = t.closest ? t.closest('[data-wla-g]') : null;
+        if (!g) return;
+        if (t.classList.contains('wla-ppl')) _plan[t.getAttribute('data-pk')] = t.value;
+        else if (t.classList.contains('wla-rate')) _plan[t.getAttribute('data-rk')] = t.value;
+        else return;
+        savePlan(); calc(g);
+      });
+      area._wired = true;
+    }
+    document.querySelectorAll('.wla-shift-btn').forEach(function(b){
+      var act = b.getAttribute('data-wlashift') === _wlaShift;
+      b.style.background = act ? 'var(--blue)' : '';
+      b.style.color = act ? 'white' : '';
+      b.style.borderColor = act ? 'var(--blue)' : '';
+    });
+
+    var dateISO = DP.getVal('wlaDate') || todayISO();
+    if (!DP.getVal('wlaDate')) DP.setVal('wlaDate', dateISO, false);
+    if (!TOKEN) return;
+
+    if (force) {
+      Object.keys(_RPC_CACHE).forEach(function(k){
+        if (k.indexOf('getStats|') === 0 || k.indexOf('getAttendance|') === 0) delete _RPC_CACHE[k];
+      });
+    }
+
+    var seq = ++_wla.seq;
+    var att = null, stats = null, got = 0, failed = false;
+    shtml('wlaArea', '<div class="loading"><div class="spin"></div> Loading...</div>');
+
+    function done(){
+      if (seq !== _wla.seq || failed) return;
+      if (++got < 2) return;
+      var b = build(att, stats);
+      _wla.model = b.model; _wla.other = b.other; _wla.date = dateISO;
+      render();
+    }
+    function fail(msg){
+      if (seq !== _wla.seq || failed) return;
+      failed = true;
+      shtml('wlaArea', '<div class="empty">' + esc(msg || 'Error') + '</div>');
+    }
+
+    google.script.run
+      .withSuccessHandler(function(r){ if (!r || r.err) return fail(r && r.err); att = r; done(); })
+      .withFailureHandler(function(e){ fail(e && e.message); })
+      .getAttendance(TOKEN, dateISO, null, dateISO);
+
+    google.script.run
+      .withSuccessHandler(function(r){ if (!r || r.err) return fail(r && r.err); stats = r; done(); })
+      .withFailureHandler(function(e){ fail(e && e.message); })
+      .getStats(TOKEN, dateISO + 'T00:00:00', dateISO + 'T23:59:59');
+  };
+
+  // ── hooks ──
+  document.querySelectorAll('.wla-shift-btn').forEach(function(b){
+    b.addEventListener('click', function(){ _wlaShift = b.getAttribute('data-wlashift'); loadWla(); });
+  });
+  var rb = gid('wlaRefresh'); if (rb) rb.addEventListener('click', function(){ loadWla(true); });
+
+  var _wlaOnChange = DP.onChange;
+  DP.onChange = function(id){
+    if (id === 'wlaDate' && SESSION && TOKEN) { loadWla(); return; }
+    return _wlaOnChange.apply(DP, arguments);
+  };
+
+  var _wlaNavTo = navTo;
+  navTo = function(page){
+    if (page === 'wla') {
+      if (!SESSION || !hasRole(SESSION.role, WLA_ROLES)) { _wlaNavTo('home'); return; }
+      _wlaNavTo(page);
+      loadWla();
+      return;
+    }
+    _wlaNavTo(page);
+  };
+
+  var _wlaShowDash = showDash;
+  showDash = function(){
+    _wlaShowDash();
+    var n = gid('nav-wla');
+    if (n) n.style.display = (SESSION && hasRole(SESSION.role, WLA_ROLES)) ? '' : 'none';
+  };
+})();
+</script>
+
 </body>
 </html>
