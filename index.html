@@ -5368,11 +5368,12 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       var pk = 'p|' + sh + '|' + f;
       return '<label class="wla-plab">' + title + ' <input type="number" min="0" step="1" class="wla-ppl" data-f="'+f+'" data-pk="'+esc(pk)+'" value="'+esc(_plan[pk] || '')+'" placeholder="0"></label>';
     }
-    var h = '<div class="wla-sec" data-wla-p="'+sh+'"><div class="wla-hdr" style="padding:6px 0 12px;border:none">'
+    var h = '<div class="wla-sec" data-wla-p="'+sh+'"><div class="wla-hdr" style="padding:10px 16px;border:none;background:var(--gray-lt);border-radius:10px;margin-bottom:14px;gap:18px">'
       + '<span class="wla-pill" style="background:#455a64;font-size:13px;padding:5px 16px">Planner</span>'
+      + field('Total Labelers', 'tot') + field('Lane Line (FP & QA)', 'lane') + field('Lidar QA', 'liqa')
+      + '<div class="wla-plab">Lidar FP (الباقي): <span class="wla-remv" style="font-size:18px;font-weight:800">-</span></div>'
+      + '<div class="wla-plab">Σ كل الكيوهات: <span class="wla-sumv" style="font-size:18px;font-weight:800">-</span></div>'
       + '<button class="wla-copy" data-wla-copyplan="'+sh+'">📋 Copy</button></div>'
-      + '<div class="wla-pin">' + field('Total Head Count', 'tot') + field('Lane Line (FP & QA)', 'lane') + field('Lidar QA', 'liqa')
-      + '<div class="wla-plab">Lidar FP (الباقي): <span class="wla-remv" style="font-size:18px;font-weight:800">-</span></div></div>'
       + '<div class="wla-pgrid">';
     GRP.forEach(function(g){
       var rows = itemsFor(d, g[0]);
@@ -5422,9 +5423,12 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       else { rv.textContent = rem; rv.style.color = 'var(--ok-text)'; }
     }
     var ppl = { 'li-fp': (T > 0 ? Math.max(0, rem) : 0), 'li-qa': Q, 'la': L };
+    var sum = 0;
     p.querySelectorAll('[data-wla-g]').forEach(function(g){
       calcG(g, ppl[g.getAttribute('data-wla-g').split('|')[1]] || 0);
+      var tl = g.querySelector('.t-lab'); sum += parseInt(tl && tl.textContent, 10) || 0;
     });
+    var sv = p.querySelector('.wla-sumv'); if (sv) sv.textContent = T > 0 ? sum : '-';
   }
   function calcAll(){ document.querySelectorAll('[data-wla-p]').forEach(calcP); }
   function copyPlan(sh, btn){
