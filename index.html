@@ -859,7 +859,7 @@ body.dark #detailBd [style*="color:var(--blue)"] { color: #7eaaff !important; }
             <div class="dp-wrap" id="dpWrap-wlaDate"><input type="text" class="dp-input" id="wlaDate" readonly placeholder="Select date" autocomplete="off"><span class="dp-icon">📅</span></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center" id="wlaShiftBtns">
               <label>Shift</label>
-              <button class="mod-btn wla-shift-btn" data-wlashift="All" style="background:var(--blue);color:white;border-color:var(--blue)">All</button>
+              <button class="mod-btn wla-shift-btn" data-wlashift="All" style="background:var(--blue);color:white;border-color:var(--blue)">Total</button>
               <button class="mod-btn wla-shift-btn" data-wlashift="Morning">Morning</button>
               <button class="mod-btn wla-shift-btn" data-wlashift="Night">Night</button>
               <button class="mod-btn wla-shift-btn" data-wlashift="Over Night">Over Night</button>
@@ -5191,9 +5191,9 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
 (function(){
   var WLA_ROLES = ['admin','sm','ssv','sv','wla'];
   var WLA_SHIFTS = ['Morning','Night','Over Night'];
-  var WLA_LETTER = {'Morning':'M','Night':'N','Over Night':'ON'};
+  var WLA_LETTER = {'Morning':'M','Night':'N','Over Night':'ON','Total':'T'};
   var _wlaShift = 'All';
-  var WIN = { 'Morning':'8 AM → 4 PM', 'Night':'4 PM → 12 AM', 'Over Night':'12 AM → 8 AM' };
+  var WIN = { 'Morning':'8 AM → 4 PM', 'Night':'4 PM → 12 AM', 'Over Night':'12 AM → 8 AM', 'Total':'12 AM → 12 AM (Full Day)' };
   var _wla = { seq:0, model:null, other:0, date:'' };
   window._wla = _wla; // للـ debugging من الكونسول
 
@@ -5235,7 +5235,11 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     '.wla-ppl,.wla-rate{padding:5px 8px;border:2px solid var(--border);border-radius:7px;background:var(--white);color:var(--dark);font-size:13px;font-weight:700;text-align:center;font-family:inherit}' +
     '.wla-rate{width:80px}' +
     '.wla-ppl:focus,.wla-rate:focus{outline:none;border-color:var(--blue)}' +
-    '.wla-tbl-p{min-width:600px}';
+    '.wla-tbl-p{min-width:520px}' +
+    '.wla-tbar .wla-rate{width:70px;padding:3px 6px}' +
+    '.wla-exp{width:80px;padding:5px 8px;border:2px solid var(--border);border-radius:7px;background:var(--white);color:var(--dark);font-size:13px;font-weight:800;text-align:center;font-family:inherit}' +
+    '.wla-exp:focus,.wla-exp.ov{border-color:var(--blue)}' +
+    '.wla-exp:focus{outline:none}';
   document.head.appendChild(st);
 
   // ── helpers ──
@@ -5326,17 +5330,35 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
         lane:  all.filter(function(o){ return !o.isLi; }).sort(srt)
       };
     });
+    var avail = WLA_SHIFTS.filter(function(s){ return model[s]; });
+    if (avail.length) {
+      var tt = { present:0, total:0, withQ:0, submitted:0, notSub:0 }, mr = {};
+      avail.forEach(function(s){
+        var d = model[s];
+        ['present','total','withQ','submitted','notSub'].forEach(function(f){ tt[f] += d[f]; });
+        d.lidar.concat(d.lane).forEach(function(o){
+          var x = mr[o.key] || (mr[o.key] = { key:o.key, name:o.name, isLi:o.isLi, lfp:0, lqa:0, sfp:0, sqa:0, noLab:o.noLab });
+          x.lfp += o.lfp; x.lqa += o.lqa; x.sfp += o.sfp; x.sqa += o.sqa; x.noLab = x.noLab && o.noLab;
+        });
+      });
+      var allr = Object.keys(mr).map(function(k){ return mr[k]; });
+      var srtT = function(a,b){ return ((b.lfp+b.lqa)-(a.lfp+a.lqa)) || (a.name < b.name ? -1 : 1); };
+      tt.lidar = allr.filter(function(o){ return o.isLi; }).sort(srtT);
+      tt.lane  = allr.filter(function(o){ return !o.isLi; }).sort(srtT);
+      model['Total'] = tt;
+    }
     return { model: model, other: other };
   }
 
-  // ── Planner: توزيع عدد الأشخاص بنسبة التاسكات + Rate ──
-  var PLAN_KEY = 'wla_plan_v1', _plan = {};
+  // ── Planner: توزيع عدد الأشخاص بنسبة التاسكات + Rate واحد لكل جروب ──
+  var PLAN_KEY = 'wla_plan_v2', _plan = {};
   try { _plan = JSON.parse(localStorage.getItem(PLAN_KEY) || '{}') || {}; } catch (e) { _plan = {}; }
   function savePlan(){ try { localStorage.setItem(PLAN_KEY, JSON.stringify(_plan)); } catch (e) {} }
   var GRP = [
-    ['li-fp','Lidar FP (الباقي)','#00838f'],
+    ['li-fp','Lidar FP','#00838f'],
     ['li-qa','Lidar QA','#00838f'],
-    ['la','Lane Line (FP & QA)','#2e7d32']
+    ['la-fp','Lane Line FP','#2e7d32'],
+    ['la-qa','Lane Line QA','#2e7d32']
   ];
   function fmtN(v){ return String(Math.round(v * 100) / 100); }
   // أكبر باقي (largest remainder): المجموع دايمًا بيساوي الرقم المدخل بالظبط
@@ -5357,10 +5379,8 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     var out = [];
     if (g === 'li-fp') d.lidar.forEach(function(o){ if (o.sfp > 0) out.push({ key:o.key, name:o.name, pass:'FP', s:o.sfp }); });
     else if (g === 'li-qa') d.lidar.forEach(function(o){ if (o.sqa > 0) out.push({ key:o.key, name:o.name, pass:'QA', s:o.sqa }); });
-    else d.lane.forEach(function(o){
-      if (o.sfp > 0) out.push({ key:o.key, name:o.name, pass:'FP', s:o.sfp });
-      if (o.sqa > 0) out.push({ key:o.key, name:o.name, pass:'QA', s:o.sqa });
-    });
+    else if (g === 'la-fp') d.lane.forEach(function(o){ if (o.sfp > 0) out.push({ key:o.key, name:o.name, pass:'FP', s:o.sfp }); });
+    else d.lane.forEach(function(o){ if (o.sqa > 0) out.push({ key:o.key, name:o.name, pass:'QA', s:o.sqa }); });
     return out;
   }
   function plannerHtml(sh, d){
@@ -5370,27 +5390,29 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     }
     var h = '<div class="wla-sec" data-wla-p="'+sh+'"><div class="wla-hdr" style="padding:10px 16px;border:none;background:var(--gray-lt);border-radius:10px;margin-bottom:14px;gap:18px">'
       + '<span class="wla-pill" style="background:#455a64;font-size:13px;padding:5px 16px">Planner</span>'
-      + field('Total Labelers', 'tot') + field('Lane Line (FP & QA)', 'lane') + field('Lidar QA', 'liqa')
-      + '<div class="wla-plab">Lidar FP (الباقي): <span class="wla-remv" style="font-size:18px;font-weight:800">-</span></div>'
+      + field('Total Labelers', 'tot') + field('Lane Line FP', 'lafp') + field('Lane Line QA', 'laqa') + field('Lidar QA', 'liqa') + field('Lidar FP (الباقي)', 'lifp')
+      + '<span class="wla-remv" style="font-size:12px;font-weight:800;color:var(--danger-text)"></span>'
       + '<div class="wla-plab">Σ كل الكيوهات: <span class="wla-sumv" style="font-size:18px;font-weight:800">-</span></div>'
       + '<button class="wla-copy" data-wla-copyplan="'+sh+'">📋 Copy</button></div>'
       + '<div class="wla-pgrid">';
     GRP.forEach(function(g){
       var rows = itemsFor(d, g[0]);
+      var gk = 'g|' + sh + '|' + g[0];
       h += '<div class="wla-pbox" data-wla-g="'+sh+'|'+g[0]+'" data-title="'+g[1]+'">'
-        + '<div class="wla-tbar" style="background:'+g[2]+'">'+g[1]+'<span class="wla-gp">0 people</span></div>'
-        + '<div class="wla-wrap"><table class="wla-tbl wla-tbl-p"><thead><tr><th>#</th><th style="text-align:left">Queue</th><th>Pass</th><th>Submitted</th><th>Share</th><th>Labelers</th><th>Rate</th><th>Labelers × Rate</th></tr></thead><tbody>';
-      if (!rows.length) h += '<tr><td colspan="8" style="color:var(--gray);padding:16px">No submitted tasks</td></tr>';
+        + '<div class="wla-tbar" style="background:'+g[2]+'">'+g[1]
+        + '<label class="wla-plab">Rate <input type="number" min="0" step="any" class="wla-rate" data-gk="'+esc(gk)+'" value="'+esc(_plan[gk] || '')+'"></label>'
+        + '<span class="wla-gp">0 people</span></div>'
+        + '<div class="wla-wrap"><table class="wla-tbl wla-tbl-p"><thead><tr><th>#</th><th style="text-align:left">Queue</th><th>Pass</th><th>Submitted</th><th>Share</th><th>Labelers</th><th>Submit for Report</th></tr></thead><tbody>';
+      if (!rows.length) h += '<tr><td colspan="7" style="color:var(--gray);padding:16px">No submitted tasks</td></tr>';
       var tot = 0;
       rows.forEach(function(o, i){
-        var rk = 'r|' + sh + '|' + g[0] + '|' + o.key + '|' + o.pass;
         tot += o.s;
+        var ek = 'e|' + sh + '|' + g[0] + '|' + o.key + '|' + o.pass;
         h += '<tr data-s="'+o.s+'"><td class="n">'+(i+1)+'</td><td class="q">'+esc(o.name)+'</td><td>'+o.pass+'</td>'
           + '<td class="num">'+o.s+'</td><td class="pct"></td><td class="num lab"></td>'
-          + '<td><input type="number" min="0" step="any" class="wla-rate" data-rk="'+esc(rk)+'" value="'+esc(_plan[rk] || '')+'"></td>'
-          + '<td class="num exp"></td></tr>';
+          + '<td><input type="number" min="0" step="any" class="wla-exp" data-ek="'+esc(ek)+'" value="'+esc(_plan[ek] !== undefined ? _plan[ek] : '')+'" placeholder="-"></td></tr>';
       });
-      h += '<tr class="tot"><td></td><td class="q">TOTAL</td><td></td><td>'+tot+'</td><td class="t-pct"></td><td class="t-lab"></td><td></td><td class="t-exp"></td></tr>';
+      h += '<tr class="tot"><td></td><td class="q">TOTAL</td><td></td><td>'+tot+'</td><td class="t-pct"></td><td class="t-lab"></td><td class="t-exp"></td></tr>';
       h += '</tbody></table></div></div>';
     });
     return h + '</div></div>';
@@ -5399,36 +5421,51 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     var trs = [].slice.call(g.querySelectorAll('tr[data-s]'));
     var s = trs.map(function(tr){ return parseFloat(tr.getAttribute('data-s')) || 0; });
     var sum = s.reduce(function(a, b){ return a + b; }, 0);
-    var lab = split(total, s), tl = 0, te = 0, anyRate = false;
+    var ri = g.querySelector('.wla-rate'), rate = parseFloat(ri && ri.value) || 0;
+    var lab = split(total, s), tl = 0, te = 0, anyV = false;
     var gp = g.querySelector('.wla-gp'); if (gp) gp.textContent = total + ' people';
     trs.forEach(function(tr, i){
-      var rate = parseFloat(tr.querySelector('.wla-rate').value) || 0;
       var e = lab[i] * rate;
       tr.querySelector('.pct').textContent = sum > 0 ? (s[i] / sum * 100).toFixed(1) + '%' : '-';
       tr.querySelector('.lab').textContent = total > 0 ? lab[i] : '-';
-      tr.querySelector('.exp').textContent = (total > 0 && rate) ? fmtN(e) : '-';
-      tl += lab[i]; te += e; if (rate) anyRate = true;
+      var ei = tr.querySelector('.wla-exp'), ov = _plan[ei.getAttribute('data-ek')], has = (ov !== undefined && ov !== '');
+      if (has) ei.value = ov; else if (document.activeElement !== ei) ei.value = (total > 0 && rate) ? fmtN(e) : '';
+      ei.classList.toggle('ov', has);
+      if (ei.value !== '') { anyV = true; te += parseFloat(ei.value) || 0; }
+      tl += lab[i];
     });
     var tp = g.querySelector('.t-pct'); if (tp) tp.textContent = sum > 0 ? '100%' : '';
     var tla = g.querySelector('.t-lab'); if (tla) tla.textContent = total > 0 ? tl : '-';
-    var tex = g.querySelector('.t-exp'); if (tex) tex.textContent = (total > 0 && anyRate) ? fmtN(te) : '-';
+    var tex = g.querySelector('.t-exp'); if (tex) tex.textContent = anyV ? fmtN(te) : '-';
   }
   function calcP(p){
-    function val(f){ var el = p.querySelector('[data-f="'+f+'"]'); return Math.max(0, Math.round(parseFloat(el && el.value) || 0)); }
-    var T = val('tot'), L = val('lane'), Q = val('liqa'), rem = T - L - Q;
-    var rv = p.querySelector('.wla-remv');
-    if (rv) {
-      if (T <= 0) { rv.textContent = '-'; rv.style.color = ''; }
-      else if (rem < 0) { rv.textContent = rem + ' ⚠ (Lane + Lidar QA أكبر من التوتال)'; rv.style.color = 'var(--danger-text)'; }
-      else { rv.textContent = rem; rv.style.color = 'var(--ok-text)'; }
+    function inp(f){ return p.querySelector('[data-f="'+f+'"]'); }
+    function val(f){ var el = inp(f); return Math.max(0, Math.round(parseFloat(el && el.value) || 0)); }
+    var LF = val('lafp'), LQ = val('laqa'), IQ = val('liqa');
+    var fe = inp('lifp'), te = inp('tot');
+    var manual = !!(fe && fe.value !== '');
+    var IF, T, rem = 0, bad = false;
+    if (manual) {
+      // Lidar FP مكتوب يدويًا → التوتال = مجموع الأربع خانات
+      IF = val('lifp'); T = LF + LQ + IQ + IF;
+      if (te) { te.value = T > 0 ? T : ''; _plan[te.getAttribute('data-pk')] = te.value; savePlan(); }
+      fe.placeholder = '0';
+    } else {
+      // Lidar FP فاضي → الباقي من التوتال
+      T = val('tot'); rem = T - LF - LQ - IQ; bad = rem < 0;
+      IF = T > 0 ? Math.max(0, rem) : 0;
+      if (fe) fe.placeholder = String(IF);
     }
-    var ppl = { 'li-fp': (T > 0 ? Math.max(0, rem) : 0), 'li-qa': Q, 'la': L };
+    if (fe) fe.style.borderColor = bad ? 'var(--danger-text)' : '';
+    var rv = p.querySelector('.wla-remv');
+    if (rv) rv.textContent = bad ? '⚠ Lane + Lidar QA أكبر من التوتال (' + rem + ')' : '';
+    var ppl = { 'li-fp': IF, 'li-qa': IQ, 'la-fp': LF, 'la-qa': LQ };
     var sum = 0;
     p.querySelectorAll('[data-wla-g]').forEach(function(g){
       calcG(g, ppl[g.getAttribute('data-wla-g').split('|')[1]] || 0);
       var tl = g.querySelector('.t-lab'); sum += parseInt(tl && tl.textContent, 10) || 0;
     });
-    var sv = p.querySelector('.wla-sumv'); if (sv) sv.textContent = T > 0 ? sum : '-';
+    var sv = p.querySelector('.wla-sumv'); if (sv) sv.textContent = (T > 0 || manual) ? sum : '-';
   }
   function calcAll(){ document.querySelectorAll('[data-wla-p]').forEach(calcP); }
   function copyPlan(sh, btn){
@@ -5436,9 +5473,10 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     document.querySelectorAll('[data-wla-g]').forEach(function(g){
       if (g.getAttribute('data-wla-g').split('|')[0] !== sh) return;
       var title = g.getAttribute('data-title');
+      var rate = (g.querySelector('.wla-rate') || {}).value || '';
       g.querySelectorAll('tr[data-s]').forEach(function(tr){
         var c = tr.children;
-        lines.push([WLA_LETTER[sh], fmtMDY(_wla.date), title, c[1].textContent, c[2].textContent, c[3].textContent, c[4].textContent, c[5].textContent, tr.querySelector('.wla-rate').value || '', c[7].textContent].join('\t'));
+        lines.push([WLA_LETTER[sh], fmtMDY(_wla.date), title, c[1].textContent, c[2].textContent, c[3].textContent, c[4].textContent, c[5].textContent, rate, (tr.querySelector('.wla-exp') || {}).value || ''].join('\t'));
       });
     });
     if (!lines.length) { toast('No planner data', 'err'); return; }
@@ -5471,16 +5509,16 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
 
   function render(){
     var m = _wla.model || {};
-    var vis = (_wlaShift === 'All') ? WLA_SHIFTS.filter(function(s){ return m[s]; })
+    var vis = (_wlaShift === 'All') ? ['Total'].filter(function(s){ return m[s]; })
                                     : [_wlaShift].filter(function(s){ return m[s]; });
     if (!vis.length) { shtml('wlaArea', '<div class="empty">No data for this date.</div>'); return; }
-    var COL = { 'Morning':'var(--morning-text)', 'Night':'var(--indigo-text)', 'Over Night':'#1b5e20' };
+    var COL = { 'Morning':'var(--morning-text)', 'Night':'var(--indigo-text)', 'Over Night':'#1b5e20', 'Total':'var(--blue)' };
     var h = '';
     vis.forEach(function(sh){
       var d = m[sh];
       var pct = d.total > 0 ? Math.round(d.present / d.total * 100) : 0;
       h += '<div class="wla-card">'
-        + '<div class="wla-hdr"><span class="wla-pill" style="background:'+COL[sh]+'">'+sh+' Shift</span>'
+        + '<div class="wla-hdr"><span class="wla-pill" style="background:'+COL[sh]+'">'+(sh === 'Total' ? 'Total · Full Day' : sh+' Shift')+'</span>'
         + '<span class="wla-date">'+fmtMDY(_wla.date)+' · '+WIN[sh]+'</span>'
         + '<button class="wla-copy" data-wla-copy="'+sh+'">📋 Copy</button></div>'
         + '<div class="wla-stats">'
@@ -5525,10 +5563,22 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       area.addEventListener('input', function(e){
         var t = e.target, p = t.closest ? t.closest('[data-wla-p]') : null;
         if (!p || !t.getAttribute) return;
-        if (t.getAttribute('data-pk')) _plan[t.getAttribute('data-pk')] = t.value;
-        else if (t.getAttribute('data-rk')) _plan[t.getAttribute('data-rk')] = t.value;
+        if (t.getAttribute('data-pk')) {
+          _plan[t.getAttribute('data-pk')] = t.value;
+          if (t.getAttribute('data-f') === 'tot') {
+            // تعديل التوتال يدويًا → Lidar FP يرجع يتحسب تلقائي (الباقي)
+            var fe = p.querySelector('[data-f="lifp"]');
+            if (fe) { fe.value = ''; _plan[fe.getAttribute('data-pk')] = ''; }
+          }
+        }
+        else if (t.getAttribute('data-gk')) _plan[t.getAttribute('data-gk')] = t.value;
+        else if (t.getAttribute('data-ek')) _plan[t.getAttribute('data-ek')] = t.value;
         else return;
         savePlan(); calcP(p);
+      });
+      area.addEventListener('focusout', function(e){
+        var t = e.target, p = t.closest ? t.closest('[data-wla-p]') : null;
+        if (p && t.getAttribute && t.getAttribute('data-ek')) calcP(p);
       });
       area._wired = true;
     }
