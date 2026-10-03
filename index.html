@@ -5890,17 +5890,13 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     +     '<div class="wst-f"><label class="wst-lb">Lane Line FP</label><input class="wst-tx" data-t="lafp" inputmode="numeric" placeholder="6000"></div>'
     +     '<div class="wst-f"><label class="wst-lb">Lane Line QA</label><input class="wst-tx" data-t="laqa" inputmode="numeric" placeholder="6000"></div>'
     +   '</div>'
-    +   '<div class="wst-row">'
-    +     '<div class="wst-f" style="flex:2"><label class="wst-lb">الكلام اللي بين الأقواس في تجميعة Lidar</label><input class="wst-tx" data-l="li" style="direction:ltr"></div>'
-    +     '<div class="wst-f" style="flex:2"><label class="wst-lb">الكلام اللي بين الأقواس في تجميعة Lane Line</label><input class="wst-tx" data-l="la" style="direction:ltr"></div>'
-    +   '</div>'
 
     // مكتبة الكيوهات
     +   '<div class="wst-box">'
     +     '<label class="wst-lb" id="wstFormTitle">تسجيل كيو جديد (بيتحفظ في المكتبة)</label>'
     +     '<div class="wst-row" style="margin-bottom:0">'
     +       '<div class="wst-f" style="flex:3;min-width:260px"><label class="wst-lb">Queue name</label><input class="wst-tx" id="wstLName" style="direction:ltr" placeholder="sc3_full_scene_lanes_3d_v4" spellcheck="false" autocomplete="off"></div>'
-    +       '<div class="wst-f"><label class="wst-lb">Type</label><select class="wst-tx" id="wstLType"><option>LiDAR</option><option>Lane Line</option><option>SellMapping</option></select></div>'
+    +       '<div class="wst-f"><label class="wst-lb">Type</label><input class="wst-tx" id="wstLType" list="wstTypes" value="LiDAR" placeholder="اختار أو اكتب" autocomplete="off"><datalist id="wstTypes"></datalist></div>'
     +       '<div class="wst-f"><label class="wst-lb">Tags (اختياري)</label><input class="wst-tx" id="wstLTags" style="direction:ltr" placeholder="ASAP" autocomplete="off"></div>'
     +       '<div class="wst-f"><label class="wst-lb">Header (اختياري)</label><input class="wst-tx" id="wstLHdr" style="direction:ltr" placeholder="تلقائي" autocomplete="off"></div>'
     +       '<div><button class="mod-btn" id="wstLSave">Save</button> <button class="mod-btn" id="wstLCancel" style="display:none">Cancel</button></div>'
@@ -5923,15 +5919,35 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   function curDate(){ return DP.getVal('wlaDate') || todayISO(); }
   function dLbl(iso){ var p = (iso || '').split('-'); return p.length === 3 ? (parseInt(p[2], 10) + ' ' + MON[parseInt(p[1], 10) - 1]) : (iso || ''); }
   function headerOf(name){ return name.toLowerCase().indexOf('alpine') !== -1 ? 'SC3 Alpine' : 'SC3 Full Scene'; }
-  function colOf(type){ return type === 'LiDAR' ? '#00838f' : (type === 'SellMapping' ? '#b45309' : '#2e7d32'); }
+  // تصنيف التجميع: lidar → Lidar · lane / sellmapping / msl → Lane Line · أي نوع تاني بيتجمع مع نفسه بس
+  function kindOf(t){
+    if (/lidar/i.test(t)) return 'Lidar';
+    if (/lane|sell\s*-?\s*mapping|msl/i.test(t)) return 'Lane';
+    return 'T:' + t.toLowerCase();
+  }
+  function colOf(type){ return /lidar/i.test(type) ? '#00838f' : (/sell/i.test(type) ? '#b45309' : '#2e7d32'); }
+  // النوع: لو كتبت واحد من الأنواع المعروفة بأي حروف (lidar / lane line / sellmapping) بيتظبط شكله، وأي نوع تاني بيتحفظ زي ما كتبته
+  function normType(v){
+    v = (v || '').trim().replace(/\s+/g, ' ');
+    for (var i = 0; i < TYPES.length; i++) if (TYPES[i].toLowerCase() === v.toLowerCase()) return TYPES[i];
+    return v;
+  }
+  function renderTypes(){
+    var seen = {}, h = '';
+    TYPES.concat(S.lib.map(function(e){ return e.type; })).forEach(function(t){
+      t = (t || '').trim(); if (!t || seen[t.toLowerCase()]) return; seen[t.toLowerCase()] = 1;
+      h += '<option value="' + esc(t) + '">';
+    });
+    var dl = gid('wstTypes'); if (dl) dl.innerHTML = h;
+  }
 
   // كيو من المكتبة → كارت
   function resolve(e){
-    var t = TYPES.indexOf(e.type) !== -1 ? e.type : 'LiDAR';
+    var t = (e.type || '').trim() || 'LiDAR';
     return {
       key: e.id, name: e.name, type: t,
       header: (e.hdr || '').trim() || headerOf(e.name),
-      kind: t === 'LiDAR' ? 'Lidar' : 'Lane',
+      kind: kindOf(t),
       mod: t,
       extras: (e.tags || '').split(',').map(function(x){ return x.trim(); }).filter(Boolean)
     };
@@ -5978,15 +5994,30 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   }
 
   function summary(cards){
-    var dl = dLbl(curDate()), out = [];
-    [['Lidar','Lidar','LiDAR','li','lifp','liqa'], ['Lane','Lane Line','Lane Line','la','lafp','laqa']].forEach(function(g){
-      var cs = cards.filter(function(c){ return c.kind === g[0]; }); if (!cs.length) return;
-      var fp = 0, qa = 0;
-      cs.forEach(function(c){ var v = vOf(c); fp += numOf(v.p_fp); qa += numOf(v.p_qa); });
-      var lb = (S.lbl[g[3]] || '').trim();
-      var l = ['For ' + g[1] + (lb ? ' ( ' + lb + ' )' : '') + ' (' + dl + '):'];
-      l.push('Submitted: ' + fmt(fp) + ' FP ' + g[2] + ' / ' + fmt(qa) + ' QA ' + g[2]);
-      var rem = [], tf = S.tot[g[4]], tq = S.tot[g[5]];
+    var dl = dLbl(curDate()), groups = [], idx = {};
+    cards.forEach(function(c){
+      if (!(c.kind in idx)) {
+        idx[c.kind] = groups.length;
+        groups.push({ kind: c.kind, name: c.kind === 'Lidar' ? 'Lidar' : (c.kind === 'Lane' ? 'Lane Line' : c.mod),
+                      tag: c.kind === 'Lidar' ? 'LiDAR' : (c.kind === 'Lane' ? 'Lane Line' : c.mod), cs: [] });
+      }
+      groups[idx[c.kind]].cs.push(c);
+    });
+    function rank(g){ return g.kind === 'Lidar' ? 0 : (g.kind === 'Lane' ? 1 : 2); }
+    groups = groups.map(function(g, i){ return { g: g, i: i }; })
+      .sort(function(a, b){ return (rank(a.g) - rank(b.g)) || (a.i - b.i); })
+      .map(function(x){ return x.g; });
+    var out = [];
+    groups.forEach(function(g){
+      var fp = 0, qa = 0, hs = [];
+      g.cs.forEach(function(c){
+        var v = vOf(c); fp += numOf(v.p_fp); qa += numOf(v.p_qa);
+        if (hs.indexOf(c.header) === -1) hs.push(c.header);
+      });
+      var l = ['For ' + g.name + ' ( ' + hs.join(' + ') + ' ) (' + dl + '):'];
+      l.push('Submitted: ' + fmt(fp) + ' FP ' + g.tag + ' / ' + fmt(qa) + ' QA ' + g.tag);
+      var kf = g.kind === 'Lidar' ? 'lifp' : (g.kind === 'Lane' ? 'lafp' : null), kq = g.kind === 'Lidar' ? 'liqa' : (g.kind === 'Lane' ? 'laqa' : null);
+      var rem = [], tf = kf ? S.tot[kf] : '', tq = kq ? S.tot[kq] : '';
       if (String(tf || '').trim() !== '') rem.push(fmt(Math.max(0, numOf(tf) - fp)) + ' FP Tasks from ' + fmt(numOf(tf)) + ' tasks');
       if (String(tq || '').trim() !== '') rem.push(fmt(Math.max(0, numOf(tq) - qa)) + ' QA Tasks from ' + fmt(numOf(tq)) + ' tasks');
       if (rem.length) l.push('Remaining: ' + rem.join(' / ') + '.');
@@ -6047,10 +6078,11 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     gid('wstLSave').textContent = 'Save'; gid('wstLCancel').style.display = 'none';
   }
   function saveQueue(){
-    var name = gid('wstLName').value.trim(), type = gid('wstLType').value;
+    var name = gid('wstLName').value.trim(), type = normType(gid('wstLType').value);
     var tags = gid('wstLTags').value.split(',').map(function(x){ return x.trim(); }).filter(Boolean).join(', ');
     var hdr = gid('wstLHdr').value.trim();
     if (!name) { toast('اكتب اسم الكيو', 'err'); return; }
+    if (!type) { toast('اختار أو اكتب النوع', 'err'); return; }
     var dup = S.lib.some(function(e){ return e.id !== _edit && e.name.toLowerCase() === name.toLowerCase() && e.type === type; });
     if (dup) { toast('الكيو ده متسجل قبل كده بنفس النوع', 'err'); return; }
     if (_edit) {
@@ -6094,7 +6126,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     b.style.color = S.sep ? 'white' : '';
     b.style.borderColor = S.sep ? 'var(--blue)' : '';
   }
-  function renderAll(){ renderLib(); renderPick(); renderCards(); renderMsgs(); }
+  function renderAll(){ renderTypes(); renderLib(); renderPick(); renderCards(); renderMsgs(); }
   function showStats(){
     if (!DP.getVal('wlaDate')) DP.setVal('wlaDate', todayISO(), false);
     gid('wstDate').textContent = dLbl(curDate());
@@ -6109,7 +6141,6 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
 
   // ── init القيم المحفوظة ──
   [].forEach.call(pane.querySelectorAll('[data-t]'), function(i){ i.value = S.tot[i.getAttribute('data-t')] || ''; });
-  [].forEach.call(pane.querySelectorAll('[data-l]'), function(i){ i.value = S.lbl[i.getAttribute('data-l')] || ''; });
   sepLabel();
 
   // ── events ──
@@ -6122,8 +6153,15 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   pane.addEventListener('input', function(e){
     var t = e.target;
     if (t.hasAttribute('data-t')) { S.tot[t.getAttribute('data-t')] = t.value; save(); renderMsgs(); return; }
-    if (t.hasAttribute('data-l')) { S.lbl[t.getAttribute('data-l')] = t.value; save(); renderMsgs(); return; }
     if (t.classList.contains('wst-in')) { setV(t.closest('.wst-card').getAttribute('data-wst-k'), t.getAttribute('data-f'), t.value); renderMsgs(); }
+  });
+  // لما تدوس على خانة Type الاقتراحات كلها بتظهر (القيمة بترجع لو سيبتها فاضية)
+  var _typeBak = '';
+  pane.addEventListener('focusin', function(e){
+    if (e.target.id === 'wstLType') { _typeBak = e.target.value; e.target.value = ''; }
+  });
+  pane.addEventListener('focusout', function(e){
+    if (e.target.id === 'wstLType' && !e.target.value.trim()) e.target.value = _typeBak;
   });
   pane.addEventListener('keydown', function(e){
     if (e.key === 'Enter' && e.target.id && /^wstL(Name|Tags|Hdr)$/.test(e.target.id)) { e.preventDefault(); saveQueue(); }
