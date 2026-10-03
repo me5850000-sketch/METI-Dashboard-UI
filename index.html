@@ -5840,13 +5840,13 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   var MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   var TYPES = ['LiDAR','Lane Line','SellMapping'];
   var SRC_DEF = 'Daily Task tracking';
-  var S = { lib:[], order:[], q:'', tot:{ lifp:'', liqa:'', lafp:'', laqa:'' }, lbl:{ li:'SC3 Alpine + SC3 Full Scene + V4 parallel', la:'SC3 Full Scene' }, sep:false, vals:{} };
+  var S = { lib:[], order:[], q:'', tot:{ lifp:'', liqa:'', lafp:'', laqa:'' }, lbl:{ li:'SC3 Alpine + SC3 Full Scene + V4 parallel', la:'SC3 Full Scene' }, sep:false, vals:{}, done:{} };
   try {
     var sv = JSON.parse(localStorage.getItem(KEY) || 'null');
     if (sv) {
       S.lib = sv.lib || []; S.order = sv.order || []; S.q = sv.q || '';
       S.tot = Object.assign(S.tot, sv.tot || {}); S.lbl = Object.assign(S.lbl, sv.lbl || {});
-      S.sep = !!sv.sep; S.vals = sv.vals || {};
+      S.sep = !!sv.sep; S.vals = sv.vals || {}; S.done = sv.done || {};
     }
   } catch (e) {}
   function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
@@ -5872,11 +5872,16 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     '.wst-bd{font-size:11px;font-weight:800;color:#fff;border-radius:10px;padding:2px 9px}' +
     '.wst-sm{padding:4px 11px;border-radius:7px;border:2px solid var(--border);background:var(--white);color:var(--gray);font-size:12px;font-weight:800;cursor:pointer;font-family:inherit}' +
     '.wst-sm:hover{border-color:var(--blue);color:var(--blue)}.wst-sm.del:hover{border-color:var(--danger-text);color:var(--danger-text)}' +
-    '.wst-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:18px;padding:16px 20px 20px}' +
-    '.wst-card{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--white)}' +
+    '.wst-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:18px;padding:16px 20px 20px}' +
+    '.wst-card{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--white);opacity:.5;filter:grayscale(.85);transition:opacity .2s,filter .2s,border-color .2s,background .2s}' +
+    '.wst-card:focus-within{opacity:.85}' +
+    '.wst-card.done{opacity:1;filter:none;border:2px solid #2e7d32;background:#e8f5e9}' +
+    '.wst-card.done .wst-ch{background:#c8e6c9}' +
+    'body.dark .wst-card.done{background:#17331c}body.dark .wst-card.done .wst-ch{background:#1f4a27}' +
+    '.wst-ok{width:22px;height:22px;accent-color:#2e7d32;cursor:pointer;margin:0 4px 0 0;align-self:center}' +
     '.wst-ch{padding:12px 16px;background:var(--gray-lt);font-weight:800;font-size:14px;color:var(--dark)}' +
     '.wst-chr{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}' +
-    '.wst-chr>span:first-child{word-break:break-all;direction:ltr;text-align:left}' +
+    '.wst-chr>span:first-child{word-break:normal;overflow-wrap:break-word;direction:ltr;text-align:left}' +
     '.wst-ch small{display:block;margin-top:3px;font-size:11px;font-weight:700;color:var(--gray)}' +
     '.wst-mv{display:flex;gap:4px;flex-shrink:0}.wst-mv .wst-sm{padding:2px 8px}' +
     '.wst-t{width:100%;border-collapse:collapse}' +
@@ -5900,7 +5905,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   pane.innerHTML =
     '<div class="wla-card">'
     + '<div class="wla-hdr"><span class="wla-pill" style="background:var(--blue)">Stats</span><span class="wla-date" id="wstDate"></span>'
-    + '<button class="mod-btn" id="wstSep" style="margin-left:auto"></button></div>'
+    + '</div>'
     + '<div class="wla-sec" style="padding-top:14px">'
 
     // التسليمة
@@ -5919,8 +5924,8 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     +       '<div class="wst-f" style="flex:3;min-width:260px"><label class="wst-lb">Queue name</label><input class="wst-tx" id="wstLName" style="direction:ltr" placeholder="sc3_full_scene_lanes_3d_v4" spellcheck="false" autocomplete="off"></div>'
     +       '<div class="wst-f"><label class="wst-lb">Type</label><input class="wst-tx" id="wstLType" list="wstTypes" value="LiDAR" placeholder="اختار أو اكتب" autocomplete="off"><datalist id="wstTypes"></datalist></div>'
     +       '<div class="wst-f"><label class="wst-lb">Tags (اختياري)</label><input class="wst-tx" id="wstLTags" style="direction:ltr" placeholder="ASAP" autocomplete="off"></div>'
-    +       '<div class="wst-f"><label class="wst-lb">Project name (اختياري)</label><input class="wst-tx" id="wstLHdr" style="direction:ltr" placeholder="تلقائي" autocomplete="off"></div>'
-    +       '<div class="wst-f"><label class="wst-lb">From (اختياري)</label><input class="wst-tx" id="wstLSrc" list="wstSrcs" style="direction:ltr" placeholder="Daily Task tracking" autocomplete="off"><datalist id="wstSrcs"><option value="Labeler Performance"><option value="Daily Task Tracking"></datalist></div>'
+    +       '<div class="wst-f"><label class="wst-lb">Project name (اختياري)</label><input class="wst-tx" id="wstLHdr" style="direction:ltr" placeholder="" autocomplete="off"></div>'
+    +       '<div class="wst-f"><label class="wst-lb">From (اختياري)</label><input class="wst-tx" id="wstLSrc" list="wstSrcs" style="direction:ltr" value="Daily Task tracking" autocomplete="off"><datalist id="wstSrcs"><option value="Labeler Performance"><option value="Daily Task tracking"></datalist></div>'
     +       '<div><button class="mod-btn" id="wstLSave">Save</button> <button class="mod-btn" id="wstLCancel" style="display:none">Cancel</button></div>'
     +     '</div>'
     +     '<div style="font-size:11px;color:var(--gray);margin-top:8px">Project name التلقائي: أي كيو فيه alpine = SC3 Alpine، والباقي SC3 Full Scene. Tags بتتفصل بفاصلة.</div>'
@@ -5938,7 +5943,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     +   '<div><button class="mod-btn" id="wstAdd">Add</button> <button class="mod-btn" id="wstAddAll">Add all</button> <button class="mod-btn" id="wstClear">Clear order</button></div></div>'
     + '</div></div>'
     + '<div class="wla-card"><div class="wla-hdr"><span class="wla-pill" style="background:#455a64">Queues</span></div><div class="wst-grid" id="wstCards"></div></div>'
-    + '<div class="wla-card" style="padding-bottom:18px"><div id="wstMsgs"></div></div>';
+    + '<div class="wla-card" style="padding-bottom:18px"><div style="padding:16px 20px 0"><button class="mod-btn" id="wstSep"></button></div><div id="wstMsgs"></div></div>';
   pg.appendChild(pane);
 
   // ── helpers ──
@@ -6007,6 +6012,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     S.q = ''; save();
   })();
 
+  function isDone(k){ var d = S.done[curDate()]; return !!(d && d[k]); }
   function vOf(c){ var d = S.vals[curDate()]; return (d && d[c.key]) || {}; }
   function setV(key, f, val){
     var d = curDate();
@@ -6132,7 +6138,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
 
   function resetForm(){
     _edit = null;
-    gid('wstLName').value = ''; gid('wstLTags').value = ''; gid('wstLHdr').value = ''; gid('wstLSrc').value = ''; gid('wstLType').value = 'LiDAR';
+    gid('wstLName').value = ''; gid('wstLTags').value = ''; gid('wstLHdr').value = ''; gid('wstLSrc').value = SRC_DEF; gid('wstLType').value = 'LiDAR';
     gid('wstFormTitle').textContent = 'تسجيل كيو جديد (بيتحفظ في المكتبة)';
     gid('wstLSave').textContent = 'Save'; gid('wstLCancel').style.display = 'none';
   }
@@ -6212,8 +6218,9 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     if (!cards.length) h = '<div class="empty" style="grid-column:1/-1">مفيش كيوهات في الترتيب — اختار من الدروب داون فوق واضغط Add</div>';
     cards.forEach(function(c, i){
       var v = vOf(c), id = esc(c.key);
-      h += '<div class="wst-card" data-wst-k="' + id + '"><div class="wst-ch" style="border-top:4px solid ' + colOf(c.type) + '">'
-        + '<div class="wst-chr"><span>#' + (i + 1) + ' ' + esc(titleLine(c)) + '</span><span class="wst-mv">'
+      h += '<div class="wst-card' + (isDone(c.key) ? ' done' : '') + '" data-wst-k="' + id + '"><div class="wst-ch" style="border-top:4px solid ' + colOf(c.type) + '">'
+        + '<div class="wst-chr"><span>#' + (i + 1) + ' ' + esc(titleLine(c)).replace(/([_@])/g, '$1<wbr>') + '</span><span class="wst-mv">'
+        + '<input type="checkbox" class="wst-ok" data-wst-done="' + id + '" title="خلصت"' + (isDone(c.key) ? ' checked' : '') + '>'
         + '<button class="wst-sm" data-wst-up="' + id + '" title="فوق">↑</button>'
         + '<button class="wst-sm" data-wst-dn="' + id + '" title="تحت">↓</button>'
         + '<button class="wst-sm del" data-wst-rm="' + id + '" title="شيل من الترتيب">✕</button></span></div>'
@@ -6282,6 +6289,11 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   });
   pane.addEventListener('click', function(e){
     var t = e.target; if (!t.closest) return;
+    if (t.hasAttribute && t.hasAttribute('data-wst-done')) {
+      var dk = t.getAttribute('data-wst-done'), dd = curDate();
+      S.done[dd] = S.done[dd] || {}; if (t.checked) S.done[dd][dk] = 1; else delete S.done[dd][dk];
+      t.closest('.wst-card').classList.toggle('done', t.checked); save(); return;
+    }
     if (t.id === 'wstSep') { S.sep = !S.sep; save(); sepLabel(); renderMsgs(); return; }
     if (t.id === 'wstImpGo') {
       var n = importOld(gid('wstImp').value);
@@ -6311,7 +6323,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     if ((b = t.closest('[data-wst-edit]'))) {
       var id = b.getAttribute('data-wst-edit'), q = S.lib.filter(function(x){ return x.id === id; })[0]; if (!q) return;
       _edit = id;
-      gid('wstLName').value = q.name; gid('wstLType').value = q.type; gid('wstLTags').value = q.tags || ''; gid('wstLHdr').value = q.hdr || ''; gid('wstLSrc').value = q.src || '';
+      gid('wstLName').value = q.name; gid('wstLType').value = q.type; gid('wstLTags').value = q.tags || ''; gid('wstLHdr').value = q.hdr || ''; gid('wstLSrc').value = q.src || SRC_DEF;
       gid('wstFormTitle').textContent = 'تعديل كيو: ' + q.name;
       gid('wstLSave').textContent = 'Update'; gid('wstLCancel').style.display = '';
       gid('wstLName').focus(); gid('wstLName').scrollIntoView({ block: 'center', behavior: 'smooth' });
