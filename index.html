@@ -5805,5 +5805,272 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
 })();
 </script>
 
+<script>
+// ══════════════════════════════════════════════════════════
+// WLA → تبويبين: Shift Report (الموجود) + Stats (جديد)
+// Stats: كارت لكل كيو (بالترتيب) + رسالة واحدة أو مفصولة + تجميعة Lidar / Lane Line
+// ملحوظة: التبويب ده مش بيحتاج أي تعديل في الباك إند (app.gs)
+// ══════════════════════════════════════════════════════════
+(function(){
+  var pg = gid('pgWla'); if (!pg) return;
+
+  var KEY = 'wla_stats_v1';
+  var FIELDS = [['c','Created'],['s','Started'],['p','Processed'],['k','Skipped']];
+  var FKEY = { created:'c', started:'s', processed:'p', skipped:'k' };
+  var MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+  var S = { q:'', tot:{ lifp:'', liqa:'', lafp:'', laqa:'' }, lbl:{ li:'SC3 Alpine + SC3 Full Scene + V4 parallel', la:'SC3 Full Scene' }, sep:false, vals:{} };
+  try {
+    var sv = JSON.parse(localStorage.getItem(KEY) || 'null');
+    if (sv) { S.q = sv.q || ''; S.tot = Object.assign(S.tot, sv.tot || {}); S.lbl = Object.assign(S.lbl, sv.lbl || {}); S.sep = !!sv.sep; S.vals = sv.vals || {}; }
+  } catch (e) {}
+  function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+
+  var _tab = 'shift', _msgs = [];
+
+  // ── CSS ──
+  var st2 = document.createElement('style');
+  st2.textContent =
+    '.wla-tabs{display:flex;gap:8px;margin-bottom:14px;border-bottom:2px solid var(--border)}' +
+    '.wla-tab{padding:9px 22px;border:none;background:none;font-size:14px;font-weight:800;color:var(--gray);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;font-family:inherit}' +
+    '.wla-tab:hover{color:var(--blue)}.wla-tab.on{color:var(--blue);border-bottom-color:var(--blue)}' +
+    '.wst-lb{display:block;font-size:12px;font-weight:800;color:var(--gray);margin-bottom:6px}' +
+    '.wst-ta{width:100%;box-sizing:border-box;padding:10px 12px;border:2px solid var(--border);border-radius:10px;background:var(--white);color:var(--dark);font-size:13px;font-family:Consolas,Menlo,monospace;direction:ltr;resize:vertical}' +
+    '.wst-ta:focus,.wst-tx:focus{outline:none;border-color:var(--blue)}' +
+    '.wst-row{display:flex;gap:14px;flex-wrap:wrap;margin-bottom:14px}' +
+    '.wst-f{flex:1;min-width:150px}' +
+    '.wst-tx{width:100%;box-sizing:border-box;padding:8px 10px;border:2px solid var(--border);border-radius:8px;background:var(--white);color:var(--dark);font-size:14px;font-weight:700;font-family:inherit}' +
+    '.wst-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;padding:14px 20px 18px}' +
+    '.wst-card{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--white)}' +
+    '.wst-ch{padding:10px 14px;background:var(--gray-lt);font-weight:800;font-size:13px;color:var(--dark);word-break:break-all}' +
+    '.wst-ch small{display:block;margin-top:3px;font-size:11px;font-weight:700;color:var(--gray);word-break:normal}' +
+    '.wst-t{width:100%;border-collapse:collapse}' +
+    '.wst-t th{font-size:11px;font-weight:800;color:var(--gray);padding:7px 8px;text-align:center}' +
+    '.wst-t td{padding:5px 8px;text-align:center;border-top:1px solid var(--border)}' +
+    '.wst-t td.l{text-align:left;font-size:12px;font-weight:800;color:var(--dark)}' +
+    '.wst-t .wla-exp{width:84px}' +
+    '.wst-msg{white-space:pre-wrap;word-break:break-word;direction:ltr;text-align:left;padding:14px 16px;border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;font-size:13px;line-height:1.6;font-family:Consolas,Menlo,monospace;color:var(--dark);background:var(--white)}';
+  document.head.appendChild(st2);
+
+  // ── inject tabs + stats pane ──
+  var tabs = document.createElement('div');
+  tabs.className = 'wla-tabs';
+  tabs.innerHTML = '<button class="wla-tab on" data-wlatab="shift">Shift Report</button><button class="wla-tab" data-wlatab="stats">Stats</button>';
+  pg.insertBefore(tabs, pg.firstChild);
+
+  var pane = document.createElement('div');
+  pane.id = 'wlaStatsPane';
+  pane.style.display = 'none';
+  pane.innerHTML =
+    '<div class="wla-card">'
+    + '<div class="wla-hdr"><span class="wla-pill" style="background:var(--blue)">Stats</span><span class="wla-date" id="wstDate"></span>'
+    + '<button class="mod-btn" id="wstSep" style="margin-left:auto"></button></div>'
+    + '<div class="wla-sec" style="padding-top:14px">'
+    +   '<label class="wst-lb">التسليمة (الرقم اللي بيتكتب في "from ... tasks") — سيب الخانة فاضية لو مش عايز سطر Remaining</label>'
+    +   '<div class="wst-row">'
+    +     '<div class="wst-f"><label class="wst-lb">Lidar FP</label><input class="wst-tx" data-t="lifp" inputmode="numeric" placeholder="3200"></div>'
+    +     '<div class="wst-f"><label class="wst-lb">Lidar QA</label><input class="wst-tx" data-t="liqa" inputmode="numeric" placeholder="3200"></div>'
+    +     '<div class="wst-f"><label class="wst-lb">Lane Line FP</label><input class="wst-tx" data-t="lafp" inputmode="numeric" placeholder="6000"></div>'
+    +     '<div class="wst-f"><label class="wst-lb">Lane Line QA</label><input class="wst-tx" data-t="laqa" inputmode="numeric" placeholder="6000"></div>'
+    +   '</div>'
+    +   '<div class="wst-row">'
+    +     '<div class="wst-f" style="flex:2"><label class="wst-lb">الكلام اللي بين الأقواس في تجميعة Lidar</label><input class="wst-tx" data-l="li" style="direction:ltr"></div>'
+    +     '<div class="wst-f" style="flex:2"><label class="wst-lb">الكلام اللي بين الأقواس في تجميعة Lane Line</label><input class="wst-tx" data-l="la" style="direction:ltr"></div>'
+    +   '</div>'
+    +   '<label class="wst-lb">أسامي الكيوهات بالترتيب (كل كيو في سطر، وبعده بين أقواس: (Lidar) أو (Lane Line) أو (SellMapping) وأي تاج زي (ASAP))</label>'
+    +   '<textarea class="wst-ta" id="wstQ" rows="8" spellcheck="false" placeholder="alpine_sc3_full_scene_lane_3d_v4 (Lane Line)&#10;alpine_sc3_full_scene_lane_3d_v4__sc3_full_scene_3d_v4@2.0.0 (LiDAR)&#10;sc3_full_scene_lanes_3d_v3__sc3_full_scene_lanes_3d_v3@2.0.0 (LiDAR) (ASAP)"></textarea>'
+    +   '<div style="margin-top:10px"><button class="mod-btn" id="wstBuild">Build Cards</button> <span style="font-size:12px;color:var(--gray);margin-left:8px">تقدر تلزق بلوك الـ 8 أرقام كله في أي خانة جوه الكارت وهيتوزع لوحده</span></div>'
+    + '</div></div>'
+    + '<div class="wla-card"><div class="wla-hdr"><span class="wla-pill" style="background:#455a64">Queues</span></div><div class="wst-grid" id="wstCards"></div></div>'
+    + '<div class="wla-card" style="padding-bottom:18px"><div id="wstMsgs"></div></div>';
+  pg.appendChild(pane);
+
+  // ── helpers ──
+  function numOf(v){ var n = parseInt(String(v == null ? '' : v).replace(/[^\d]/g, ''), 10); return isNaN(n) ? 0 : n; }
+  function fmt(n){ return Number(n || 0).toLocaleString('en-US'); }
+  function curDate(){ return DP.getVal('wlaDate') || todayISO(); }
+  function dLbl(iso){ var p = (iso || '').split('-'); return p.length === 3 ? (parseInt(p[2], 10) + ' ' + MON[parseInt(p[1], 10) - 1]) : (iso || ''); }
+  function headerOf(name){ return name.toLowerCase().indexOf('alpine') !== -1 ? 'SC3 Alpine' : 'SC3 Full Scene'; }
+
+  // سطر الكيو: [Header | ] queue_name (Lidar|Lane Line|SellMapping) (ASAP) ...
+  function parseQueues(text){
+    var out = [], seen = {};
+    (text || '').split(/\r?\n/).forEach(function(line){
+      var raw = line.trim(); if (!raw) return;
+      var title = '', bar = raw.indexOf('|');
+      if (bar > 0) { title = raw.slice(0, bar).trim(); raw = raw.slice(bar + 1).trim(); }
+      var p = raw.indexOf('('), name = (p === -1 ? raw : raw.slice(0, p)).trim();
+      if (!name) return;
+      var tags = [], re = /\(([^)]*)\)/g, m;
+      while ((m = re.exec(raw))) tags.push(m[1].trim());
+      var kind = null, mod = '', extras = [];
+      tags.forEach(function(t){
+        if (/^\d{1,2}\s*[a-z]{3,9}$/i.test(t)) return; // التاريخ بيتحط أوتوماتيك من الـ Date Picker
+        if (!kind && /lidar/i.test(t)) { kind = 'Lidar'; mod = 'LiDAR'; return; }
+        if (!kind && /lane|sell\s*-?\s*mapping|msl/i.test(t)) { kind = 'Lane'; mod = /lane/i.test(t) ? 'Lane Line' : t; return; }
+        extras.push(t);
+      });
+      var key = raw.toLowerCase(); seen[key] = (seen[key] || 0) + 1; if (seen[key] > 1) key += '#' + seen[key];
+      out.push({ key: key, name: name, header: title || headerOf(name), kind: kind, mod: mod, extras: extras });
+    });
+    return out;
+  }
+
+  function vOf(c){ var d = S.vals[curDate()]; return (d && d[c.key]) || {}; }
+  function setV(key, f, val){
+    var d = curDate();
+    S.vals[d] = S.vals[d] || {}; S.vals[d][key] = S.vals[d][key] || {}; S.vals[d][key][f] = val;
+    save();
+  }
+
+  // ── بناء الرسالة ──
+  function block(c){
+    var v = vOf(c), l = [c.header + ' status from Daily Task tracking'];
+    l.push(c.name + (c.mod ? ' (' + c.mod + ')' : '') + ' (' + dLbl(curDate()) + ')' + c.extras.map(function(e){ return ' (' + e + ')'; }).join(''));
+    FIELDS.forEach(function(f){ ['fp','qa'].forEach(function(p){ l.push(f[1] + ' ' + p.toUpperCase() + ': ' + fmt(numOf(v[f[0] + '_' + p]))); }); });
+    return l.join('\n');
+  }
+
+  function summary(cards){
+    var dl = dLbl(curDate()), out = [];
+    [['Lidar','Lidar','LiDAR','li','lifp','liqa'], ['Lane','Lane Line','Lane Line','la','lafp','laqa']].forEach(function(g){
+      var cs = cards.filter(function(c){ return c.kind === g[0]; }); if (!cs.length) return;
+      var fp = 0, qa = 0;
+      cs.forEach(function(c){ var v = vOf(c); fp += numOf(v.p_fp); qa += numOf(v.p_qa); });
+      var lb = (S.lbl[g[3]] || '').trim();
+      var l = ['For ' + g[1] + (lb ? ' ( ' + lb + ' )' : '') + ' (' + dl + '):'];
+      l.push('Submitted: ' + fmt(fp) + ' FP ' + g[2] + ' / ' + fmt(qa) + ' QA ' + g[2]);
+      var rem = [], tf = S.tot[g[4]], tq = S.tot[g[5]];
+      if (String(tf || '').trim() !== '') rem.push(fmt(Math.max(0, numOf(tf) - fp)) + ' FP Tasks from ' + fmt(numOf(tf)) + ' tasks');
+      if (String(tq || '').trim() !== '') rem.push(fmt(Math.max(0, numOf(tq) - qa)) + ' QA Tasks from ' + fmt(numOf(tq)) + ' tasks');
+      if (rem.length) l.push('Remaining: ' + rem.join(' / ') + '.');
+      out.push(l.join('\n'));
+    });
+    return out.join('\n\n');
+  }
+
+  function renderMsgs(){
+    var cards = parseQueues(S.q), bl = cards.map(block), sm = summary(cards);
+    _msgs = [];
+    if (S.sep) {
+      cards.forEach(function(c, i){ _msgs.push({ label: '#' + (i + 1) + ' · ' + c.name, text: bl[i] }); });
+      if (sm) _msgs.push({ label: 'Summary (التجميعة)', text: sm });
+    } else {
+      var all = bl.join('\n\n'); if (sm) all += (all ? '\n\n' : '') + sm;
+      if (all) _msgs.push({ label: 'Message', text: all });
+    }
+    var h = '';
+    _msgs.forEach(function(m, i){
+      h += '<div class="wla-sec" style="padding-top:18px"><div class="wla-tbar" style="background:#455a64">' + esc(m.label)
+        + '<button class="wla-copy" data-wst-copy="' + i + '">Copy</button></div><div class="wst-msg">' + esc(m.text) + '</div></div>';
+    });
+    if (!h) h = '<div class="empty">اكتب أسامي الكيوهات واضغط Build Cards</div>';
+    gid('wstMsgs').innerHTML = h;
+  }
+
+  // ── الكروت ──
+  function renderCards(){
+    var cards = parseQueues(S.q), h = '';
+    if (!cards.length) h = '<div class="empty" style="grid-column:1/-1">مفيش كيوهات لسه</div>';
+    cards.forEach(function(c, i){
+      var v = vOf(c), col = c.kind === 'Lidar' ? '#00838f' : (c.kind === 'Lane' ? '#2e7d32' : '#b45309');
+      h += '<div class="wst-card" data-wst-k="' + esc(c.key) + '"><div class="wst-ch" style="border-top:4px solid ' + col + '">#' + (i + 1) + ' ' + esc(c.name)
+        + '<small>' + esc(c.header) + ' · ' + (c.kind ? esc(c.mod) : '⚠ اكتب (Lidar) أو (Lane Line) بعد اسم الكيو عشان يتحسب في التجميعة') + '</small></div>'
+        + '<table class="wst-t"><thead><tr><th></th><th>FP</th><th>QA</th></tr></thead><tbody>';
+      FIELDS.forEach(function(f){
+        h += '<tr><td class="l">' + f[1] + '</td>';
+        ['fp','qa'].forEach(function(p){
+          var id = f[0] + '_' + p;
+          h += '<td><input type="text" inputmode="numeric" class="wla-exp wst-in" data-f="' + id + '" placeholder="0" value="' + esc(v[id] || '') + '"></td>';
+        });
+        h += '</tr>';
+      });
+      h += '</tbody></table></div>';
+    });
+    gid('wstCards').innerHTML = h;
+  }
+
+  function sepLabel(){
+    var b = gid('wstSep');
+    b.textContent = 'افصل المسدج: ' + (S.sep ? 'ON' : 'OFF');
+    b.style.background = S.sep ? 'var(--blue)' : '';
+    b.style.color = S.sep ? 'white' : '';
+    b.style.borderColor = S.sep ? 'var(--blue)' : '';
+  }
+
+  function showStats(){
+    if (!DP.getVal('wlaDate')) DP.setVal('wlaDate', todayISO(), false);
+    gid('wstDate').textContent = dLbl(curDate());
+    renderCards(); renderMsgs();
+  }
+
+  // ── init القيم المحفوظة ──
+  gid('wstQ').value = S.q;
+  [].forEach.call(pane.querySelectorAll('[data-t]'), function(i){ i.value = S.tot[i.getAttribute('data-t')] || ''; });
+  [].forEach.call(pane.querySelectorAll('[data-l]'), function(i){ i.value = S.lbl[i.getAttribute('data-l')] || ''; });
+  sepLabel();
+
+  // ── events ──
+  function copyText(txt, btn){
+    navigator.clipboard.writeText(txt).then(function(){
+      var o = btn.innerHTML; btn.innerHTML = 'Copied!'; setTimeout(function(){ btn.innerHTML = o; }, 2000);
+    }).catch(function(){ toast('Copy failed', 'err'); });
+  }
+
+  pane.addEventListener('input', function(e){
+    var t = e.target;
+    if (t.id === 'wstQ') { S.q = t.value; save(); return; }
+    if (t.hasAttribute('data-t')) { S.tot[t.getAttribute('data-t')] = t.value; save(); renderMsgs(); return; }
+    if (t.hasAttribute('data-l')) { S.lbl[t.getAttribute('data-l')] = t.value; save(); renderMsgs(); return; }
+    if (t.classList.contains('wst-in')) { setV(t.closest('.wst-card').getAttribute('data-wst-k'), t.getAttribute('data-f'), t.value); renderMsgs(); }
+  });
+  pane.addEventListener('change', function(e){
+    if (e.target.id === 'wstQ') { S.q = e.target.value; save(); renderCards(); renderMsgs(); }
+  });
+  pane.addEventListener('click', function(e){
+    var t = e.target;
+    if (t.id === 'wstBuild') { S.q = gid('wstQ').value; save(); renderCards(); renderMsgs(); return; }
+    if (t.id === 'wstSep') { S.sep = !S.sep; save(); sepLabel(); renderMsgs(); return; }
+    var c = t.closest ? t.closest('[data-wst-copy]') : null;
+    if (c) { var m = _msgs[parseInt(c.getAttribute('data-wst-copy'), 10)]; if (m) copyText(m.text, c); }
+  });
+  // لصق بلوك "Created FP: 0 ... Skipped QA: 0" في أي خانة جوه الكارت → بيتوزع على الـ 8 خانات
+  pane.addEventListener('paste', function(e){
+    var t = e.target; if (!t.classList || !t.classList.contains('wst-in')) return;
+    var txt = ((e.clipboardData || window.clipboardData).getData('text')) || '';
+    var re = /(created|started|processed|skipped)\s*(fp|qa)\s*:\s*([\d,\.]+)/ig, m, found = {}, n = 0;
+    while ((m = re.exec(txt))) { found[FKEY[m[1].toLowerCase()] + '_' + m[2].toLowerCase()] = String(numOf(m[3])); n++; }
+    if (n < 2) return;
+    e.preventDefault();
+    var card = t.closest('.wst-card'), k = card.getAttribute('data-wst-k');
+    Object.keys(found).forEach(function(id){
+      setV(k, id, found[id]);
+      var inp = card.querySelector('[data-f="' + id + '"]'); if (inp) inp.value = found[id];
+    });
+    renderMsgs();
+  });
+
+  // ── التبويبات ──
+  var _origLoad = window.loadWla;
+  window.loadWla = function(force){
+    if (_tab === 'stats') { showStats(); return; } // تغيير التاريخ وانت في Stats بيحدّث الـ Stats بس
+    if (_origLoad) return _origLoad.apply(this, arguments);
+  };
+  function setTab(t){
+    _tab = t;
+    [].forEach.call(tabs.querySelectorAll('.wla-tab'), function(b){ b.classList.toggle('on', b.getAttribute('data-wlatab') === t); });
+    var isS = (t === 'stats');
+    var a = gid('wlaShiftBtns'); if (a) a.style.display = isS ? 'none' : 'flex';
+    var r = gid('wlaRefresh');  if (r) r.style.display = isS ? 'none' : '';
+    var w = gid('wlaArea');     if (w) w.style.display = isS ? 'none' : '';
+    pane.style.display = isS ? '' : 'none';
+    if (isS) showStats(); else if (_origLoad) _origLoad();
+  }
+  tabs.addEventListener('click', function(e){
+    var b = e.target.closest ? e.target.closest('[data-wlatab]') : null;
+    if (b) setTab(b.getAttribute('data-wlatab'));
+  });
+})();
+</script>
+
 </body>
 </html>
