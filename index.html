@@ -5925,11 +5925,11 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     '.wst-cnt .pl{padding:6px 14px;border-radius:20px;color:#fff;font-size:13px;font-weight:800}' +
     '#wlaStatsPane{padding-bottom:96px}' +
     '#wstSecQ{overflow:visible}#wstSecQ>.wla-hdr{border-radius:14px 14px 0 0}' +
-    '.wst-qbody{display:flex;align-items:flex-start;gap:0}' +
-    '.wst-qbody .wst-grid{flex:1;min-width:0;padding-right:8px}' +
-    '.wst-qbody .wst-cnt{position:sticky;top:90px;flex:0 0 150px;width:150px;box-sizing:border-box;flex-direction:column;flex-wrap:nowrap;align-items:stretch;gap:10px;margin:16px 16px 0 0;padding:12px;border:1px solid var(--border);border-radius:14px;box-shadow:0 4px 16px rgba(28,69,135,.18);z-index:5}' +
-    '.wst-qbody .wst-cnt .pl{text-align:center;white-space:nowrap}' +
-    '@media (max-width:900px){#wlaStatsPane{padding-bottom:170px}.wst-qbody .wst-grid{grid-template-columns:1fr}.wst-qbody .wst-cnt{flex-basis:92px;width:92px;margin-right:8px;padding:8px;gap:8px;top:70px}.wst-qbody .wst-cnt .pl{padding:5px 6px;font-size:11px}}' +
+    '.wst-qbody{display:block}' +
+    '.wst-qbody .wst-grid{padding-top:50px}' +
+    '.wst-qbody .wst-cnt{position:sticky;top:84px;height:0;overflow:visible;display:flex;flex-direction:row;flex-wrap:nowrap;justify-content:flex-end;align-items:flex-start;gap:6px;padding:0 18px 0 0;margin:0;border:0;background:transparent;pointer-events:none;z-index:30}' +
+    '.wst-qbody .wst-cnt .pl{margin-top:10px;padding:4px 11px;font-size:11px;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.28);pointer-events:auto;opacity:.97}' +
+    '@media (max-width:900px){#wlaStatsPane{padding-bottom:170px}.wst-qbody .wst-cnt{top:72px;padding-right:8px;gap:4px}.wst-qbody .wst-cnt .pl{padding:3px 8px;font-size:10px}.wst-qbody .wst-grid{grid-template-columns:1fr}}' +
     '.wst-top{display:flex;justify-content:flex-end;margin-bottom:12px}' +
     '.wst-clr{padding:8px 18px;border-radius:9px;border:2px solid var(--danger-text);background:var(--danger-bg);color:var(--danger-text);font-size:13px;font-weight:800;cursor:pointer;font-family:inherit}' +
     '.wst-clr:hover{background:var(--danger-text);color:#fff}' +
@@ -5991,7 +5991,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     +   '<div class="wst-row"><div class="wst-f" style="flex:3;min-width:260px"><label class="wst-lb">ضيف كيو من المكتبة (اكتب أو اختار — بيتضاف في آخر الترتيب)</label><input class="wst-tx" id="wstPick" list="wstPickList" style="direction:ltr" placeholder="اكتب للبحث أو اختار من القايمة" autocomplete="off"><datalist id="wstPickList"></datalist></div>'
     +   '<div><button class="mod-btn" id="wstAdd">Add</button> <button class="mod-btn" id="wstAddAll">Add all</button> <button class="mod-btn" id="wstClear">Clear order</button></div></div>'
     + '</div></div>'
-    + '<div class="wla-card" id="wstSecQ"><div class="wla-hdr" style="display:flex;align-items:center;gap:10px"><span class="wla-pill" style="background:#455a64">Queues</span><button class="wst-sm del" id="wstUncheck" style="margin-left:auto">✓ Delete all check marks</button></div><div class="wst-qbody"><div class="wst-grid" id="wstCards"></div><div id="wstCount" class="wst-cnt"></div></div></div>'
+    + '<div class="wla-card" id="wstSecQ"><div class="wla-hdr" style="display:flex;align-items:center;gap:10px"><span class="wla-pill" style="background:#455a64">Queues</span><button class="wst-sm del" id="wstUncheck" style="margin-left:auto">✓ Delete all check marks</button></div><div class="wst-qbody"><div id="wstCount" class="wst-cnt"></div><div class="wst-grid" id="wstCards"></div></div></div>'
     + '<div class="wla-card" id="wstSecMsg" style="padding-bottom:18px"><div style="padding:16px 20px 0"><button class="mod-btn" id="wstSep"></button></div><div id="wstMsgs"></div></div>'
     + '<div class="wst-fnav" id="wstFnav">'
     +   '<button data-wst-go="wstSecTop">⬆ Top</button><button data-wst-go="wstSecTot">Totals</button><button data-wst-go="wstSecForm">New Queue</button>'
