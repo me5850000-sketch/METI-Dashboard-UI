@@ -5940,18 +5940,20 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   var MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   var TYPES = ['LiDAR','Lane Line','SellMapping'];
   var SRC_DEF = 'Daily Task tracking';
-  var S = { lib:[], order:[], q:'', tot:{ lifp:'', liqa:'', lafp:'', laqa:'' }, lbl:{ li:'SC3 Alpine + SC3 Full Scene + V4 parallel', la:'SC3 Full Scene' }, sep:false, vals:{}, done:{}, slots:{ t:['','','',''], d:[false,false,false,false], day:'' } };
+  var S = { lib:[], order:[], q:'', tot:{ lifp:'', liqa:'', lafp:'', laqa:'' }, lbl:{ li:'SC3 Alpine + SC3 Full Scene + V4 parallel', la:'SC3 Full Scene' }, sep:false, vals:{}, done:{}, slots:{ t:['','','',''], d:[false,false,false,false], day:'' }, days:{}, cur:'' };
   function applySaved(sv){
     S.lib = sv.lib || []; S.order = sv.order || []; S.q = sv.q || '';
     S.tot = Object.assign({ lifp:'', liqa:'', lafp:'', laqa:'' }, sv.tot || {});
     S.lbl = Object.assign({ li:'SC3 Alpine + SC3 Full Scene + V4 parallel', la:'SC3 Full Scene' }, sv.lbl || {});
     S.sep = !!sv.sep; S.vals = sv.vals || {}; S.done = sv.done || {};
+    S.days = sv.days || {}; S.cur = sv.cur || '';
     var sl = sv.slots || {}; S.slots = { t: (sl.t || []).concat(['','','','']).slice(0,4), d: (sl.d || []).concat([false,false,false,false]).slice(0,4).map(Boolean), day: sl.day || '' };
   }
   function resetS(){
     S.lib = []; S.order = []; S.q = ''; S.tot = { lifp:'', liqa:'', lafp:'', laqa:'' };
     S.lbl = { li:'SC3 Alpine + SC3 Full Scene + V4 parallel', la:'SC3 Full Scene' };
     S.sep = false; S.vals = {}; S.done = {}; S.slots = { t:['','','',''], d:[false,false,false,false], day:'' };
+    S.days = {}; S.cur = '';
   }
   try {
     _loadedUK = userKey();
@@ -5973,6 +5975,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     var o = JSON.parse(j);
     S.lib = o.lib || []; S.order = o.order || []; S.q = o.q || ''; S.tot = o.tot || {}; S.lbl = o.lbl || S.lbl;
     S.sep = !!o.sep; S.vals = o.vals || {}; S.done = o.done || {}; if (o.slots) S.slots = o.slots;
+    S.days = o.days || {}; S.cur = o.cur || '';
     persist(j);
   }
   function uid(){ return 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
@@ -6419,7 +6422,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   function nowHM(){ var d = new Date(); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
   function syncSlots(){
     var box = gid('wstSlots'); if (!box) return;
-    var today = todayISO();
+    var today = curDate();
     if (S.slots.day !== today) { S.slots.d = [false, false, false, false]; S.slots.day = today; save(); }
     var hm = nowHM();
     [].forEach.call(box.querySelectorAll('.wst-slot'), function(lb){
@@ -6460,9 +6463,34 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     var pk = gid('wstPick'); if (pk) pk.value = '';
     sepLabel(); resetForm();
   }
+  // ── كل تاريخ له صفحة خاصة بيه (لكل يوزر): الترتيب + الأرقام + المواعيد + التشيكات ──
+  // المكتبة (الكيوهات المسجلة) مشتركة بين كل الأيام. أول مرة بعد التحديث: الداتا الحالية بتفضل في التاريخ المفتوح.
+  function swapDay(d){
+    if (S.cur === d) return false;
+    if (!S.cur) { S.cur = d; S.slots.day = S.slots.day || d; persist(JSON.stringify(S)); return false; }
+    S.days[S.cur] = { order:S.order, q:S.q, tot:S.tot, lbl:S.lbl, sep:S.sep, slots:S.slots };
+    var x = S.days[d];
+    S.order = x ? (x.order || []) : [];
+    S.q = x ? (x.q || '') : '';
+    S.tot = Object.assign({ lifp:'', liqa:'', lafp:'', laqa:'' }, x ? (x.tot || {}) : {});
+    S.lbl = Object.assign({ li:'SC3 Alpine + SC3 Full Scene + V4 parallel', la:'SC3 Full Scene' }, x ? (x.lbl || {}) : {});
+    S.sep = x ? !!x.sep : false;
+    var sl = (x && x.slots) || {};
+    S.slots = { t:(sl.t || []).concat(['','','','']).slice(0,4), d:(sl.d || []).concat([false,false,false,false]).slice(0,4).map(Boolean), day:d };
+    S.cur = d;
+    persist(JSON.stringify(S));
+    return true;
+  }
+  function refreshInputs(){
+    [].forEach.call(pane.querySelectorAll('[data-t]'), function(i){ i.value = S.tot[i.getAttribute('data-t')] || ''; });
+    var imp = gid('wstImp'); if (imp) imp.value = '';
+    var pk = gid('wstPick'); if (pk) pk.value = '';
+    sepLabel(); resetForm();
+  }
   function showStats(){
     ensureUser();
     if (!DP.getVal('wlaDate')) DP.setVal('wlaDate', todayISO(), false);
+    if (swapDay(curDate())) { _hist = [JSON.stringify(S)]; _redo = []; refreshInputs(); }
     gid('wstDate').textContent = dLbl(curDate());
     renderAll(); syncSlots();
   }
