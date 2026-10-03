@@ -6304,7 +6304,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   pane.addEventListener('input', function(e){
     var t = e.target;
     if (t.hasAttribute('data-t')) { S.tot[t.getAttribute('data-t')] = t.value; save(true); renderMsgs(); return; }
-    if (t.classList.contains('wst-in') && /^[\s\-\u2013\u2014]+$/.test(t.value)) { t.value = '0'; try { t.select(); } catch (x) {} }
+    if (t.classList.contains('wst-in') && /^[^A-Za-z0-9\u0600-\u06FF]+$/.test(t.value) && t.value !== '') { t.value = '0'; try { t.select(); } catch (x) {} }
     if (t.classList.contains('wst-in')) { setV(t.closest('.wst-card').getAttribute('data-wst-k'), t.getAttribute('data-f'), t.value); renderMsgs(); }
   });
   // لما تدوس على خانة Type الاقتراحات كلها بتظهر (القيمة بترجع لو سيبتها فاضية)
@@ -6319,8 +6319,17 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   pane.addEventListener('paste', function(e){
     var t = e.target; if (!t || !t.classList || !t.classList.contains('wst-in')) return;
     var txt = (e.clipboardData || window.clipboardData).getData('text') || '';
-    var toks = txt.split(/[\s\t]+/).filter(function(x){ return /\d/.test(x) || /^[-\u2013\u2014]$/.test(x); }).map(function(x){ return /\d/.test(x) ? x : '0'; });
-    if ((toks.length < 2 && !/^\s*[-\u2013\u2014]\s*$/.test(txt)) || /(created|started|processed|skipped)\s*(fp|qa)\s*:/i.test(txt)) return;
+    // كل خانة في النسخة (Tab / سطر) = قيمة: الرقم يفضل، وأي شرطة بأي شكل ("-" "–" "−" "$ -" ...) أو خانة فاضية = 0، والعناوين (FP/QA/Created) بتتخطى
+    var pcs = String(txt).replace(/\r/g, '').split(/\t|\n/);
+    while (pcs.length && pcs[pcs.length - 1].trim() === '') pcs.pop();
+    var toks = [];
+    pcs.forEach(function(pc){
+      pc = pc.trim();
+      if (pc === '' || (!/\d/.test(pc) && !/[A-Za-z\u0600-\u06FF]/.test(pc))) { toks.push('0'); return; }
+      pc.split(/\s+/).forEach(function(x){ if (/\d/.test(x)) toks.push(x); });
+    });
+    var onlyDash = toks.length === 1 && !/\d/.test(txt);
+    if ((toks.length < 2 && !onlyDash) || /(created|started|processed|skipped)\s*(fp|qa)\s*:/i.test(txt)) return;
     e.preventDefault();
     var card = t.closest('.wst-card'), ins = [].slice.call(card.querySelectorAll('.wst-in')), i = ins.indexOf(t);
     // كيو LiDAR + Lane Line بنفس الاسم ورا بعض = صف واحد جنب بعض: A.FP A.QA B.FP B.QA ثم السطر اللي بعده
