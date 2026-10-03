@@ -5425,7 +5425,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       + '<span class="wla-pill" style="background:#455a64;font-size:13px;padding:5px 16px">Planner</span>'
       + field('Total Labelers', 'tot') + field('Lane Line FP', 'lafp') + field('Lane Line QA', 'laqa') + field('Lidar QA', 'liqa') + field('Lidar FP (الباقي)', 'lifp')
       + '<span class="wla-remv" style="font-size:12px;font-weight:800;color:var(--danger-text)"></span>'
-      + '<div class="wla-plab">Σ كل الكيوهات: <span class="wla-sumv" style="font-size:18px;font-weight:800">-</span></div>'
+      + '<div class="wla-plab">كل الكيوهات: <span class="wla-sumv" style="font-size:18px;font-weight:800">-</span></div>'
       + '<button class="wla-copy" data-wla-copyplan="'+sh+'">Copy</button></div>'
       + '<div class="wla-pgrid">';
     GRP.forEach(function(g){
@@ -5625,7 +5625,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     rows.forEach(function(o, i){
       t.lfp += o.lfp; t.sfp += o.sfp; t.lqa += o.lqa; t.sqa += o.sqa;
       h += '<tr data-k="'+esc(o.key)+'"><td class="n">'+(i+1)+'</td>'
-        + '<td class="q">'+esc(o.name)+(o.noLab ? '<span class="wla-warn" title="في تاسكات اتسبمتت على الكيو ده، بس مفيش حد متسجل عليه في شيت الـ Queue (أو الاسم مش متطابق)">!</span>' : '')+'</td>'
+        + '<td class="q">'+esc(o.name)+''+'</td>'
         + num(o.lfp,'c-lfp') + num(o.sfp,'c-sfp') + num(o.lqa,'c-lqa') + num(o.sqa,'c-sqa')
         + '<td><button class="wla-copy wla-rcopy" data-wla-copyrow="'+sh+'|'+kind+'|'+esc(o.key)+'">Copy</button></td></tr>';
     });
@@ -5986,7 +5986,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   pane.id = 'wlaStatsPane';
   pane.style.display = 'none';
   pane.innerHTML =
-    '<div class="wst-top" id="wstSecTop"><button class="wst-clr" id="wstClearData">🗑 Clear Data</button></div>'
+    '<div class="wst-top" id="wstSecTop"><button class="wst-clr" id="wstClearData">Clear Data</button></div>'
     + '<div class="wla-card">'
     + '<div class="wla-hdr"><span class="wla-pill" style="background:var(--blue)">Stats</span><span class="wla-date" id="wstDate"></span>'
     + '<div class="wst-slots" id="wstSlots"><span class="wst-slots-t">Stats</span>'
@@ -6032,10 +6032,10 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     +   '<div class="wst-row"><div class="wst-f" style="flex:3;min-width:260px"><label class="wst-lb">ضيف كيو من المكتبة (اكتب أو اختار — بيتضاف في آخر الترتيب)</label><input class="wst-tx" id="wstPick" list="wstPickList" style="direction:ltr" placeholder="اكتب للبحث أو اختار من القايمة" autocomplete="off"><datalist id="wstPickList"></datalist></div>'
     +   '<div><button class="mod-btn" id="wstAdd">Add</button> <button class="mod-btn" id="wstAddAll">Add all</button> <button class="mod-btn" id="wstClear">Clear order</button></div></div>'
     + '</div></div>'
-    + '<div class="wla-card" id="wstSecQ"><div class="wla-hdr" style="display:flex;align-items:center;gap:10px"><span class="wla-pill" style="background:#455a64">Queues</span><button class="wst-sm del" id="wstUncheck" style="margin-left:auto">✓ Delete all check marks</button></div><div class="wst-qbody"><div id="wstCount" class="wst-cnt"></div><div class="wst-grid" id="wstCards"></div></div></div>'
+    + '<div class="wla-card" id="wstSecQ"><div class="wla-hdr" style="display:flex;align-items:center;gap:10px"><span class="wla-pill" style="background:#455a64">Queues</span><button class="wst-sm del" id="wstUncheck" style="margin-left:auto">Delete all check marks</button></div><div class="wst-qbody"><div id="wstCount" class="wst-cnt"></div><div class="wst-grid" id="wstCards"></div></div></div>'
     + '<div class="wla-card" id="wstSecMsg" style="padding-bottom:18px"><div style="padding:16px 20px 0"><button class="mod-btn" id="wstSep"></button></div><div id="wstMsgs"></div></div>'
     + '<div class="wst-fnav" id="wstFnav">'
-    +   '<button data-wst-go="wstSecTop">⬆ Top</button><button data-wst-go="wstSecTot">Totals</button><button data-wst-go="wstSecForm">New Queue</button>'
+    +   '<button data-wst-go="wstSecTop">Top</button><button data-wst-go="wstSecTot">Totals</button><button data-wst-go="wstSecForm">New Queue</button>'
     +   '<button data-wst-go="wstSecImp">Import</button><button data-wst-go="wstSecLib">Library</button><button data-wst-go="wstSecQ">Queues</button><button data-wst-go="wstSecMsg">Messages</button>'
     + '</div>';
   pg.appendChild(pane);
@@ -6188,7 +6188,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       h += '<div class="wst-lr"><b>' + esc(e.name) + '</b>'
         + '<span class="wst-bd" style="background:' + colOf(c.type) + '">' + esc(c.type) + '</span>'
         + (c.extras.length ? '<span style="color:var(--gray);font-weight:700">' + esc(c.extras.join(', ')) + '</span>' : '')
-        + (used ? '<span style="color:var(--ok-text);font-weight:800;font-size:11px">✓ في الترتيب</span>' : '')
+        + (used ? '<span style="color:var(--ok-text);font-weight:800;font-size:11px">في الترتيب</span>' : '')
         + '<span style="margin-left:auto;display:flex;gap:6px">'
         + '<button class="wst-sm" data-wst-edit="' + esc(e.id) + '">Edit</button>'
         + '<button class="wst-sm del" data-wst-del="' + esc(e.id) + '">Delete</button></span></div>';
@@ -6311,7 +6311,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     var el = gid('wstCount'); if (!el) return;
     var cs = getCards(), tot = cs.length, dn = cs.filter(function(c){ return isDone(c.key); }).length, left = tot - dn;
     el.innerHTML = '<span class="pl" style="background:#455a64">Tasks: ' + tot + '</span>'
-      + '<span class="pl" style="background:#2e7d32">✓ Done: ' + dn + '</span>'
+      + '<span class="pl" style="background:#2e7d32">Done: ' + dn + '</span>'
       + '<span class="pl" style="background:' + (left ? '#e37400' : '#2e7d32') + '">Remaining: ' + left + '</span>';
   }
   function renderCards(){
@@ -6504,7 +6504,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     if (t.id === 'wstSep') { S.sep = !S.sep; save(); sepLabel(); renderMsgs(); return; }
     if (t.id === 'wstImpGo') {
       var n = importOld(gid('wstImp').value);
-      if (!n) toast('مش لاقي كيوهات في النص ده', 'err'); else { toast('اتضاف ' + n + ' كيو بأرقامهم ✅', 'ok'); gid('wstImp').value = ''; }
+      if (!n) toast('مش لاقي كيوهات في النص ده', 'err'); else { toast('اتضاف ' + n + ' كيو بأرقامهم', 'ok'); gid('wstImp').value = ''; }
       return;
     }
     if (t.id === 'wstImpClr') { gid('wstImp').value = ''; return; }
@@ -6532,7 +6532,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
         var pk = gid('wstPick'); if (pk) pk.value = '';
         save(); sepLabel(); resetForm(); renderAll();
         window.scrollTo({ top: 0, behavior: 'smooth' });
-        toast('اتمسحت كل الداتا ✅', 'ok');
+        toast('اتمسحت كل الداتا', 'ok');
       });
       return;
     }
@@ -6644,5 +6644,6 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   });
 })();
 </script>
+
 </body>
 </html>
