@@ -5921,6 +5921,8 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     '.wst-card .wst-t td.l{text-align:left;font-size:15px;font-weight:800;color:var(--dark)}' +
     '.wst-card .wst-t .wla-exp{width:100% !important;max-width:150px;height:46px;box-sizing:border-box;padding:6px 10px !important;font-size:20px !important;font-weight:800 !important;border:2px solid #9aa7b8 !important;border-radius:10px !important;background:#fff !important;color:var(--dark) !important;text-align:center}' +
     '.wst-card .wst-t .wla-exp:focus{border-color:var(--blue) !important;box-shadow:0 0 0 3px rgba(26,115,232,.18);outline:none}' +
+    '.wst-cnt{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:14px 20px;border-top:1px solid var(--border);background:var(--gray-lt);font-size:14px;font-weight:800;color:var(--dark)}' +
+    '.wst-cnt .pl{padding:6px 14px;border-radius:20px;color:#fff;font-size:13px;font-weight:800}' +
     '.wst-msg{white-space:pre-wrap;word-break:break-word;direction:ltr;text-align:left;padding:14px 16px;border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;font-size:13px;line-height:1.6;font-family:Consolas,Menlo,monospace;color:var(--dark);background:var(--white)}';
   document.head.appendChild(st2);
 
@@ -5973,7 +5975,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     +   '<div class="wst-row"><div class="wst-f" style="flex:3;min-width:260px"><label class="wst-lb">ضيف كيو من المكتبة (اكتب أو اختار — بيتضاف في آخر الترتيب)</label><input class="wst-tx" id="wstPick" list="wstPickList" style="direction:ltr" placeholder="اكتب للبحث أو اختار من القايمة" autocomplete="off"><datalist id="wstPickList"></datalist></div>'
     +   '<div><button class="mod-btn" id="wstAdd">Add</button> <button class="mod-btn" id="wstAddAll">Add all</button> <button class="mod-btn" id="wstClear">Clear order</button></div></div>'
     + '</div></div>'
-    + '<div class="wla-card"><div class="wla-hdr"><span class="wla-pill" style="background:#455a64">Queues</span></div><div class="wst-grid" id="wstCards"></div></div>'
+    + '<div class="wla-card"><div class="wla-hdr"><span class="wla-pill" style="background:#455a64">Queues</span></div><div class="wst-grid" id="wstCards"></div><div id="wstCount" class="wst-cnt"></div></div>'
     + '<div class="wla-card" style="padding-bottom:18px"><div style="padding:16px 20px 0"><button class="mod-btn" id="wstSep"></button></div><div id="wstMsgs"></div></div>';
   pg.appendChild(pane);
 
@@ -6244,6 +6246,13 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   }
 
   // ── الكروت ──
+  function updateCount(){
+    var el = gid('wstCount'); if (!el) return;
+    var cs = getCards(), tot = cs.length, dn = cs.filter(function(c){ return isDone(c.key); }).length, left = tot - dn;
+    el.innerHTML = '<span class="pl" style="background:#455a64">Tasks: ' + tot + '</span>'
+      + '<span class="pl" style="background:#2e7d32">✓ Done: ' + dn + '</span>'
+      + '<span class="pl" style="background:' + (left ? '#e37400' : '#2e7d32') + '">Remaining: ' + left + '</span>';
+  }
   function renderCards(){
     var cards = getCards(), h = '';
     if (!cards.length) h = '<div class="empty" style="grid-column:1/-1">مفيش كيوهات في الترتيب — اختار من الدروب داون فوق واضغط Add</div>';
@@ -6268,6 +6277,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       h += '</tbody></table></div>';
     });
     gid('wstCards').innerHTML = h;
+    updateCount();
   }
 
   function sepLabel(){
@@ -6378,7 +6388,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     if (t.hasAttribute && t.hasAttribute('data-wst-done')) {
       var dk = t.getAttribute('data-wst-done'), dd = curDate();
       S.done[dd] = S.done[dd] || {}; if (t.checked) S.done[dd][dk] = 1; else delete S.done[dd][dk];
-      t.closest('.wst-card').classList.toggle('done', t.checked); save(); return;
+      t.closest('.wst-card').classList.toggle('done', t.checked); save(); updateCount(); return;
     }
     if (t.id === 'wstSep') { S.sep = !S.sep; save(); sepLabel(); renderMsgs(); return; }
     if (t.id === 'wstImpGo') {
