@@ -5639,7 +5639,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     var m = _wla.model || {};
     // All = Total مدمج | Each = الـ 3 شيفتات منفصلين (كل شيفت كارت لوحده) | غير كده = شيفت واحد
     var wanted = (_wlaShift === 'All') ? ['Total']
-               : (_wlaShift === 'Each') ? WLA_SHIFTS
+               : (_wlaShift === 'Each') ? ['Night','Morning','Over Night']
                : [_wlaShift];
     var vis = wanted.filter(function(s){ return m[s]; });
     if (!vis.length) { shtml('wlaArea', '<div class="empty">No data for this date.</div>'); return; }
@@ -6648,5 +6648,6 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   });
 })();
 </script>
+
 </body>
 </html>
