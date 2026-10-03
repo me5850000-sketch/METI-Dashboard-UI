@@ -5849,7 +5849,23 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       S.sep = !!sv.sep; S.vals = sv.vals || {}; S.done = sv.done || {};
     }
   } catch (e) {}
-  function save(){ try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {} }
+  // ── Undo / Redo (Ctrl+Z / Ctrl+Y) لكل حاجة في Stats ──
+  var _hist = [JSON.stringify(S)], _redo = [], _lastT = 0;
+  function save(co){
+    var j = JSON.stringify(S);
+    try { localStorage.setItem(KEY, j); } catch (e) {}
+    if (j === _hist[_hist.length - 1]) return;
+    var now = Date.now();
+    if (co === true && _hist.length > 1 && now - _lastT < 800) _hist[_hist.length - 1] = j; else _hist.push(j);
+    _lastT = now; _redo = [];
+    if (_hist.length > 150) _hist.shift();
+  }
+  function applySnap(j){
+    var o = JSON.parse(j);
+    S.lib = o.lib || []; S.order = o.order || []; S.q = o.q || ''; S.tot = o.tot || {}; S.lbl = o.lbl || S.lbl;
+    S.sep = !!o.sep; S.vals = o.vals || {}; S.done = o.done || {};
+    try { localStorage.setItem(KEY, j); } catch (e) {}
+  }
   function uid(){ return 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
   var _tab = 'shift', _msgs = [], _edit = null;
@@ -6017,7 +6033,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   function setV(key, f, val){
     var d = curDate();
     S.vals[d] = S.vals[d] || {}; S.vals[d][key] = S.vals[d][key] || {}; S.vals[d][key][f] = val;
-    save();
+    save(true);
   }
 
   // سطر اسم الكيو: name (Type) (3 OCT) (Tags) — نفس الشكل في الكارت وفي الرسالة
@@ -6218,7 +6234,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     if (!cards.length) h = '<div class="empty" style="grid-column:1/-1">مفيش كيوهات في الترتيب — اختار من الدروب داون فوق واضغط Add</div>';
     cards.forEach(function(c, i){
       var v = vOf(c), id = esc(c.key);
-      h += '<div class="wst-card' + (isDone(c.key) ? ' done' : '') + '" data-wst-k="' + id + '"><div class="wst-ch" style="border-top:4px solid ' + colOf(c.type) + '">'
+      h += '<div class="wst-card' + (isDone(c.key) ? ' done' : '') + '" data-wst-k="' + id + '" data-wst-n="' + esc(c.name.toLowerCase()) + '"><div class="wst-ch" style="border-top:4px solid ' + colOf(c.type) + '">'
         + '<div class="wst-chr"><span>#' + (i + 1) + ' ' + esc(titleLine(c)).replace(/([_@])/g, '$1<wbr>') + '</span><span class="wst-mv">'
         + '<input type="checkbox" class="wst-ok" data-wst-done="' + id + '" title="خلصت"' + (isDone(c.key) ? ' checked' : '') + '>'
         + '<button class="wst-sm" data-wst-up="' + id + '" title="فوق">↑</button>'
@@ -6272,7 +6288,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
 
   pane.addEventListener('input', function(e){
     var t = e.target;
-    if (t.hasAttribute('data-t')) { S.tot[t.getAttribute('data-t')] = t.value; save(); renderMsgs(); return; }
+    if (t.hasAttribute('data-t')) { S.tot[t.getAttribute('data-t')] = t.value; save(true); renderMsgs(); return; }
     if (t.classList.contains('wst-in')) { setV(t.closest('.wst-card').getAttribute('data-wst-k'), t.getAttribute('data-f'), t.value); renderMsgs(); }
   });
   // لما تدوس على خانة Type الاقتراحات كلها بتظهر (القيمة بترجع لو سيبتها فاضية)
@@ -6288,15 +6304,45 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     var t = e.target; if (!t || !t.classList || !t.classList.contains('wst-in')) return;
     var txt = (e.clipboardData || window.clipboardData).getData('text') || '';
     var toks = txt.split(/[\s\t]+/).filter(function(x){ return /\d/.test(x); });
-    if (toks.length < 2) return;
+    if (toks.length < 2 || /(created|started|processed|skipped)\s*(fp|qa)\s*:/i.test(txt)) return;
     e.preventDefault();
     var card = t.closest('.wst-card'), ins = [].slice.call(card.querySelectorAll('.wst-in')), i = ins.indexOf(t);
-    toks.forEach(function(tok, k){
-      var el = ins[i + k]; if (!el) return;
-      el.value = tok; setV(card.getAttribute('data-wst-k'), el.getAttribute('data-f'), tok);
+    // كيو LiDAR + Lane Line بنفس الاسم ورا بعض = صف واحد جنب بعض: A.FP A.QA B.FP B.QA ثم السطر اللي بعده
+    var all = [].slice.call(card.parentNode.querySelectorAll('.wst-card')), ci = all.indexOf(card), seq = ins, start = i, k;
+    var pairs = [], skip = -1;
+    for (k = 0; k < all.length - 1; k++) {
+      if (k === skip) continue;
+      if (all[k].getAttribute('data-wst-n') === all[k + 1].getAttribute('data-wst-n')) { pairs.push([k, k + 1]); skip = k + 1; }
+    }
+    var pr = pairs.filter(function(p){ return p[0] === ci || p[1] === ci; })[0];
+    if (pr) {
+      var A = [].slice.call(all[pr[0]].querySelectorAll('.wst-in')), B = [].slice.call(all[pr[1]].querySelectorAll('.wst-in'));
+      seq = [];
+      for (var r = 0; r < A.length / 2; r++) seq.push(A[r * 2], A[r * 2 + 1], B[r * 2], B[r * 2 + 1]);
+      start = seq.indexOf(t);
+    }
+    toks.forEach(function(tok, n){
+      var el = seq[start + n]; if (!el) return;
+      el.value = tok; setV(el.closest('.wst-card').getAttribute('data-wst-k'), el.getAttribute('data-f'), tok);
     });
+    ins = seq; i = start;
     renderMsgs();
     var last = ins[Math.min(i + toks.length, ins.length - 1)]; if (last) last.focus();
+  });
+  function doUndo(redo){
+    if (redo ? !_redo.length : _hist.length < 2) return;
+    if (redo) { var n = _redo.pop(); _hist.push(n); applySnap(n); }
+    else { _redo.push(_hist.pop()); applySnap(_hist[_hist.length - 1]); }
+    _lastT = 0;
+    [].forEach.call(pane.querySelectorAll('[data-t]'), function(i){ i.value = S.tot[i.getAttribute('data-t')] || ''; });
+    sepLabel(); resetForm(); renderAll();
+  }
+  document.addEventListener('keydown', function(e){
+    if (!(e.ctrlKey || e.metaKey) || pane.offsetParent === null) return;
+    var k = (e.key || '').toLowerCase(), ae = document.activeElement;
+    if (ae && (ae.id === 'wstImp' || /^wstL/.test(ae.id || '') || ae.id === 'wstPick')) return;
+    if (k === 'z' && !e.shiftKey) { e.preventDefault(); doUndo(false); }
+    else if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); doUndo(true); }
   });
   pane.addEventListener('keydown', function(e){
     if (e.key === 'Enter' && e.target.id && /^wstL(Name|Tags|Hdr|Src)$/.test(e.target.id)) { e.preventDefault(); saveQueue(); }
