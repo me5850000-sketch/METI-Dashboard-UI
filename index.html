@@ -868,6 +868,7 @@ body.dark .pc-box{background:#2a2b2e;color:#e8eaed}body.dark .pc-no{background:#
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center" id="wlaShiftBtns">
               <label>Shift</label>
               <button class="mod-btn wla-shift-btn" data-wlashift="All" style="background:var(--blue);color:white;border-color:var(--blue)">Total</button>
+              <button class="mod-btn wla-shift-btn" data-wlashift="Each">All 3 Shifts</button>
               <button class="mod-btn wla-shift-btn" data-wlashift="Morning">Morning</button>
               <button class="mod-btn wla-shift-btn" data-wlashift="Night">Night</button>
               <button class="mod-btn wla-shift-btn" data-wlashift="Over Night">Over Night</button>
@@ -5636,8 +5637,11 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
 
   function render(){
     var m = _wla.model || {};
-    var vis = (_wlaShift === 'All') ? ['Total'].filter(function(s){ return m[s]; })
-                                    : [_wlaShift].filter(function(s){ return m[s]; });
+    // All = Total مدمج | Each = الـ 3 شيفتات منفصلين (كل شيفت كارت لوحده) | غير كده = شيفت واحد
+    var wanted = (_wlaShift === 'All') ? ['Total']
+               : (_wlaShift === 'Each') ? WLA_SHIFTS
+               : [_wlaShift];
+    var vis = wanted.filter(function(s){ return m[s]; });
     if (!vis.length) { shtml('wlaArea', '<div class="empty">No data for this date.</div>'); return; }
     var COL = { 'Morning':'var(--morning-text)', 'Night':'var(--indigo-text)', 'Over Night':'#1b5e20', 'Total':'var(--blue)' };
     var h = '';
