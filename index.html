@@ -5866,14 +5866,14 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     }
   } catch (e) {}
   // ── Undo / Redo (Ctrl+Z / Ctrl+Y) لكل حاجة في Stats ──
-  var _hist = [JSON.stringify(S)], _redo = [], _lastT = 0;
+  var _hist = [JSON.stringify(S)], _redo = [], _lastT = 0, _lastCo = false;
   function save(co){
     var j = JSON.stringify(S);
     persist(j);
     if (j === _hist[_hist.length - 1]) return;
     var now = Date.now();
-    if (co === true && _hist.length > 1 && now - _lastT < 800) _hist[_hist.length - 1] = j; else _hist.push(j);
-    _lastT = now; _redo = [];
+    if (co === true && _lastCo && _hist.length > 1 && now - _lastT < 800) _hist[_hist.length - 1] = j; else _hist.push(j);
+    _lastCo = (co === true); _lastT = now; _redo = [];
     if (_hist.length > 150) _hist.shift();
   }
   function applySnap(j){
@@ -5923,6 +5923,14 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     '.wst-card .wst-t .wla-exp:focus{border-color:var(--blue) !important;box-shadow:0 0 0 3px rgba(26,115,232,.18);outline:none}' +
     '.wst-cnt{display:flex;gap:12px;flex-wrap:wrap;align-items:center;padding:14px 20px;border-top:1px solid var(--border);background:var(--gray-lt);font-size:14px;font-weight:800;color:var(--dark)}' +
     '.wst-cnt .pl{padding:6px 14px;border-radius:20px;color:#fff;font-size:13px;font-weight:800}' +
+    '.wst-top{display:flex;justify-content:flex-end;margin-bottom:12px}' +
+    '.wst-clr{padding:8px 18px;border-radius:9px;border:2px solid var(--danger-text);background:var(--danger-bg);color:var(--danger-text);font-size:13px;font-weight:800;cursor:pointer;font-family:inherit}' +
+    '.wst-clr:hover{background:var(--danger-text);color:#fff}' +
+    '.wst-top,.wla-card[id^=wstSec],.wst-box[id^=wstSec],#wstSecTot,#wstSecLib{scroll-margin-top:84px}' +
+    '.wst-fnav{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:60;display:flex;gap:4px;padding:6px;max-width:94vw;overflow-x:auto;background:var(--white);border:1px solid var(--border);border-radius:30px;box-shadow:0 6px 24px rgba(28,69,135,.28)}' +
+    '.wst-fnav button{border:none;background:none;color:var(--blue);font-size:12px;font-weight:800;padding:8px 13px;border-radius:22px;cursor:pointer;white-space:nowrap;font-family:inherit}' +
+    '.wst-fnav button:hover{background:var(--blue);color:#fff}' +
+    '@media (max-width:900px){.wst-fnav{bottom:84px}}' +
     '.wst-msg{white-space:pre-wrap;word-break:break-word;direction:ltr;text-align:left;padding:14px 16px;border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;font-size:13px;line-height:1.6;font-family:Consolas,Menlo,monospace;color:var(--dark);background:var(--white)}';
   document.head.appendChild(st2);
 
@@ -5936,13 +5944,14 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   pane.id = 'wlaStatsPane';
   pane.style.display = 'none';
   pane.innerHTML =
-    '<div class="wla-card">'
+    '<div class="wst-top" id="wstSecTop"><button class="wst-clr" id="wstClearData">🗑 Clear Data</button></div>'
+    + '<div class="wla-card">'
     + '<div class="wla-hdr"><span class="wla-pill" style="background:var(--blue)">Stats</span><span class="wla-date" id="wstDate"></span>'
     + '</div>'
     + '<div class="wla-sec" style="padding-top:14px">'
 
     // التسليمة
-    +   '<label class="wst-lb">التسليمة (الرقم اللي بيتكتب في "from ... tasks") — سيب الخانة فاضية لو مش عايز سطر Remaining</label>'
+    +   '<label class="wst-lb" id="wstSecTot">التسليمة (الرقم اللي بيتكتب في "from ... tasks") — سيب الخانة فاضية لو مش عايز سطر Remaining</label>'
     +   '<div class="wst-row">'
     +     '<div class="wst-f"><label class="wst-lb">Lidar FP</label><input class="wst-tx" data-t="lifp" inputmode="numeric" placeholder="3200"></div>'
     +     '<div class="wst-f"><label class="wst-lb">Lidar QA</label><input class="wst-tx" data-t="liqa" inputmode="numeric" placeholder="3200"></div>'
@@ -5951,7 +5960,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     +   '</div>'
 
     // مكتبة الكيوهات
-    +   '<div class="wst-box">'
+    +   '<div class="wst-box" id="wstSecForm">'
     +     '<label class="wst-lb" id="wstFormTitle">تسجيل كيو جديد (بيتحفظ في المكتبة)</label>'
     +     '<div class="wst-row" style="margin-bottom:0">'
     +       '<div class="wst-f" style="flex:3;min-width:260px"><label class="wst-lb">Queue name</label><input class="wst-tx" id="wstLName" style="direction:ltr" placeholder="sc3_full_scene_lanes_3d_v4" spellcheck="false" autocomplete="off"></div>'
@@ -5963,20 +5972,24 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     +     '</div>'
     +     '<div style="font-size:11px;color:var(--gray);margin-top:8px">Project name التلقائي: أي كيو فيه alpine = SC3 Alpine، والباقي SC3 Full Scene. Tags بتتفصل بفاصلة.</div>'
     +   '</div>'
-    +   '<div class="wst-box">'
+    +   '<div class="wst-box" id="wstSecImp">'
     +     '<label class="wst-lb">لزّق المسدج القديمة هنا — بياخد أسامي الكيوهات والأرقام ويملّيهم في الكروت تحت (بيستبدل الترتيب الحالي)</label>'
     +     '<textarea class="wst-tx" id="wstImp" rows="16" style="direction:ltr;font-family:Consolas,Menlo,monospace;font-size:12px;font-weight:500" placeholder="SC3 Alpine status from Daily Task tracking&#10;queue_name (LiDAR) (3 OCT)&#10;Created FP: 0 ..." spellcheck="false"></textarea>'
     +     '<div style="margin-top:8px"><button class="mod-btn" id="wstImpGo">Import</button> <button class="mod-btn" id="wstImpClr">Clear</button></div>'
     +   '</div>'
-    +   '<div style="margin-bottom:8px"><button class="wst-sm del" id="wstDelAll">Delete all</button></div>'
+    +   '<div style="margin-bottom:8px" id="wstSecLib"><button class="wst-sm del" id="wstDelAll">Delete all</button></div>'
     +   '<div class="wst-box" style="background:var(--white);padding:6px 4px"><div id="wstLib"></div></div>'
 
     // دروب داون الإضافة
     +   '<div class="wst-row"><div class="wst-f" style="flex:3;min-width:260px"><label class="wst-lb">ضيف كيو من المكتبة (اكتب أو اختار — بيتضاف في آخر الترتيب)</label><input class="wst-tx" id="wstPick" list="wstPickList" style="direction:ltr" placeholder="اكتب للبحث أو اختار من القايمة" autocomplete="off"><datalist id="wstPickList"></datalist></div>'
     +   '<div><button class="mod-btn" id="wstAdd">Add</button> <button class="mod-btn" id="wstAddAll">Add all</button> <button class="mod-btn" id="wstClear">Clear order</button></div></div>'
     + '</div></div>'
-    + '<div class="wla-card"><div class="wla-hdr"><span class="wla-pill" style="background:#455a64">Queues</span></div><div class="wst-grid" id="wstCards"></div><div id="wstCount" class="wst-cnt"></div></div>'
-    + '<div class="wla-card" style="padding-bottom:18px"><div style="padding:16px 20px 0"><button class="mod-btn" id="wstSep"></button></div><div id="wstMsgs"></div></div>';
+    + '<div class="wla-card" id="wstSecQ"><div class="wla-hdr" style="display:flex;align-items:center;gap:10px"><span class="wla-pill" style="background:#455a64">Queues</span><button class="wst-sm del" id="wstUncheck" style="margin-left:auto">✓ Delete all check marks</button></div><div class="wst-grid" id="wstCards"></div><div id="wstCount" class="wst-cnt"></div></div>'
+    + '<div class="wla-card" id="wstSecMsg" style="padding-bottom:18px"><div style="padding:16px 20px 0"><button class="mod-btn" id="wstSep"></button></div><div id="wstMsgs"></div></div>'
+    + '<div class="wst-fnav" id="wstFnav">'
+    +   '<button data-wst-go="wstSecTop">⬆ Top</button><button data-wst-go="wstSecTot">Totals</button><button data-wst-go="wstSecForm">New Queue</button>'
+    +   '<button data-wst-go="wstSecImp">Import</button><button data-wst-go="wstSecLib">Library</button><button data-wst-go="wstSecQ">Queues</button><button data-wst-go="wstSecMsg">Messages</button>'
+    + '</div>';
   pg.appendChild(pane);
 
   // ── helpers ──
@@ -6366,15 +6379,19 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   });
   function doUndo(redo){
     if (redo ? !_redo.length : _hist.length < 2) return;
+    var _ae = document.activeElement, _fk = null;
+    if (_ae && _ae.classList && _ae.classList.contains('wst-in') && _ae.closest('.wst-card')) _fk = [_ae.closest('.wst-card').getAttribute('data-wst-k'), _ae.getAttribute('data-f')];
     if (redo) { var n = _redo.pop(); _hist.push(n); applySnap(n); }
     else { _redo.push(_hist.pop()); applySnap(_hist[_hist.length - 1]); }
-    _lastT = 0;
+    _lastT = 0; _lastCo = false;
     [].forEach.call(pane.querySelectorAll('[data-t]'), function(i){ i.value = S.tot[i.getAttribute('data-t')] || ''; });
     sepLabel(); resetForm(); renderAll();
+    if (_fk) { var _el = pane.querySelector('.wst-card[data-wst-k="' + _fk[0] + '"] [data-f="' + _fk[1] + '"]'); if (_el) _el.focus(); }
   }
   document.addEventListener('keydown', function(e){
     if (!(e.ctrlKey || e.metaKey) || pane.offsetParent === null) return;
     var k = (e.key || '').toLowerCase(), ae = document.activeElement;
+    if (e.code === 'KeyZ') k = 'z'; else if (e.code === 'KeyY') k = 'y'; // شغال حتى لو الكيبورد عربي
     if (ae && (ae.id === 'wstImp' || /^wstL/.test(ae.id || '') || ae.id === 'wstPick')) return;
     if (k === 'z' && !e.shiftKey) { e.preventDefault(); doUndo(false); }
     else if (k === 'y' || (k === 'z' && e.shiftKey)) { e.preventDefault(); doUndo(true); }
@@ -6402,6 +6419,33 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       popConfirm('تحذف كل الكيوهات (' + S.lib.length + ') من المكتبة؟ (وهتتشال من الترتيب كمان)', function(){
         S.lib = []; S.order = []; resetForm(); save(); renderAll();
       });
+      return;
+    }
+    var go = t.closest('[data-wst-go]');
+    if (go) {
+      var gid2 = go.getAttribute('data-wst-go');
+      if (gid2 === 'wstSecTop') { window.scrollTo({ top: 0, behavior: 'smooth' }); try { document.scrollingElement.scrollTo({ top: 0, behavior: 'smooth' }); } catch (x) {} var mm = document.querySelector('.main'); if (mm) mm.scrollTop = 0; }
+      else { var tg = gid(gid2); if (tg) tg.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      return;
+    }
+    if (t.id === 'wstClearData') {
+      popConfirm('تمسح كل الداتا المتخزنة والموجودة في الصفحة؟ (المكتبة والترتيب والأرقام والتشيك مارك — ممكن تتراجع بـ Ctrl+Z)', function(){
+        S.lib = []; S.order = []; S.q = ''; S.tot = { lifp: '', liqa: '', lafp: '', laqa: '' };
+        S.lbl = { li: 'SC3 Alpine + SC3 Full Scene + V4 parallel', la: 'SC3 Full Scene' };
+        S.sep = false; S.vals = {}; S.done = {};
+        [].forEach.call(pane.querySelectorAll('[data-t]'), function(i){ i.value = ''; });
+        var imp = gid('wstImp'); if (imp) imp.value = '';
+        var pk = gid('wstPick'); if (pk) pk.value = '';
+        save(); sepLabel(); resetForm(); renderAll();
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+        toast('اتمسحت كل الداتا ✅', 'ok');
+      });
+      return;
+    }
+    if (t.id === 'wstUncheck') {
+      var dn = S.done[curDate()] || {};
+      if (!Object.keys(dn).length) { toast('مفيش تشيك مارك عشان يتشال', 'err'); return; }
+      popConfirm('تشيل كل التشيك مارك؟ (ممكن تتراجع بـ Ctrl+Z)', function(){ S.done[curDate()] = {}; save(); renderCards(); });
       return;
     }
     if (t.id === 'wstLSave') { saveQueue(); return; }
