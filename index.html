@@ -5834,21 +5834,39 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
 (function(){
   var pg = gid('pgWla'); if (!pg) return;
 
-  var KEY = 'wla_stats_v1';
+  var KEY = 'wla_stats_v1';            // المفتاح القديم (مشترك) — بيتنقل لأول يوزر بس مرة واحدة
   var UIKEY = 'wla_stats_ui_v1';
-  // ── حفظ آمن: localStorage + نسخة احتياطية + sessionStorage، ويتقرا بأول نسخة سليمة ──
-  var _warned = false;
-  function persist(j){
+  // ── كل يوزر له تخزين خاص بيه (حسب الـ id بتاعه في الداشبورد) ──
+  function userKey(){
+    try {
+      if (typeof SESSION === 'undefined' || !SESSION) return null;
+      var id = SESSION.id || SESSION.email || SESSION.name;
+      return id ? (KEY + '_u' + String(id).toLowerCase().replace(/[^a-z0-9@._-]/g, '_')) : null;
+    } catch (e) { return null; }
+  }
+  var _warned = false, _loadedUK = null;
+  function persistTo(k, j){
+    if (!k) return;
     var ok = false;
-    try { localStorage.setItem(KEY, j); localStorage.setItem(KEY + '_bak', j); ok = true; } catch (e) {}
-    try { sessionStorage.setItem(KEY, j); ok = true; } catch (e) {}
+    try { localStorage.setItem(k, j); localStorage.setItem(k + '_bak', j); ok = true; } catch (e) {}
+    try { sessionStorage.setItem(k, j); ok = true; } catch (e) {}
     if (!ok && !_warned) { _warned = true; try { toast('المتصفح مانع الحفظ — الداتا مش هتفضل بعد الريلود', 'err'); } catch (e) {} }
   }
-  function loadSaved(){
-    var srcs = [function(){ return localStorage.getItem(KEY); }, function(){ return localStorage.getItem(KEY + '_bak'); }, function(){ return sessionStorage.getItem(KEY); }];
+  function persist(j){ persistTo(_loadedUK, j); }
+  function loadSaved(k){
+    if (!k) return null;
+    var srcs = [function(){ return localStorage.getItem(k); }, function(){ return localStorage.getItem(k + '_bak'); }, function(){ return sessionStorage.getItem(k); }];
     for (var i = 0; i < srcs.length; i++) {
       try { var o = JSON.parse(srcs[i]() || 'null'); if (o && typeof o === 'object') return o; } catch (e) {}
     }
+    // أول مرة ليوزر: لو الداتا القديمة المشتركة لسه محدش أخدها، أول يوزر بياخدها مرة واحدة
+    try {
+      if (!localStorage.getItem(KEY + '_claimed')) {
+        var old = JSON.parse(localStorage.getItem(KEY) || localStorage.getItem(KEY + '_bak') || 'null');
+        localStorage.setItem(KEY + '_claimed', k);
+        if (old && typeof old === 'object') return old;
+      }
+    } catch (e) {}
     return null;
   }
   var FIELDS = [['c','Created'],['s','Started'],['p','Processed'],['k','Skipped']];
@@ -5856,14 +5874,23 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   var MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   var TYPES = ['LiDAR','Lane Line','SellMapping'];
   var SRC_DEF = 'Daily Task tracking';
-  var S = { lib:[], order:[], q:'', tot:{ lifp:'', liqa:'', lafp:'', laqa:'' }, lbl:{ li:'SC3 Alpine + SC3 Full Scene + V4 parallel', la:'SC3 Full Scene' }, sep:false, vals:{}, done:{} };
+  var S = { lib:[], order:[], q:'', tot:{ lifp:'', liqa:'', lafp:'', laqa:'' }, lbl:{ li:'SC3 Alpine + SC3 Full Scene + V4 parallel', la:'SC3 Full Scene' }, sep:false, vals:{}, done:{}, slots:{ t:['','','',''], d:[false,false,false,false], day:'' } };
+  function applySaved(sv){
+    S.lib = sv.lib || []; S.order = sv.order || []; S.q = sv.q || '';
+    S.tot = Object.assign({ lifp:'', liqa:'', lafp:'', laqa:'' }, sv.tot || {});
+    S.lbl = Object.assign({ li:'SC3 Alpine + SC3 Full Scene + V4 parallel', la:'SC3 Full Scene' }, sv.lbl || {});
+    S.sep = !!sv.sep; S.vals = sv.vals || {}; S.done = sv.done || {};
+    var sl = sv.slots || {}; S.slots = { t: (sl.t || []).concat(['','','','']).slice(0,4), d: (sl.d || []).concat([false,false,false,false]).slice(0,4).map(Boolean), day: sl.day || '' };
+  }
+  function resetS(){
+    S.lib = []; S.order = []; S.q = ''; S.tot = { lifp:'', liqa:'', lafp:'', laqa:'' };
+    S.lbl = { li:'SC3 Alpine + SC3 Full Scene + V4 parallel', la:'SC3 Full Scene' };
+    S.sep = false; S.vals = {}; S.done = {}; S.slots = { t:['','','',''], d:[false,false,false,false], day:'' };
+  }
   try {
-    var sv = loadSaved();
-    if (sv) {
-      S.lib = sv.lib || []; S.order = sv.order || []; S.q = sv.q || '';
-      S.tot = Object.assign(S.tot, sv.tot || {}); S.lbl = Object.assign(S.lbl, sv.lbl || {});
-      S.sep = !!sv.sep; S.vals = sv.vals || {}; S.done = sv.done || {};
-    }
+    _loadedUK = userKey();
+    var sv = loadSaved(_loadedUK);
+    if (sv) applySaved(sv);
   } catch (e) {}
   // ── Undo / Redo (Ctrl+Z / Ctrl+Y) لكل حاجة في Stats ──
   var _hist = [JSON.stringify(S)], _redo = [], _lastT = 0, _lastCo = false;
@@ -5879,7 +5906,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   function applySnap(j){
     var o = JSON.parse(j);
     S.lib = o.lib || []; S.order = o.order || []; S.q = o.q || ''; S.tot = o.tot || {}; S.lbl = o.lbl || S.lbl;
-    S.sep = !!o.sep; S.vals = o.vals || {}; S.done = o.done || {};
+    S.sep = !!o.sep; S.vals = o.vals || {}; S.done = o.done || {}; if (o.slots) S.slots = o.slots;
     persist(j);
   }
   function uid(){ return 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
@@ -5930,6 +5957,14 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     '.wst-qbody .wst-cnt{position:sticky;top:84px;height:0;overflow:visible;display:flex;flex-direction:row;flex-wrap:nowrap;justify-content:flex-end;align-items:flex-start;gap:6px;padding:0 18px 0 0;margin:0;border:0;background:transparent;pointer-events:none;z-index:30}' +
     '.wst-qbody .wst-cnt .pl{margin-top:10px;padding:4px 11px;font-size:11px;white-space:nowrap;box-shadow:0 3px 10px rgba(0,0,0,.28);pointer-events:auto;opacity:.97}' +
     '@media (max-width:900px){#wlaStatsPane{padding-bottom:170px}.wst-qbody .wst-cnt{top:72px;padding-right:8px;gap:4px}.wst-qbody .wst-cnt .pl{padding:3px 8px;font-size:10px}.wst-qbody .wst-grid{grid-template-columns:1fr}}' +
+    '.wst-slots{margin-left:auto;display:flex;align-items:center;gap:8px;flex-wrap:wrap}' +
+    '.wst-slots-t{font-size:11px;font-weight:800;color:var(--gray);text-transform:uppercase;letter-spacing:.5px}' +
+    '.wst-slot{display:inline-flex;align-items:center;gap:6px;padding:4px 8px;border:2px solid var(--border);border-radius:10px;background:var(--gray-lt);cursor:pointer;transition:border-color .2s,background .2s}' +
+    '.wst-sk{width:18px;height:18px;accent-color:#2e7d32;cursor:pointer;margin:0}' +
+    '.wst-st{width:104px;padding:3px 6px;border:1px solid var(--border);border-radius:7px;background:var(--white);color:var(--dark);font-size:13px;font-weight:800;font-family:inherit}' +
+    '.wst-st:focus{outline:none;border-color:var(--blue)}' +
+    '.wst-slot.done{border-color:#2e7d32;background:#e8f5e9}.wst-slot.due{border-color:#e37400;background:#fff3e0}' +
+    'body.dark .wst-slot.done{background:#17331c}body.dark .wst-slot.due{background:#3a2a10}' +
     '.wst-top{display:flex;justify-content:flex-end;margin-bottom:12px}' +
     '.wst-clr{padding:8px 18px;border-radius:9px;border:2px solid var(--danger-text);background:var(--danger-bg);color:var(--danger-text);font-size:13px;font-weight:800;cursor:pointer;font-family:inherit}' +
     '.wst-clr:hover{background:var(--danger-text);color:#fff}' +
@@ -5954,6 +5989,12 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     '<div class="wst-top" id="wstSecTop"><button class="wst-clr" id="wstClearData">🗑 Clear Data</button></div>'
     + '<div class="wla-card">'
     + '<div class="wla-hdr"><span class="wla-pill" style="background:var(--blue)">Stats</span><span class="wla-date" id="wstDate"></span>'
+    + '<div class="wst-slots" id="wstSlots"><span class="wst-slots-t">Stats</span>'
+    +   '<label class="wst-slot" data-i="0"><input type="checkbox" class="wst-sk" data-i="0"><input type="time" class="wst-st" data-i="0"></label>'
+    +   '<label class="wst-slot" data-i="1"><input type="checkbox" class="wst-sk" data-i="1"><input type="time" class="wst-st" data-i="1"></label>'
+    +   '<label class="wst-slot" data-i="2"><input type="checkbox" class="wst-sk" data-i="2"><input type="time" class="wst-st" data-i="2"></label>'
+    +   '<label class="wst-slot" data-i="3"><input type="checkbox" class="wst-sk" data-i="3"><input type="time" class="wst-st" data-i="3"></label>'
+    + '</div>'
     + '</div>'
     + '<div class="wla-sec" style="padding-top:14px">'
 
@@ -6308,10 +6349,56 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     b.style.borderColor = S.sep ? 'var(--blue)' : '';
   }
   function renderAll(){ renderTypes(); renderLib(); renderPick(); renderCards(); renderMsgs(); }
+  // ── مواعيد الـ 4 ستاتس + التشيك بوكس (لكل يوزر مواعيده، والتشيكات بتتصفّر كل يوم) ──
+  function nowHM(){ var d = new Date(); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+  function syncSlots(){
+    var box = gid('wstSlots'); if (!box) return;
+    var today = todayISO();
+    if (S.slots.day !== today) { S.slots.d = [false, false, false, false]; S.slots.day = today; save(); }
+    var hm = nowHM();
+    [].forEach.call(box.querySelectorAll('.wst-slot'), function(lb){
+      var i = parseInt(lb.getAttribute('data-i'), 10), t = S.slots.t[i] || '', d = !!S.slots.d[i];
+      var ti = lb.querySelector('.wst-st'), ck = lb.querySelector('.wst-sk');
+      if (document.activeElement !== ti) ti.value = t;
+      ck.checked = d;
+      lb.classList.toggle('done', d);
+      lb.classList.toggle('due', !d && !!t && hm >= t);
+    });
+  }
+  (function(){
+    var box = gid('wstSlots'); if (!box) return;
+    box.addEventListener('change', function(e){
+      var t = e.target, i = parseInt(t.getAttribute('data-i'), 10); if (isNaN(i)) return;
+      if (t.classList.contains('wst-st')) S.slots.t[i] = t.value || '';
+      else if (t.classList.contains('wst-sk')) S.slots.d[i] = !!t.checked;
+      save(); syncSlots();
+    });
+    box.addEventListener('input', function(e){
+      var t = e.target; if (!t.classList.contains('wst-st')) return;
+      S.slots.t[parseInt(t.getAttribute('data-i'), 10)] = t.value || ''; save(true);
+    });
+    setInterval(function(){ if (pane.offsetParent !== null) syncSlots(); }, 30000);
+  })();
+
+  // ── لو اليوزر اتغيّر (لوج آوت/لوج إن) نحفظ بتاع القديم ونحمّل بتاع الجديد ──
+  function ensureUser(){
+    var k = userKey();
+    if (k === _loadedUK) return;
+    persistTo(_loadedUK, JSON.stringify(S));
+    _loadedUK = k;
+    var sv = loadSaved(k);
+    if (sv) applySaved(sv); else resetS();
+    _hist = [JSON.stringify(S)]; _redo = [];
+    [].forEach.call(pane.querySelectorAll('[data-t]'), function(i){ i.value = S.tot[i.getAttribute('data-t')] || ''; });
+    var imp = gid('wstImp'); if (imp) imp.value = '';
+    var pk = gid('wstPick'); if (pk) pk.value = '';
+    sepLabel(); resetForm();
+  }
   function showStats(){
+    ensureUser();
     if (!DP.getVal('wlaDate')) DP.setVal('wlaDate', todayISO(), false);
     gid('wstDate').textContent = dLbl(curDate());
-    renderAll();
+    renderAll(); syncSlots();
   }
   function move(id, dir){
     var i = S.order.indexOf(id), j = i + dir;
