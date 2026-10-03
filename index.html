@@ -6490,7 +6490,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   function showStats(){
     ensureUser();
     if (!DP.getVal('wlaDate')) DP.setVal('wlaDate', todayISO(), false);
-    if (swapDay(curDate())) { _hist = [JSON.stringify(S)]; _redo = []; refreshInputs(); }
+    try { if (swapDay(curDate())) { _hist = [JSON.stringify(S)]; _redo = []; refreshInputs(); } } catch (e) { try { console.error('swapDay', e); } catch (x) {} }
     gid('wstDate').textContent = dLbl(curDate());
     renderAll(); syncSlots();
   }
@@ -6709,6 +6709,12 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   window.addEventListener('beforeunload', flush);
   window.addEventListener('pagehide', flush);
   document.addEventListener('visibilitychange', function(){ if (document.hidden) flush(); });
+
+  // ── اختيار التاريخ لازم يشتغل من أول لحظة (حتى لو الصفحة اتفتحت على Stats بعد ريلود) ──
+  (function(){
+    var di = gid('wlaDate');
+    if (di && !di._dpWired) { di.addEventListener('click', function(){ DP.open('wlaDate'); }); di._dpWired = true; }
+  })();
 
   // ── التبويبات ──
   var _origLoad = window.loadWla, _restored = false;
