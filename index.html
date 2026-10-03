@@ -5839,6 +5839,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   var FKEY = { created:'c', started:'s', processed:'p', skipped:'k' };
   var MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
   var TYPES = ['LiDAR','Lane Line','SellMapping'];
+  var SRC_DEF = 'Daily Task tracking';
   var S = { lib:[], order:[], q:'', tot:{ lifp:'', liqa:'', lafp:'', laqa:'' }, lbl:{ li:'SC3 Alpine + SC3 Full Scene + V4 parallel', la:'SC3 Full Scene' }, sep:false, vals:{} };
   try {
     var sv = JSON.parse(localStorage.getItem(KEY) || 'null');
@@ -5918,16 +5919,18 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     +       '<div class="wst-f" style="flex:3;min-width:260px"><label class="wst-lb">Queue name</label><input class="wst-tx" id="wstLName" style="direction:ltr" placeholder="sc3_full_scene_lanes_3d_v4" spellcheck="false" autocomplete="off"></div>'
     +       '<div class="wst-f"><label class="wst-lb">Type</label><input class="wst-tx" id="wstLType" list="wstTypes" value="LiDAR" placeholder="اختار أو اكتب" autocomplete="off"><datalist id="wstTypes"></datalist></div>'
     +       '<div class="wst-f"><label class="wst-lb">Tags (اختياري)</label><input class="wst-tx" id="wstLTags" style="direction:ltr" placeholder="ASAP" autocomplete="off"></div>'
-    +       '<div class="wst-f"><label class="wst-lb">Header (اختياري)</label><input class="wst-tx" id="wstLHdr" style="direction:ltr" placeholder="تلقائي" autocomplete="off"></div>'
+    +       '<div class="wst-f"><label class="wst-lb">Project name (اختياري)</label><input class="wst-tx" id="wstLHdr" style="direction:ltr" placeholder="تلقائي" autocomplete="off"></div>'
+    +       '<div class="wst-f"><label class="wst-lb">From (اختياري)</label><input class="wst-tx" id="wstLSrc" list="wstSrcs" style="direction:ltr" placeholder="Daily Task tracking" autocomplete="off"><datalist id="wstSrcs"><option value="Labeler Performance"><option value="Daily Task Tracking"></datalist></div>'
     +       '<div><button class="mod-btn" id="wstLSave">Save</button> <button class="mod-btn" id="wstLCancel" style="display:none">Cancel</button></div>'
     +     '</div>'
-    +     '<div style="font-size:11px;color:var(--gray);margin-top:8px">Header التلقائي: أي كيو فيه alpine = SC3 Alpine، والباقي SC3 Full Scene. Tags بتتفصل بفاصلة.</div>'
+    +     '<div style="font-size:11px;color:var(--gray);margin-top:8px">Project name التلقائي: أي كيو فيه alpine = SC3 Alpine، والباقي SC3 Full Scene. Tags بتتفصل بفاصلة.</div>'
     +   '</div>'
     +   '<div class="wst-box">'
     +     '<label class="wst-lb">لزّق المسدج القديمة هنا — بياخد أسامي الكيوهات والأرقام ويملّيهم في الكروت تحت (بيستبدل الترتيب الحالي)</label>'
-    +     '<textarea class="wst-tx" id="wstImp" rows="6" style="direction:ltr;font-family:Consolas,Menlo,monospace;font-size:12px;font-weight:500" placeholder="SC3 Alpine status from Daily Task tracking&#10;queue_name (LiDAR) (3 OCT)&#10;Created FP: 0 ..." spellcheck="false"></textarea>'
+    +     '<textarea class="wst-tx" id="wstImp" rows="16" style="direction:ltr;font-family:Consolas,Menlo,monospace;font-size:12px;font-weight:500" placeholder="SC3 Alpine status from Daily Task tracking&#10;queue_name (LiDAR) (3 OCT)&#10;Created FP: 0 ..." spellcheck="false"></textarea>'
     +     '<div style="margin-top:8px"><button class="mod-btn" id="wstImpGo">Import</button> <button class="mod-btn" id="wstImpClr">Clear</button></div>'
     +   '</div>'
+    +   '<div style="margin-bottom:8px"><button class="wst-sm del" id="wstDelAll">Delete all</button></div>'
     +   '<div class="wst-box" style="background:var(--white);padding:6px 4px"><div id="wstLib"></div></div>'
 
     // دروب داون الإضافة
@@ -5972,6 +5975,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     return {
       key: e.id, name: e.name, type: t,
       header: (e.hdr || '').trim() || headerOf(e.name),
+      src: (e.src || '').trim() || SRC_DEF,
       kind: kindOf(t),
       mod: t,
       extras: (e.tags || '').split(',').map(function(x){ return x.trim(); }).filter(Boolean)
@@ -6017,7 +6021,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
 
   // ── بناء الرسالة ──
   function block(c){
-    var v = vOf(c), l = [c.header + ' status from Daily Task tracking'];
+    var v = vOf(c), l = [c.header + ' status from ' + c.src];
     l.push(titleLine(c));
     FIELDS.forEach(function(f){ ['fp','qa'].forEach(function(p){ l.push(f[1] + ' ' + p.toUpperCase() + ': ' + fmt(numOf(v[f[0] + '_' + p]))); }); });
     return l.join('\n');
@@ -6128,22 +6132,22 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
 
   function resetForm(){
     _edit = null;
-    gid('wstLName').value = ''; gid('wstLTags').value = ''; gid('wstLHdr').value = ''; gid('wstLType').value = 'LiDAR';
+    gid('wstLName').value = ''; gid('wstLTags').value = ''; gid('wstLHdr').value = ''; gid('wstLSrc').value = ''; gid('wstLType').value = 'LiDAR';
     gid('wstFormTitle').textContent = 'تسجيل كيو جديد (بيتحفظ في المكتبة)';
     gid('wstLSave').textContent = 'Save'; gid('wstLCancel').style.display = 'none';
   }
   function saveQueue(){
     var name = gid('wstLName').value.trim(), type = normType(gid('wstLType').value);
     var tags = gid('wstLTags').value.split(',').map(function(x){ return x.trim(); }).filter(Boolean).join(', ');
-    var hdr = gid('wstLHdr').value.trim();
+    var hdr = gid('wstLHdr').value.trim(), src = gid('wstLSrc').value.trim();
     if (!name) { toast('اكتب اسم الكيو', 'err'); return; }
     if (!type) { toast('اختار أو اكتب النوع', 'err'); return; }
     var dup = S.lib.some(function(e){ return e.id !== _edit && e.name.toLowerCase() === name.toLowerCase() && e.type === type; });
     if (dup) { toast('الكيو ده متسجل قبل كده بنفس النوع', 'err'); return; }
     if (_edit) {
-      S.lib.forEach(function(e){ if (e.id === _edit) { e.name = name; e.type = type; e.tags = tags; e.hdr = hdr; } });
+      S.lib.forEach(function(e){ if (e.id === _edit) { e.name = name; e.type = type; e.tags = tags; e.hdr = hdr; e.src = src; } });
     } else {
-      var id = uid(); S.lib.push({ id: id, name: name, type: type, tags: tags, hdr: hdr });
+      var id = uid(); S.lib.push({ id: id, name: name, type: type, tags: tags, hdr: hdr, src: src });
     }
     save(); resetForm(); renderAll();
   }
@@ -6154,8 +6158,9 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     var blocks = [], cur = null, tot = {};
     for (var i = 0; i < lines.length; i++) {
       var L = lines[i]; if (!L) continue;
-      if (/status from Daily Task tracking/i.test(L)) {
-        cur = { header: L.replace(/\s*status from Daily Task tracking.*/i, '').trim(), title: '', v: {} };
+      var sm = L.match(/^(.*?)\s+status from\s+(.+)$/i);
+      if (sm) {
+        cur = { header: sm[1].trim(), src: sm[2].trim(), title: '', v: {} };
         blocks.push(cur); continue;
       }
       var fm = L.match(/^(Created|Started|Processed|Skipped)\s+(FP|QA)\s*:\s*([\d,\.]*)/i);
@@ -6188,7 +6193,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       }
       var e = S.lib.filter(function(x){ return x.name.toLowerCase() === name.toLowerCase() && normType(x.type).toLowerCase() === type.toLowerCase(); })[0];
       if (!e) {
-        e = { id: uid(), name: name, type: type, tags: tags.join(', '), hdr: (b.header && b.header !== headerOf(name)) ? b.header : '' };
+        e = { id: uid(), name: name, type: type, tags: tags.join(', '), hdr: (b.header && b.header !== headerOf(name)) ? b.header : '', src: (b.src && b.src.toLowerCase() !== SRC_DEF.toLowerCase()) ? b.src : '' };
         S.lib.push(e);
       }
       if (order.indexOf(e.id) === -1) order.push(e.id);
@@ -6212,7 +6217,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
         + '<button class="wst-sm" data-wst-up="' + id + '" title="فوق">↑</button>'
         + '<button class="wst-sm" data-wst-dn="' + id + '" title="تحت">↓</button>'
         + '<button class="wst-sm del" data-wst-rm="' + id + '" title="شيل من الترتيب">✕</button></span></div>'
-        + '<small>' + esc(c.header) + ' status from Daily Task tracking</small></div>'
+        + '<small>' + esc(c.header) + ' status from ' + esc(c.src) + '</small></div>'
         + '<table class="wst-t"><thead><tr><th></th><th>FP</th><th>QA</th></tr></thead><tbody>';
       FIELDS.forEach(function(f){
         h += '<tr><td class="l">' + f[1] + '</td>';
@@ -6266,13 +6271,13 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   // لما تدوس على خانة Type الاقتراحات كلها بتظهر (القيمة بترجع لو سيبتها فاضية)
   var _typeBak = '';
   pane.addEventListener('focusin', function(e){
-    if (e.target.id === 'wstLType') { _typeBak = e.target.value; e.target.value = ''; }
+    if (e.target.id === 'wstLType' || e.target.id === 'wstLSrc') { e.target._bak = e.target.value; e.target.value = ''; }
   });
   pane.addEventListener('focusout', function(e){
-    if (e.target.id === 'wstLType' && !e.target.value.trim()) e.target.value = _typeBak;
+    if ((e.target.id === 'wstLType' || e.target.id === 'wstLSrc') && !e.target.value.trim()) e.target.value = e.target._bak || '';
   });
   pane.addEventListener('keydown', function(e){
-    if (e.key === 'Enter' && e.target.id && /^wstL(Name|Tags|Hdr)$/.test(e.target.id)) { e.preventDefault(); saveQueue(); }
+    if (e.key === 'Enter' && e.target.id && /^wstL(Name|Tags|Hdr|Src)$/.test(e.target.id)) { e.preventDefault(); saveQueue(); }
     if (e.key === 'Enter' && e.target.id === 'wstPick') { e.preventDefault(); addPick(); }
   });
   pane.addEventListener('click', function(e){
@@ -6284,6 +6289,13 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       return;
     }
     if (t.id === 'wstImpClr') { gid('wstImp').value = ''; return; }
+    if (t.id === 'wstDelAll') {
+      if (!S.lib.length) return;
+      popConfirm('تحذف كل الكيوهات (' + S.lib.length + ') من المكتبة؟ (وهتتشال من الترتيب كمان)', function(){
+        S.lib = []; S.order = []; resetForm(); save(); renderAll();
+      });
+      return;
+    }
     if (t.id === 'wstLSave') { saveQueue(); return; }
     if (t.id === 'wstLCancel') { resetForm(); return; }
     if (t.id === 'wstAdd') { addPick(); return; }
@@ -6299,7 +6311,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     if ((b = t.closest('[data-wst-edit]'))) {
       var id = b.getAttribute('data-wst-edit'), q = S.lib.filter(function(x){ return x.id === id; })[0]; if (!q) return;
       _edit = id;
-      gid('wstLName').value = q.name; gid('wstLType').value = q.type; gid('wstLTags').value = q.tags || ''; gid('wstLHdr').value = q.hdr || '';
+      gid('wstLName').value = q.name; gid('wstLType').value = q.type; gid('wstLTags').value = q.tags || ''; gid('wstLHdr').value = q.hdr || ''; gid('wstLSrc').value = q.src || '';
       gid('wstFormTitle').textContent = 'تعديل كيو: ' + q.name;
       gid('wstLSave').textContent = 'Update'; gid('wstLCancel').style.display = '';
       gid('wstLName').focus(); gid('wstLName').scrollIntoView({ block: 'center', behavior: 'smooth' });
