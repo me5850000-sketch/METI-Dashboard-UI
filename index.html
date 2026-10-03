@@ -553,6 +553,69 @@ body.dark #detailBd [style*="color:var(--blue)"] { color: #7eaaff !important; }
 .pc-btns{display:flex;gap:10px;margin-top:18px}.pc-btns button{flex:1;border:0;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
 .pc-no{background:#f1f3f4;color:#5f6368}.pc-yes{background:#d93025;color:#fff}.pc-yes:hover{background:#b3261e}
 body.dark .pc-box{background:#2a2b2e;color:#e8eaed}body.dark .pc-no{background:#3c4043;color:#e8eaed}body.dark .pc-ic{background:#4a2523}
+/* ═══ WLA PAGE — MOBILE ═══ */
+@media(max-width:768px){
+  /* شريط الفلتر: التاريخ + الشيفتات + Refresh */
+  #pgWla .filter-bar{flex-direction:row!important;flex-wrap:wrap!important;align-items:center!important;gap:8px!important;padding:10px!important;margin-bottom:14px!important}
+  #pgWla .dp-wrap{flex:1 1 150px;min-width:0!important}
+  #pgWla #wlaShiftBtns{width:100%;gap:6px!important}
+  #pgWla #wlaShiftBtns>label{flex:1 1 100%;margin:0}
+  #pgWla #wlaShiftBtns .mod-btn{flex:1 1 calc(33.33% - 6px);padding:9px 4px!important;font-size:12px!important;white-space:nowrap}
+  #pgWla #wlaRefresh{margin-left:0!important;width:100%;padding:10px!important}
+
+  /* الكروت */
+  #pgWla .wla-card{border-radius:12px;margin-bottom:14px}
+  #pgWla .wla-hdr{padding:10px 12px!important;gap:8px!important}
+  #pgWla .wla-pill{font-size:13px!important;padding:5px 14px!important}
+  #pgWla .wla-date{font-size:11px;flex:1 1 100%;order:3}
+  #pgWla .wla-copy{padding:6px 12px}
+  #pgWla .wla-stats{padding:10px 12px;gap:8px}
+  #pgWla .wla-stat{flex:1 1 calc(50% - 8px);min-width:0;padding:8px 10px}
+  #pgWla .wla-stat .v{font-size:20px}
+  #pgWla .wla-stat .v small{font-size:11px}
+  #pgWla .wla-sec{padding:0 10px 14px}
+  #pgWla .wla-tbar{padding:8px 12px;font-size:13px;gap:8px;flex-wrap:wrap}
+
+  /* الجداول: تتظبط على عرض الشاشة بدل ما تعمل سكرول */
+  #pgWla .wla-tbl{min-width:0}
+  #pgWla .wla-tbl th{font-size:9px!important;padding:7px 3px!important;letter-spacing:0}
+  #pgWla .wla-tbl td{font-size:11px!important;padding:6px 3px!important}
+  #pgWla .wla-tbl td.n{width:22px}
+  #pgWla .wla-tbl td.q{word-break:break-word}
+  #pgWla .wla-tbl .wla-rcopy{padding:3px 6px;font-size:10px}
+
+  /* Planner: جروب واحد في العمود، والجدول يسكرول لو احتاج */
+  #pgWla .wla-pgrid{grid-template-columns:1fr!important;gap:12px}
+  #pgWla .wla-tbl-p{min-width:460px}
+  #pgWla .wla-pin{gap:10px;padding:10px 12px}
+  #pgWla .wla-plab{flex-wrap:wrap}
+  #pgWla .wla-ppl{width:70px}
+  #pgWla .wla-rate{width:64px}
+  #pgWla .wla-exp{width:60px;padding:5px 4px}
+  #pgWla .wla-msgbox{padding:12px;font-size:12.5px}
+  #pgWla .wla-msgbox ul{padding-left:18px}
+
+  /* تاب Stats */
+  .wla-tabs{gap:0}
+  .wla-tab{flex:1;padding:10px 8px!important;font-size:13px!important}
+  #wlaStatsPane .wst-row{gap:10px}
+  #wlaStatsPane .wst-f{flex:1 1 100%;min-width:0}
+  #wlaStatsPane .wst-box{padding:10px}
+  #wlaStatsPane .wst-grid{padding:12px 10px 16px;gap:12px}
+  #wlaStatsPane .wst-ch{padding:10px 12px;font-size:13px}
+  #wlaStatsPane .wst-card .wst-t th{font-size:12px!important;padding:8px 4px!important}
+  #wlaStatsPane .wst-card .wst-t td{padding:7px 6px}
+  #wlaStatsPane .wst-card .wst-t td.l{font-size:13px}
+  #wlaStatsPane .wst-card .wst-t .wla-exp{height:40px;font-size:17px!important;max-width:110px}
+  #wlaStatsPane .wst-slots{margin-left:0;width:100%}
+  #wlaStatsPane .wst-st{width:92px}
+  #wlaStatsPane .wst-top{justify-content:stretch}
+  #wlaStatsPane .wst-clr{width:100%}
+  #wlaStatsPane .wst-lr{gap:6px;padding:8px 6px}
+}
+@media(max-width:380px){
+  #pgWla .wla-stat{flex:1 1 100%}
+}
 </style>
 </head>
 <body>
@@ -867,8 +930,6 @@ body.dark .pc-box{background:#2a2b2e;color:#e8eaed}body.dark .pc-no{background:#
             <div class="dp-wrap" id="dpWrap-wlaDate"><input type="text" class="dp-input" id="wlaDate" readonly placeholder="Select date" autocomplete="off"><span class="dp-icon"></span></div>
             <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center" id="wlaShiftBtns">
               <label>Shift</label>
-              <button class="mod-btn wla-shift-btn" data-wlashift="All" style="background:var(--blue);color:white;border-color:var(--blue)">Total</button>
-              <button class="mod-btn wla-shift-btn" data-wlashift="Each">All 3 Shifts</button>
               <button class="mod-btn wla-shift-btn" data-wlashift="Morning">Morning</button>
               <button class="mod-btn wla-shift-btn" data-wlashift="Night">Night</button>
               <button class="mod-btn wla-shift-btn" data-wlashift="Over Night">Over Night</button>
@@ -5212,7 +5273,8 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   var WLA_ROLES = ['admin','sm','ssv','sv','wla'];
   var WLA_SHIFTS = ['Morning','Night','Over Night'];
   var WLA_LETTER = {'Morning':'M','Night':'N','Over Night':'ON','Total':'T'};
-  var _wlaShift = 'All';
+  // الافتراضي: الشيفت الحالي حسب الساعة (Over Night 00-08 | Morning 08-16 | Night 16-24)
+  var _wlaShift = (function(){ var h = new Date().getHours(); return h < 8 ? 'Over Night' : (h < 16 ? 'Morning' : 'Night'); })();
   var WIN = { 'Morning':'8 AM → 4 PM', 'Night':'4 PM → 12 AM', 'Over Night':'12 AM → 8 AM', 'Total':'12 AM → 12 AM (Full Day)' };
   var _wla = { seq:0, model:null, other:0, date:'' };
   window._wla = _wla; // للـ debugging من الكونسول
