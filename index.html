@@ -6283,6 +6283,21 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   pane.addEventListener('focusout', function(e){
     if ((e.target.id === 'wstLType' || e.target.id === 'wstLSrc') && !e.target.value.trim()) e.target.value = e.target._bak || '';
   });
+  // لصق أكتر من رقم (سطور / مسافات / تاب) في خانة → بيتوزعوا جنب بعض: FP ثم QA ثم السطر اللي بعده
+  pane.addEventListener('paste', function(e){
+    var t = e.target; if (!t || !t.classList || !t.classList.contains('wst-in')) return;
+    var txt = (e.clipboardData || window.clipboardData).getData('text') || '';
+    var toks = txt.split(/[\s\t]+/).filter(function(x){ return /\d/.test(x); });
+    if (toks.length < 2) return;
+    e.preventDefault();
+    var card = t.closest('.wst-card'), ins = [].slice.call(card.querySelectorAll('.wst-in')), i = ins.indexOf(t);
+    toks.forEach(function(tok, k){
+      var el = ins[i + k]; if (!el) return;
+      el.value = tok; setV(card.getAttribute('data-wst-k'), el.getAttribute('data-f'), tok);
+    });
+    renderMsgs();
+    var last = ins[Math.min(i + toks.length, ins.length - 1)]; if (last) last.focus();
+  });
   pane.addEventListener('keydown', function(e){
     if (e.key === 'Enter' && e.target.id && /^wstL(Name|Tags|Hdr|Src)$/.test(e.target.id)) { e.preventDefault(); saveQueue(); }
     if (e.key === 'Enter' && e.target.id === 'wstPick') { e.preventDefault(); addPick(); }
