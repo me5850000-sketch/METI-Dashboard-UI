@@ -545,6 +545,14 @@ body.dark #detailBd [style*="color:var(--blue)"] { color: #7eaaff !important; }
   .modal .detail-grid { grid-template-columns: 1fr 1fr !important; gap: 10px !important; }
   .detail-item .detail-val { font-size: 15px !important; }
 }
+
+.pc-bd{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100000;display:flex;align-items:center;justify-content:center;padding:16px;opacity:0;transition:opacity .15s}.pc-bd.show{opacity:1}
+.pc-box{background:#fff;color:#202124;border-radius:16px;width:100%;max-width:380px;padding:22px 20px 16px;box-shadow:0 12px 40px rgba(0,0,0,.3);transform:scale(.94);transition:transform .15s;text-align:center}.pc-bd.show .pc-box{transform:scale(1)}
+.pc-ic{width:44px;height:44px;border-radius:50%;background:#fde8e8;color:#d93025;display:flex;align-items:center;justify-content:center;font-size:22px;margin:0 auto 12px}
+.pc-msg{font-size:15px;font-weight:600;line-height:1.5;word-break:break-word}.pc-sub{font-size:13px;opacity:.65;margin-top:6px;line-height:1.5}
+.pc-btns{display:flex;gap:10px;margin-top:18px}.pc-btns button{flex:1;border:0;border-radius:10px;padding:11px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit}
+.pc-no{background:#f1f3f4;color:#5f6368}.pc-yes{background:#d93025;color:#fff}.pc-yes:hover{background:#b3261e}
+body.dark .pc-box{background:#2a2b2e;color:#e8eaed}body.dark .pc-no{background:#3c4043;color:#e8eaed}body.dark .pc-ic{background:#4a2523}
 </style>
 </head>
 <body>
@@ -941,6 +949,16 @@ body.dark #detailBd [style*="color:var(--blue)"] { color: #7eaaff !important; }
 <div class="toast" id="toast"></div>
 
 <script>
+window.popConfirm=function(msg,onOk,o){o=o||{};var sub='';var m=String(msg);var p=m.match(/^([\s\S]*?)\s*\(([^()]*)\)\s*$/);if(p){m=p[1];sub=p[2];}
+var bd=document.createElement('div');bd.className='pc-bd';
+var rtl=/[\u0600-\u06FF]/.test(msg);
+bd.innerHTML='<div class="pc-box" dir="'+(rtl?'rtl':'ltr')+'"><div class="pc-ic">🗑</div><div class="pc-msg"></div>'+(sub?'<div class="pc-sub"></div>':'')+'<div class="pc-btns"><button class="pc-no"></button><button class="pc-yes"></button></div></div>';
+bd.querySelector('.pc-msg').textContent=m;if(sub)bd.querySelector('.pc-sub').textContent=sub;
+bd.querySelector('.pc-no').textContent=o.no||(rtl?'إلغاء':'Cancel');bd.querySelector('.pc-yes').textContent=o.yes||(rtl?'تأكيد':'Confirm');
+function close(ok){document.removeEventListener('keydown',kd,true);bd.classList.remove('show');setTimeout(function(){bd.remove();},150);if(ok&&onOk)onOk();}
+function kd(e){if(e.key==='Escape'){e.preventDefault();close(false);}else if(e.key==='Enter'){e.preventDefault();close(true);}}
+bd.addEventListener('click',function(e){if(e.target===bd||e.target.classList.contains('pc-no'))close(false);else if(e.target.classList.contains('pc-yes'))close(true);});
+document.addEventListener('keydown',kd,true);document.body.appendChild(bd);requestAnimationFrame(function(){bd.classList.add('show');});bd.querySelector('.pc-yes').focus();};
 // ═══════════════════════════════════════════════
 // BRIDGE: replaces google.script.run
 // Calls your deployed Apps Script via fetch()
@@ -3287,7 +3305,7 @@ window.onload=function(){
   gid('modalCloseBtn').addEventListener('click',closeModal);gid('modalCancelBtn').addEventListener('click',closeModal);gid('modalSaveBtn').addEventListener('click',saveUser);gid('modalBd').addEventListener('click',function(e){if(e.target===gid('modalBd'))closeModal();});
   gid('changePwdCloseBtn').addEventListener('click',closeChangePwd);gid('changePwdCancelBtn').addEventListener('click',closeChangePwd);gid('changePwdSaveBtn').addEventListener('click',saveChangePwd);gid('changePwdBd').addEventListener('click',function(e){if(e.target===gid('changePwdBd'))closeChangePwd();});
   gid('detailCloseBtn').addEventListener('click',closeDetail);gid('detailBd').addEventListener('click',function(e){if(e.target===gid('detailBd'))closeDetail();});
-  gid('usersArea').addEventListener('click',function(e){var editBtn=e.target.closest('.ib-edit');if(editBtn){var u=tryParse(decodeURIComponent(editBtn.getAttribute('data-uid')));if(u)openModal(u);return;}var delBtn=e.target.closest('.ib-del');if(delBtn){var uid=delBtn.getAttribute('data-uid'),uname=decodeURIComponent(delBtn.getAttribute('data-uname')||'');if(!confirm('Delete user "'+titleCase(uname)+'"?'))return;google.script.run.withSuccessHandler(function(r){if(r.err){toast(r.err,'err');return;}toast('User deleted ✅','ok');loadUsers();}).withFailureHandler(function(e){toast(e.message,'err');}).deleteUser(TOKEN,uid);}});
+  gid('usersArea').addEventListener('click',function(e){var editBtn=e.target.closest('.ib-edit');if(editBtn){var u=tryParse(decodeURIComponent(editBtn.getAttribute('data-uid')));if(u)openModal(u);return;}var delBtn=e.target.closest('.ib-del');if(delBtn){var uid=delBtn.getAttribute('data-uid'),uname=decodeURIComponent(delBtn.getAttribute('data-uname')||'');popConfirm('Delete user "'+titleCase(uname)+'"?',function(){google.script.run.withSuccessHandler(function(r){if(r.err){toast(r.err,'err');return;}toast('User deleted ✅','ok');loadUsers();}).withFailureHandler(function(e){toast(e.message,'err');}).deleteUser(TOKEN,uid);});}});
   gid('btnAddUser').addEventListener('click',function(){openModal(null);});
 
   // Init pages
@@ -3458,7 +3476,7 @@ function confirmApprove() {
 
 function declineUser(rowId, encodedName) {
   var name = decodeURIComponent(encodedName);
-  if (!confirm('Decline request from "' + titleCase(name) + '"?')) return;
+  popConfirm('Decline request from "' + titleCase(name) + '"?', function(){
   google.script.run
     .withSuccessHandler(function(r) {
       if (r.err) { toast(r.err, 'err'); return; }
@@ -3467,6 +3485,7 @@ function declineUser(rowId, encodedName) {
     })
     .withFailureHandler(function(e) { toast(e.message, 'err'); })
     .approveUser(TOKEN, rowId, 'decline', {});
+  }, { yes: 'Decline' });
 }
 </script>
   <script>
@@ -5852,18 +5871,19 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     '.wst-bd{font-size:11px;font-weight:800;color:#fff;border-radius:10px;padding:2px 9px}' +
     '.wst-sm{padding:4px 11px;border-radius:7px;border:2px solid var(--border);background:var(--white);color:var(--gray);font-size:12px;font-weight:800;cursor:pointer;font-family:inherit}' +
     '.wst-sm:hover{border-color:var(--blue);color:var(--blue)}.wst-sm.del:hover{border-color:var(--danger-text);color:var(--danger-text)}' +
-    '.wst-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:14px;padding:14px 20px 18px}' +
+    '.wst-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(380px,1fr));gap:18px;padding:16px 20px 20px}' +
     '.wst-card{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--white)}' +
-    '.wst-ch{padding:10px 14px;background:var(--gray-lt);font-weight:800;font-size:13px;color:var(--dark)}' +
+    '.wst-ch{padding:12px 16px;background:var(--gray-lt);font-weight:800;font-size:14px;color:var(--dark)}' +
     '.wst-chr{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}' +
     '.wst-chr>span:first-child{word-break:break-all;direction:ltr;text-align:left}' +
     '.wst-ch small{display:block;margin-top:3px;font-size:11px;font-weight:700;color:var(--gray)}' +
     '.wst-mv{display:flex;gap:4px;flex-shrink:0}.wst-mv .wst-sm{padding:2px 8px}' +
     '.wst-t{width:100%;border-collapse:collapse}' +
-    '.wst-t th{font-size:11px;font-weight:800;color:var(--gray);padding:7px 8px;text-align:center}' +
-    '.wst-t td{padding:5px 8px;text-align:center;border-top:1px solid var(--border)}' +
-    '.wst-t td.l{text-align:left;font-size:12px;font-weight:800;color:var(--dark)}' +
-    '.wst-t .wla-exp{width:84px}' +
+    '.wst-card .wst-t th{background:#1c4587 !important;color:#fff !important;font-size:15px !important;font-weight:800 !important;letter-spacing:1px;padding:10px 8px !important;text-align:center}' +
+    '.wst-card .wst-t td{padding:9px 10px;text-align:center;border-top:1px solid var(--border)}' +
+    '.wst-card .wst-t td.l{text-align:left;font-size:15px;font-weight:800;color:var(--dark)}' +
+    '.wst-card .wst-t .wla-exp{width:100% !important;max-width:150px;height:46px;box-sizing:border-box;padding:6px 10px !important;font-size:20px !important;font-weight:800 !important;border:2px solid #9aa7b8 !important;border-radius:10px !important;background:#fff !important;color:var(--dark) !important;text-align:center}' +
+    '.wst-card .wst-t .wla-exp:focus{border-color:var(--blue) !important;box-shadow:0 0 0 3px rgba(26,115,232,.18);outline:none}' +
     '.wst-msg{white-space:pre-wrap;word-break:break-word;direction:ltr;text-align:left;padding:14px 16px;border:1px solid var(--border);border-top:none;border-radius:0 0 10px 10px;font-size:13px;line-height:1.6;font-family:Consolas,Menlo,monospace;color:var(--dark);background:var(--white)}';
   document.head.appendChild(st2);
 
@@ -5903,10 +5923,15 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     +     '</div>'
     +     '<div style="font-size:11px;color:var(--gray);margin-top:8px">Header التلقائي: أي كيو فيه alpine = SC3 Alpine، والباقي SC3 Full Scene. Tags بتتفصل بفاصلة.</div>'
     +   '</div>'
+    +   '<div class="wst-box">'
+    +     '<label class="wst-lb">لزّق المسدج القديمة هنا — بياخد أسامي الكيوهات والأرقام ويملّيهم في الكروت تحت (بيستبدل الترتيب الحالي)</label>'
+    +     '<textarea class="wst-tx" id="wstImp" rows="6" style="direction:ltr;font-family:Consolas,Menlo,monospace;font-size:12px;font-weight:500" placeholder="SC3 Alpine status from Daily Task tracking&#10;queue_name (LiDAR) (3 OCT)&#10;Created FP: 0 ..." spellcheck="false"></textarea>'
+    +     '<div style="margin-top:8px"><button class="mod-btn" id="wstImpGo">Import</button> <button class="mod-btn" id="wstImpClr">Clear</button></div>'
+    +   '</div>'
     +   '<div class="wst-box" style="background:var(--white);padding:6px 4px"><div id="wstLib"></div></div>'
 
     // دروب داون الإضافة
-    +   '<div class="wst-row"><div class="wst-f" style="flex:3;min-width:260px"><label class="wst-lb">ضيف كيو من المكتبة (بيتضاف في آخر الترتيب)</label><select class="wst-tx" id="wstPick" style="direction:ltr"></select></div>'
+    +   '<div class="wst-row"><div class="wst-f" style="flex:3;min-width:260px"><label class="wst-lb">ضيف كيو من المكتبة (اكتب أو اختار — بيتضاف في آخر الترتيب)</label><input class="wst-tx" id="wstPick" list="wstPickList" style="direction:ltr" placeholder="اكتب للبحث أو اختار من القايمة" autocomplete="off"><datalist id="wstPickList"></datalist></div>'
     +   '<div><button class="mod-btn" id="wstAdd">Add</button> <button class="mod-btn" id="wstAddAll">Add all</button> <button class="mod-btn" id="wstClear">Clear order</button></div></div>'
     + '</div></div>'
     + '<div class="wla-card"><div class="wla-hdr"><span class="wla-pill" style="background:#455a64">Queues</span></div><div class="wst-grid" id="wstCards"></div></div>'
@@ -5985,10 +6010,15 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     save();
   }
 
+  // سطر اسم الكيو: name (Type) (3 OCT) (Tags) — نفس الشكل في الكارت وفي الرسالة
+  function titleLine(c){
+    return c.name + ' (' + c.mod + ') (' + dLbl(curDate()) + ')' + c.extras.map(function(e){ return ' (' + e + ')'; }).join('');
+  }
+
   // ── بناء الرسالة ──
   function block(c){
     var v = vOf(c), l = [c.header + ' status from Daily Task tracking'];
-    l.push(c.name + ' (' + c.mod + ') (' + dLbl(curDate()) + ')' + c.extras.map(function(e){ return ' (' + e + ')'; }).join(''));
+    l.push(titleLine(c));
     FIELDS.forEach(function(f){ ['fp','qa'].forEach(function(p){ l.push(f[1] + ' ' + p.toUpperCase() + ': ' + fmt(numOf(v[f[0] + '_' + p]))); }); });
     return l.join('\n');
   }
@@ -6030,7 +6060,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     var cards = getCards(), bl = cards.map(block), sm = summary(cards);
     _msgs = [];
     if (S.sep) {
-      cards.forEach(function(c, i){ _msgs.push({ label: '#' + (i + 1) + ' · ' + c.name, text: bl[i] }); });
+      cards.forEach(function(c, i){ _msgs.push({ label: '#' + (i + 1) + ' · ' + titleLine(c), text: bl[i] }); });
       if (sm) _msgs.push({ label: 'Summary (التجميعة)', text: sm });
     } else {
       var all = bl.join('\n\n'); if (sm) all += (all ? '\n\n' : '') + sm;
@@ -6061,14 +6091,39 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     });
     gid('wstLib').innerHTML = h;
   }
+  function pickLabel(e){ return e.name + ' (' + e.type + ')' + (e.tags ? ' (' + e.tags + ')' : ''); }
   function renderPick(){
-    var sel = gid('wstPick'), h = '', n = 0;
+    var inp = gid('wstPick'), dl = gid('wstPickList'), h = '', n = 0;
     S.lib.forEach(function(e){
       if (S.order.indexOf(e.id) !== -1) return;
-      n++; h += '<option value="' + esc(e.id) + '">' + esc(e.name) + ' (' + esc(e.type) + ')' + (e.tags ? ' (' + esc(e.tags) + ')' : '') + '</option>';
+      n++; h += '<option value="' + esc(pickLabel(e)) + '">';
     });
-    sel.innerHTML = n ? h : '<option value="">— مفيش كيوهات تانية في المكتبة —</option>';
-    sel.disabled = !n; gid('wstAdd').disabled = !n; gid('wstAddAll').disabled = !n;
+    dl.innerHTML = h;
+    inp.disabled = !n; inp.placeholder = n ? 'اكتب للبحث أو اختار من القايمة' : 'مفيش كيوهات تانية في المكتبة';
+    if (!n) inp.value = '';
+    gid('wstAdd').disabled = !n; gid('wstAddAll').disabled = !n;
+  }
+  // بيدوّر في الكيوهات اللي لسه مش في الترتيب: تطابق كامل → الاسم بس → جزء من الاسم
+  function findPick(txt){
+    txt = (txt || '').trim().toLowerCase(); if (!txt) return null;
+    var av = S.lib.filter(function(e){ return S.order.indexOf(e.id) === -1; });
+    var m = av.filter(function(e){ return pickLabel(e).toLowerCase() === txt; });
+    if (!m.length) m = av.filter(function(e){ return e.name.toLowerCase() === txt; });
+    if (!m.length) m = av.filter(function(e){ return pickLabel(e).toLowerCase().indexOf(txt) !== -1; });
+    return m.length === 1 ? m[0] : (m.length > 1 ? 'many' : null);
+  }
+  function addPick(){
+    var inp = gid('wstPick'), txt = inp.value.trim(); if (!txt) return;
+    var r = findPick(txt);
+    if (r === 'many') { toast('في أكتر من كيو بنفس الكلام — كمّل الاسم أو اختار من القايمة', 'err'); return; }
+    if (!r) {
+      var inOrder = S.lib.some(function(e){ return S.order.indexOf(e.id) !== -1 && pickLabel(e).toLowerCase().indexOf(txt.toLowerCase()) !== -1; });
+      if (inOrder) { toast('الكيو ده موجود في الترتيب بالفعل', 'err'); return; }
+      gid('wstLName').value = txt; inp.value = '';
+      toast('الكيو ده مش في المكتبة — كمّل بياناته في الفورم واضغط Save', 'err');
+      gid('wstLName').focus(); return;
+    }
+    S.order.push(r.id); save(); inp.value = ''; renderAll(); gid('wstPick').focus();
   }
 
   function resetForm(){
@@ -6093,6 +6148,59 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     save(); resetForm(); renderAll();
   }
 
+  // ── استيراد مسدج قديمة ──
+  function importOld(txt){
+    var lines = String(txt || '').split(/\r?\n/).map(function(x){ return x.trim(); });
+    var blocks = [], cur = null, tot = {};
+    for (var i = 0; i < lines.length; i++) {
+      var L = lines[i]; if (!L) continue;
+      if (/status from Daily Task tracking/i.test(L)) {
+        cur = { header: L.replace(/\s*status from Daily Task tracking.*/i, '').trim(), title: '', v: {} };
+        blocks.push(cur); continue;
+      }
+      var fm = L.match(/^(Created|Started|Processed|Skipped)\s+(FP|QA)\s*:\s*([\d,\.]*)/i);
+      if (fm) { if (cur) cur.v[FKEY[fm[1].toLowerCase()] + '_' + fm[2].toLowerCase()] = String(numOf(fm[3])); continue; }
+      var rm = L.match(/^Remaining\s*:(.*)$/i);
+      if (rm) {
+        var mm, re = /from\s+([\d,]+)\s+tasks/gi, nums = [];
+        while ((mm = re.exec(rm[1]))) nums.push(numOf(mm[1]));
+        var k = /For\s+Lidar/i.test(lines.slice(0, i + 1).reverse().filter(function(x){ return /^For\s+/i.test(x); })[0] || '') ? 'li' : 'la';
+        if (nums[0] != null) tot[k + 'fp'] = String(nums[0]);
+        if (nums[1] != null) tot[k + 'qa'] = String(nums[1]);
+        continue;
+      }
+      if (/^For\s+/i.test(L) || /^Submitted/i.test(L)) continue;
+      if (cur && !cur.title) cur.title = L;
+    }
+    blocks = blocks.filter(function(b){ return b.title; });
+    if (!blocks.length) return 0;
+    var d = curDate(); S.vals[d] = S.vals[d] || {}; var order = [];
+    blocks.forEach(function(b){
+      var p = b.title.indexOf(' ('), name = (p === -1 ? b.title : b.title.slice(0, p)).trim();
+      var type = 'LiDAR', tags = [], re2 = /\(([^)]*)\)/g, m2, gotT = false;
+      while ((m2 = re2.exec(b.title.slice(p === -1 ? b.title.length : p)))) {
+        var t = m2[1].trim();
+        if (/^\d{1,2}\s*[a-z]{3,9}$/i.test(t)) continue;
+        if (!gotT && /lidar/i.test(t)) { type = 'LiDAR'; gotT = true; continue; }
+        if (!gotT && /sell\s*-?\s*mapping|msl/i.test(t)) { type = 'SellMapping'; gotT = true; continue; }
+        if (!gotT && /lane/i.test(t)) { type = 'Lane Line'; gotT = true; continue; }
+        tags.push(t);
+      }
+      var e = S.lib.filter(function(x){ return x.name.toLowerCase() === name.toLowerCase() && normType(x.type).toLowerCase() === type.toLowerCase(); })[0];
+      if (!e) {
+        e = { id: uid(), name: name, type: type, tags: tags.join(', '), hdr: (b.header && b.header !== headerOf(name)) ? b.header : '' };
+        S.lib.push(e);
+      }
+      if (order.indexOf(e.id) === -1) order.push(e.id);
+      S.vals[d][e.id] = b.v;
+    });
+    S.order = order;
+    Object.keys(tot).forEach(function(k){ S.tot[k] = tot[k]; });
+    [].forEach.call(pane.querySelectorAll('[data-t]'), function(i){ i.value = S.tot[i.getAttribute('data-t')] || ''; });
+    save(); renderAll();
+    return blocks.length;
+  }
+
   // ── الكروت ──
   function renderCards(){
     var cards = getCards(), h = '';
@@ -6100,11 +6208,11 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     cards.forEach(function(c, i){
       var v = vOf(c), id = esc(c.key);
       h += '<div class="wst-card" data-wst-k="' + id + '"><div class="wst-ch" style="border-top:4px solid ' + colOf(c.type) + '">'
-        + '<div class="wst-chr"><span>#' + (i + 1) + ' ' + esc(c.name) + '</span><span class="wst-mv">'
+        + '<div class="wst-chr"><span>#' + (i + 1) + ' ' + esc(titleLine(c)) + '</span><span class="wst-mv">'
         + '<button class="wst-sm" data-wst-up="' + id + '" title="فوق">↑</button>'
         + '<button class="wst-sm" data-wst-dn="' + id + '" title="تحت">↓</button>'
         + '<button class="wst-sm del" data-wst-rm="' + id + '" title="شيل من الترتيب">✕</button></span></div>'
-        + '<small>' + esc(c.header) + ' · ' + esc(c.mod) + (c.extras.length ? ' · ' + esc(c.extras.join(', ')) : '') + '</small></div>'
+        + '<small>' + esc(c.header) + ' status from Daily Task tracking</small></div>'
         + '<table class="wst-t"><thead><tr><th></th><th>FP</th><th>QA</th></tr></thead><tbody>';
       FIELDS.forEach(function(f){
         h += '<tr><td class="l">' + f[1] + '</td>';
@@ -6165,23 +6273,26 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   });
   pane.addEventListener('keydown', function(e){
     if (e.key === 'Enter' && e.target.id && /^wstL(Name|Tags|Hdr)$/.test(e.target.id)) { e.preventDefault(); saveQueue(); }
+    if (e.key === 'Enter' && e.target.id === 'wstPick') { e.preventDefault(); addPick(); }
   });
   pane.addEventListener('click', function(e){
     var t = e.target; if (!t.closest) return;
     if (t.id === 'wstSep') { S.sep = !S.sep; save(); sepLabel(); renderMsgs(); return; }
-    if (t.id === 'wstLSave') { saveQueue(); return; }
-    if (t.id === 'wstLCancel') { resetForm(); return; }
-    if (t.id === 'wstAdd') {
-      var v = gid('wstPick').value;
-      if (v && S.order.indexOf(v) === -1) { S.order.push(v); save(); renderAll(); }
+    if (t.id === 'wstImpGo') {
+      var n = importOld(gid('wstImp').value);
+      if (!n) toast('مش لاقي كيوهات في النص ده', 'err'); else { toast('اتضاف ' + n + ' كيو بأرقامهم ✅', 'ok'); gid('wstImp').value = ''; }
       return;
     }
+    if (t.id === 'wstImpClr') { gid('wstImp').value = ''; return; }
+    if (t.id === 'wstLSave') { saveQueue(); return; }
+    if (t.id === 'wstLCancel') { resetForm(); return; }
+    if (t.id === 'wstAdd') { addPick(); return; }
     if (t.id === 'wstAddAll') {
       S.lib.forEach(function(x){ if (S.order.indexOf(x.id) === -1) S.order.push(x.id); });
       save(); renderAll(); return;
     }
     if (t.id === 'wstClear') {
-      if (S.order.length && confirm('تشيل كل الكيوهات من الترتيب؟ (المكتبة هتفضل زي ما هي)')) { S.order = []; save(); renderAll(); }
+      if (S.order.length) popConfirm('تشيل كل الكيوهات من الترتيب؟ (المكتبة هتفضل زي ما هي)', function(){ S.order = []; save(); renderAll(); });
       return;
     }
     var b;
@@ -6196,11 +6307,13 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     }
     if ((b = t.closest('[data-wst-del]'))) {
       var did = b.getAttribute('data-wst-del'), dq = S.lib.filter(function(x){ return x.id === did; })[0]; if (!dq) return;
-      if (!confirm('تحذف "' + dq.name + '" من المكتبة؟ (وهتتشال من الترتيب كمان)')) return;
-      S.lib = S.lib.filter(function(x){ return x.id !== did; });
-      S.order = S.order.filter(function(x){ return x !== did; });
-      if (_edit === did) resetForm();
-      save(); renderAll(); return;
+      popConfirm('تحذف "' + dq.name + '" من المكتبة؟ (وهتتشال من الترتيب كمان)', function(){
+        S.lib = S.lib.filter(function(x){ return x.id !== did; });
+        S.order = S.order.filter(function(x){ return x !== did; });
+        if (_edit === did) resetForm();
+        save(); renderAll();
+      });
+      return;
     }
     if ((b = t.closest('[data-wst-up]'))) { move(b.getAttribute('data-wst-up'), -1); return; }
     if ((b = t.closest('[data-wst-dn]'))) { move(b.getAttribute('data-wst-dn'), 1); return; }
