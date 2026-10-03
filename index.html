@@ -5835,6 +5835,22 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   var pg = gid('pgWla'); if (!pg) return;
 
   var KEY = 'wla_stats_v1';
+  var UIKEY = 'wla_stats_ui_v1';
+  // ── حفظ آمن: localStorage + نسخة احتياطية + sessionStorage، ويتقرا بأول نسخة سليمة ──
+  var _warned = false;
+  function persist(j){
+    var ok = false;
+    try { localStorage.setItem(KEY, j); localStorage.setItem(KEY + '_bak', j); ok = true; } catch (e) {}
+    try { sessionStorage.setItem(KEY, j); ok = true; } catch (e) {}
+    if (!ok && !_warned) { _warned = true; try { toast('المتصفح مانع الحفظ — الداتا مش هتفضل بعد الريلود', 'err'); } catch (e) {} }
+  }
+  function loadSaved(){
+    var srcs = [function(){ return localStorage.getItem(KEY); }, function(){ return localStorage.getItem(KEY + '_bak'); }, function(){ return sessionStorage.getItem(KEY); }];
+    for (var i = 0; i < srcs.length; i++) {
+      try { var o = JSON.parse(srcs[i]() || 'null'); if (o && typeof o === 'object') return o; } catch (e) {}
+    }
+    return null;
+  }
   var FIELDS = [['c','Created'],['s','Started'],['p','Processed'],['k','Skipped']];
   var FKEY = { created:'c', started:'s', processed:'p', skipped:'k' };
   var MON = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
@@ -5842,7 +5858,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   var SRC_DEF = 'Daily Task tracking';
   var S = { lib:[], order:[], q:'', tot:{ lifp:'', liqa:'', lafp:'', laqa:'' }, lbl:{ li:'SC3 Alpine + SC3 Full Scene + V4 parallel', la:'SC3 Full Scene' }, sep:false, vals:{}, done:{} };
   try {
-    var sv = JSON.parse(localStorage.getItem(KEY) || 'null');
+    var sv = loadSaved();
     if (sv) {
       S.lib = sv.lib || []; S.order = sv.order || []; S.q = sv.q || '';
       S.tot = Object.assign(S.tot, sv.tot || {}); S.lbl = Object.assign(S.lbl, sv.lbl || {});
@@ -5853,7 +5869,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   var _hist = [JSON.stringify(S)], _redo = [], _lastT = 0;
   function save(co){
     var j = JSON.stringify(S);
-    try { localStorage.setItem(KEY, j); } catch (e) {}
+    persist(j);
     if (j === _hist[_hist.length - 1]) return;
     var now = Date.now();
     if (co === true && _hist.length > 1 && now - _lastT < 800) _hist[_hist.length - 1] = j; else _hist.push(j);
@@ -5864,7 +5880,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     var o = JSON.parse(j);
     S.lib = o.lib || []; S.order = o.order || []; S.q = o.q || ''; S.tot = o.tot || {}; S.lbl = o.lbl || S.lbl;
     S.sep = !!o.sep; S.vals = o.vals || {}; S.done = o.done || {};
-    try { localStorage.setItem(KEY, j); } catch (e) {}
+    persist(j);
   }
   function uid(){ return 'q' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 
@@ -6245,7 +6261,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
         h += '<tr><td class="l">' + f[1] + '</td>';
         ['fp','qa'].forEach(function(p){
           var fid = f[0] + '_' + p;
-          h += '<td><input type="text" inputmode="numeric" class="wla-exp wst-in" data-f="' + fid + '" placeholder="0" value="' + esc((v[fid] === undefined || v[fid] === null || String(v[fid]).trim() === '') ? '0' : v[fid]) + '"></td>';
+          h += '<td><input type="text" inputmode="numeric" class="wla-exp wst-in" data-f="' + fid + '" placeholder="0" value="' + esc(/\d/.test(String(v[fid] == null ? '' : v[fid])) ? v[fid] : '0') + '"></td>';
         });
         h += '</tr>';
       });
@@ -6288,6 +6304,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   pane.addEventListener('input', function(e){
     var t = e.target;
     if (t.hasAttribute('data-t')) { S.tot[t.getAttribute('data-t')] = t.value; save(true); renderMsgs(); return; }
+    if (t.classList.contains('wst-in') && /^[\s\-\u2013\u2014]+$/.test(t.value)) { t.value = '0'; try { t.select(); } catch (x) {} }
     if (t.classList.contains('wst-in')) { setV(t.closest('.wst-card').getAttribute('data-wst-k'), t.getAttribute('data-f'), t.value); renderMsgs(); }
   });
   // لما تدوس على خانة Type الاقتراحات كلها بتظهر (القيمة بترجع لو سيبتها فاضية)
@@ -6426,7 +6443,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   // أي خانة فاضية في الكروت ترجع 0 (وتتحفظ 0)، وعند الدخول عليها بتتحدد
   pane.addEventListener('focusout', function(e){
     var t = e.target; if (!t.classList || !t.classList.contains('wst-in')) return;
-    if (String(t.value).trim() === '') {
+    if (!/\d/.test(String(t.value))) {
       t.value = '0';
       setV(t.closest('.wst-card').getAttribute('data-wst-k'), t.getAttribute('data-f'), '0');
       renderMsgs();
@@ -6436,14 +6453,26 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     var t = e.target; if (t.classList && t.classList.contains('wst-in')) setTimeout(function(){ try { t.select(); } catch (x) {} }, 0);
   });
 
+  // حفظ فوري قبل أي ريلود/قفل/تبديل تاب
+  function flush(){ persist(JSON.stringify(S)); }
+  window.addEventListener('beforeunload', flush);
+  window.addEventListener('pagehide', flush);
+  document.addEventListener('visibilitychange', function(){ if (document.hidden) flush(); });
+
   // ── التبويبات ──
-  var _origLoad = window.loadWla;
+  var _origLoad = window.loadWla, _restored = false;
   window.loadWla = function(force){
+    if (!_restored) { // بعد الريلود: ارجع لنفس التاب (Stats) اللي كنت فيه
+      _restored = true;
+      var u = null; try { u = localStorage.getItem(UIKEY); } catch (e) {}
+      if (u === 'stats') { setTab('stats'); return; }
+    }
     if (_tab === 'stats') { showStats(); return; } // تغيير التاريخ وانت في Stats بيحدّث الـ Stats بس
     if (_origLoad) return _origLoad.apply(this, arguments);
   };
   function setTab(t){
     _tab = t;
+    try { localStorage.setItem(UIKEY, t); } catch (e) {}
     [].forEach.call(tabs.querySelectorAll('.wla-tab'), function(b){ b.classList.toggle('on', b.getAttribute('data-wlatab') === t); });
     var isS = (t === 'stats');
     var a = gid('wlaShiftBtns'); if (a) a.style.display = isS ? 'none' : 'flex';
