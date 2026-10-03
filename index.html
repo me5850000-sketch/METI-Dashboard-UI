@@ -6481,6 +6481,23 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     persist(JSON.stringify(S));
     return true;
   }
+  // ── كاش الأيام: أي تاريخ عدّى عليه 3 أيام أو أكتر بيتمسح تلقائي (مع الأرقام والتشيكات بتاعته) ──
+  var KEEP_DAYS = 3;
+  function ageDays(iso){
+    var p = (iso || '').split('-'); if (p.length !== 3) return 0;
+    var t = (iso === todayISO()) ? 0 : Math.round((Date.UTC(+todayISO().slice(0,4), +todayISO().slice(5,7) - 1, +todayISO().slice(8,10)) - Date.UTC(+p[0], +p[1] - 1, +p[2])) / 86400000);
+    return t;
+  }
+  function purgeOld(){
+    var keep = curDate(), changed = false;
+    [S.days, S.vals, S.done].forEach(function(o){
+      if (!o) return;
+      Object.keys(o).forEach(function(d){
+        if (d !== keep && /^\d{4}-\d{2}-\d{2}$/.test(d) && ageDays(d) >= KEEP_DAYS) { delete o[d]; changed = true; }
+      });
+    });
+    if (changed) persist(JSON.stringify(S));
+  }
   function refreshInputs(){
     [].forEach.call(pane.querySelectorAll('[data-t]'), function(i){ i.value = S.tot[i.getAttribute('data-t')] || ''; });
     var imp = gid('wstImp'); if (imp) imp.value = '';
@@ -6490,6 +6507,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   function showStats(){
     ensureUser();
     if (!DP.getVal('wlaDate')) DP.setVal('wlaDate', todayISO(), false);
+    try { purgeOld(); } catch (e) {}
     try { if (swapDay(curDate())) { _hist = [JSON.stringify(S)]; _redo = []; refreshInputs(); } } catch (e) { try { console.error('swapDay', e); } catch (x) {} }
     gid('wstDate').textContent = dLbl(curDate());
     renderAll(); syncSlots();
@@ -6744,5 +6762,6 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   });
 })();
 </script>
+
 </body>
 </html>
