@@ -6303,8 +6303,8 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   pane.addEventListener('paste', function(e){
     var t = e.target; if (!t || !t.classList || !t.classList.contains('wst-in')) return;
     var txt = (e.clipboardData || window.clipboardData).getData('text') || '';
-    var toks = txt.split(/[\s\t]+/).filter(function(x){ return /\d/.test(x); });
-    if (toks.length < 2 || /(created|started|processed|skipped)\s*(fp|qa)\s*:/i.test(txt)) return;
+    var toks = txt.split(/[\s\t]+/).filter(function(x){ return /\d/.test(x) || /^[-\u2013\u2014]$/.test(x); }).map(function(x){ return /\d/.test(x) ? x : '0'; });
+    if ((toks.length < 2 && !/^\s*[-\u2013\u2014]\s*$/.test(txt)) || /(created|started|processed|skipped)\s*(fp|qa)\s*:/i.test(txt)) return;
     e.preventDefault();
     var card = t.closest('.wst-card'), ins = [].slice.call(card.querySelectorAll('.wst-in')), i = ins.indexOf(t);
     // كيو LiDAR + Lane Line بنفس الاسم ورا بعض = صف واحد جنب بعض: A.FP A.QA B.FP B.QA ثم السطر اللي بعده
