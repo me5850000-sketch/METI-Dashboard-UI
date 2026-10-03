@@ -5889,8 +5889,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
     '.wst-sm{padding:4px 11px;border-radius:7px;border:2px solid var(--border);background:var(--white);color:var(--gray);font-size:12px;font-weight:800;cursor:pointer;font-family:inherit}' +
     '.wst-sm:hover{border-color:var(--blue);color:var(--blue)}.wst-sm.del:hover{border-color:var(--danger-text);color:var(--danger-text)}' +
     '.wst-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(440px,1fr));gap:18px;padding:16px 20px 20px}' +
-    '.wst-card{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--white);opacity:.5;filter:grayscale(.85);transition:opacity .2s,filter .2s,border-color .2s,background .2s}' +
-    '.wst-card:focus-within{opacity:.85}' +
+    '.wst-card{border:1px solid var(--border);border-radius:12px;overflow:hidden;background:var(--white);transition:border-color .2s,background .2s}' +
     '.wst-card.done{opacity:1;filter:none;border:2px solid #2e7d32;background:#e8f5e9}' +
     '.wst-card.done .wst-ch{background:#c8e6c9}' +
     'body.dark .wst-card.done{background:#17331c}body.dark .wst-card.done .wst-ch{background:#1f4a27}' +
@@ -6246,7 +6245,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
         h += '<tr><td class="l">' + f[1] + '</td>';
         ['fp','qa'].forEach(function(p){
           var fid = f[0] + '_' + p;
-          h += '<td><input type="text" inputmode="numeric" class="wla-exp wst-in" data-f="' + fid + '" placeholder="0" value="' + esc(v[fid] || '') + '"></td>';
+          h += '<td><input type="text" inputmode="numeric" class="wla-exp wst-in" data-f="' + fid + '" placeholder="0" value="' + esc((v[fid] === undefined || v[fid] === null || String(v[fid]).trim() === '') ? '0' : v[fid]) + '"></td>';
         });
         h += '</tr>';
       });
@@ -6422,6 +6421,19 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
       var inp = card.querySelector('[data-f="' + id + '"]'); if (inp) inp.value = found[id];
     });
     renderMsgs();
+  });
+
+  // أي خانة فاضية في الكروت ترجع 0 (وتتحفظ 0)، وعند الدخول عليها بتتحدد
+  pane.addEventListener('focusout', function(e){
+    var t = e.target; if (!t.classList || !t.classList.contains('wst-in')) return;
+    if (String(t.value).trim() === '') {
+      t.value = '0';
+      setV(t.closest('.wst-card').getAttribute('data-wst-k'), t.getAttribute('data-f'), '0');
+      renderMsgs();
+    }
+  });
+  pane.addEventListener('focusin', function(e){
+    var t = e.target; if (t.classList && t.classList.contains('wst-in')) setTimeout(function(){ try { t.select(); } catch (x) {} }, 0);
   });
 
   // ── التبويبات ──
