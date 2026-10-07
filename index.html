@@ -6113,6 +6113,7 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
   function numOf(v){ var n = parseInt(String(v == null ? '' : v).replace(/[^\d]/g, ''), 10); return isNaN(n) ? 0 : n; }
   function fmt(n){ return Number(n || 0).toLocaleString('en-US'); }
   function curDate(){ return DP.getVal('wlaDate') || todayISO(); }
+  function dLbl(iso){ var p = (iso || '').split('-'); return p.length === 3 ? (parseInt(p[2], 10) + ' ' + MON[parseInt(p[1], 10) - 1] + ' ' + p[0]) : (iso || ''); }
   function wkLbl(iso){ var p = (iso || '').split('-'); if (p.length !== 3) return iso || ''; var d = new Date(+p[0], +p[1] - 1, +p[2]); d.setDate(d.getDate() - ((d.getDay() + 1) % 7)); return d.getDate() + ' ' + MON[d.getMonth()]; }
   function headerOf(name){ return name.toLowerCase().indexOf('alpine') !== -1 ? 'SC3 Alpine' : 'SC3 Full Scene'; }
   // تصنيف التجميع: lidar → Lidar · lane / sellmapping / msl → Lane Line · أي نوع تاني بيتجمع مع نفسه بس
