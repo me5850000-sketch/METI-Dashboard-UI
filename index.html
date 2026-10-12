@@ -730,6 +730,7 @@ body.dark .pc-box{background:#2a2b2e;color:#e8eaed}body.dark .pc-no{background:#
         </div>
       <div id="loginErr" style="background: var(--danger-bg); color: var(--danger-text); padding: 10px; border-radius: 8px; font-size: 13px; margin-bottom: 10px; display: none; text-align: center;"></div>
       <button class="login-btn" id="loginBtn" onclick="doLogin()">Sign In</button>
+      <button type="button" id="demoBtn" onclick="startDemo()" style="width:100%;margin-top:10px;padding:12px;border-radius:10px;border:1.5px dashed #1c4587;background:transparent;color:#1c4587;font-weight:800;font-size:14px;cursor:pointer">Try the demo — sample data</button>
         <div style="text-align:center;margin-top:14px">
   <span style="font-size:13px;color:var(--neutral-text)">Don't have an account?</span>
   <button onclick="showRegister()" style="background:none;border:none;color:#1c4587;
@@ -1036,6 +1037,231 @@ var _RPC_CACHE_TTL = 20000; // 20 ثانية
 
 function _rpcKey(fn, args) { return fn + '|' + JSON.stringify(args); }
 
+// ═══════════════════════════════════════════════
+// DEMO MODE — fake data, nothing reaches the real backend
+// Enabled from the login screen ("Try the demo"). TOKEN === '__demo__'.
+// ═══════════════════════════════════════════════
+var DEMO_TOKEN = '__demo__';
+function _isDemo(args){ return (typeof TOKEN !== 'undefined' && TOKEN === DEMO_TOKEN) || !!(args && args[0] === DEMO_TOKEN); }
+
+var _DEMO_INST = null;
+function _demo(){ return _DEMO_INST || (_DEMO_INST = (function(){
+  // deterministic RNG so every page shows the same numbers
+  var seed = 20260712;
+  function rnd(){ seed = (seed * 1664525 + 1013904223) % 4294967296; return seed / 4294967296; }
+  function pick(a){ return a[Math.floor(rnd() * a.length)]; }
+  function ri(a, b){ return a + Math.floor(rnd() * (b - a + 1)); }
+  function pad(n){ return ('0' + n).slice(-2); }
+  function iso(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + 'T' + pad(d.getHours()) + ':' + pad(d.getMinutes()) + ':' + pad(d.getSeconds()); }
+  function dayISO(d){ return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
+
+  var FIRST = ['Ahmed','Mohamed','Omar','Youssef','Mahmoud','Karim','Mostafa','Hassan','Ali','Ibrahim','Khaled','Tarek','Amr','Hossam','Islam','Ziad','Sara','Mariam','Nour','Salma','Habiba','Menna','Aya','Yasmin','Rana','Farida','Hana','Malak','Dina','Reem'];
+  var LAST = ['Adel','Samir','Fathy','Nabil','Saeed','Gamal','Hany','Ashraf','Magdy','Reda','Fouad','Sherif','Wael','Ayman','Hamdy','Zaki','Lotfy','Shawky'];
+  var SHIFTS = ['Morning','Night','Over Night'];
+  var SHIFT_CODE = { 'Morning':'M', 'Night':'N', 'Over Night':'ON' };
+  var SHIFT_START = { 'Morning':8, 'Night':16, 'Over Night':0 };
+  var UNITS = ['Unit A','Unit B','Unit C'];
+  var ROOMS = ['NC Room 102','NC Room 106','NC Room 108'];
+  var LANE_Q = ['LL_Highway_Day_04','LL_Urban_Night_11','LL_Ramp_Merge_07','LL_Tunnel_02','LL_Rain_Set_09','LL_Roundabout_05'];
+  var LIDAR_Q = ['LD_Urban_3D_12','LD_Highway_3D_03','LD_Parking_Lot_08','LD_Pedestrian_06','LD_Intersection_10'];
+  var STAGES = ['Submitted','Submitted','Submitted','Accepted','Accepted','Rework'];
+
+  var used = {};
+  function personName(){ var n; do { n = pick(FIRST) + ' ' + pick(LAST); } while (used[n]); used[n] = 1; return n; }
+
+  // labelers (each has a shift, unit, modality and seat)
+  var labelers = [], ykSeq = 1200, pcSeq = 1;
+  SHIFTS.forEach(function(sh){
+    var count = sh === 'Over Night' ? 14 : 22;
+    for (var i = 0; i < count; i++) {
+      var isLi = rnd() < 0.38;
+      labelers.push({
+        name: personName(), shift: sh, unit: pick(UNITS), isLi: isLi,
+        queue: isLi ? pick(LIDAR_Q) : pick(LANE_Q),
+        yubikey: 'me' + ('000000' + (ykSeq++)).slice(-6) + '@meti.ai',
+        pc: 'PC-' + pad(pcSeq++ % 60 + 1), room: pick(ROOMS),
+        type: rnd() < 0.12 ? 'T' : 'L', speed: 0.7 + rnd() * 0.7
+      });
+    }
+  });
+  // QTC reviewers
+  var qtcs = [];
+  SHIFTS.forEach(function(sh){
+    for (var i = 0; i < (sh === 'Over Night' ? 2 : 3); i++) {
+      var nm = personName();
+      qtcs.push({ name: nm, teamsName: nm, shift: sh, code: SHIFT_CODE[sh] });
+    }
+  });
+
+  // task rows for the last 42 days
+  var rows = [], now = new Date(), taskId = 480000;
+  for (var back = 41; back >= 0; back--) {
+    var day = new Date(now.getFullYear(), now.getMonth(), now.getDate() - back);
+    var weekend = day.getDay() === 5; // Friday is lighter
+    labelers.forEach(function(L){
+      if (rnd() < (weekend ? 0.45 : 0.1)) return; // absent that day
+      var n = Math.round((L.isLi ? 3 : 5) * L.speed * (0.6 + rnd() * 0.8));
+      var qShift = qtcs.filter(function(q){ return q.shift === L.shift; });
+      for (var k = 0; k < n; k++) {
+        var t = new Date(day.getTime());
+        t.setHours(SHIFT_START[L.shift] + ri(0, 7), ri(0, 59), ri(0, 59));
+        if (t > now) continue;
+        var qa = rnd() < 0.3, qtc = pick(qShift);
+        var queue = rnd() < 0.85 ? L.queue : (L.isLi ? pick(LIDAR_Q) : pick(LANE_Q));
+        var r = {};
+        r[F.labeler] = L.name; r[F.shift] = L.shift; r[F.unit] = L.unit;
+        r[F.modality] = L.isLi ? 'Lidar' : 'Lane Line';
+        r[F.pass] = qa ? 'QA' : 'FP';
+        r[F.queue] = queue;
+        r[F.objects] = L.isLi ? ri(60, 420) : ri(18, 160);
+        r[F.date] = iso(t);
+        r[F.qc] = qtc.name + ' (' + qtc.code + ')';
+        r[F.ubkey] = L.yubikey;
+        r[F.link] = '#demo-task-' + (taskId++);
+        r[F.stage] = pick(STAGES);
+        r[F.pc] = L.pc;
+        rows.push(r);
+      }
+    });
+  }
+  rows.sort(function(a, b){ return a[F.date] < b[F.date] ? -1 : 1; });
+
+  function between(from, to){
+    var f = from || '0000', t = to || '9999';
+    return rows.filter(function(r){ var d = r[F.date]; return d >= f && d <= t; });
+  }
+
+  // attendance for one date
+  function attendance(dateISO, shiftFilter){
+    var key = (dateISO || dayISO(now)).slice(0, 10), out = {};
+    var dayRows = between(key + 'T00:00:00', key + 'T23:59:59');
+    var worked = {}; dayRows.forEach(function(r){ worked[r[F.labeler]] = 1; });
+    SHIFTS.forEach(function(sh){
+      if (shiftFilter && shiftFilter !== sh) return;
+      var team = labelers.filter(function(L){ return L.shift === sh; });
+      var present = [], absent = [], qs = {};
+      team.forEach(function(L, i){
+        var p = { name: L.name, pc: L.pc, row: i + 2, type: L.type, location: L.room, hasQueue: L.type !== 'T', yubikey: L.yubikey, queue: L.queue };
+        if (worked[L.name]) {
+          present.push(p);
+          if (p.hasQueue) {
+            var k = L.queue + '|' + (L.isLi ? 'li' : 'la');
+            var q = qs[k] || (qs[k] = { name: L.queue, isLidar: L.isLi, fp: 0, qa: 0 });
+            if (rnd() < 0.7) q.fp++; else q.qa++;
+          }
+        } else absent.push(p);
+      });
+      if (!present.length && !absent.length) return;
+      var buf = present.slice(0, 2).concat(absent.slice(0, 1));
+      out[sh] = {
+        present: present, absent: absent, total: team.length,
+        empty: [{ pc: 'PC-' + ri(61, 70), location: pick(ROOMS) }],
+        queueStats: qs,
+        bufferStats: { total: buf.length, present: buf.filter(function(b){ return present.indexOf(b) !== -1; }), absent: buf.filter(function(b){ return absent.indexOf(b) !== -1; }) }
+      };
+    });
+    return { shifts: out };
+  }
+
+  function ot(dateISO){
+    var list = [];
+    labelers.forEach(function(L){
+      if (rnd() < 0.18) list.push({ name: L.name, otShift: pick(['Morning','Night','Over Night','Over Shift']), state: rnd() < 0.7 ? 'Overtime' : 'Compensation', pc: L.pc });
+    });
+    return list;
+  }
+
+  var users = [
+    { id: 'u1', name: 'Demo Admin', email: 'admin@demo.meti', role: 'admin', shift: '', active: true },
+    { id: 'u2', name: 'Hana Fouad', email: 'hana@demo.meti', role: 'sm', shift: '', active: true },
+    { id: 'u3', name: 'Karim Saeed', email: 'karim@demo.meti', role: 'ssv', shift: 'Morning', active: true },
+    { id: 'u4', name: 'Nour Gamal', email: 'nour@demo.meti', role: 'sv', shift: 'Night', active: true },
+    { id: 'u5', name: 'Ziad Reda', email: 'ziad@demo.meti', role: 'wla', shift: 'Morning', active: true }
+  ];
+  qtcs.forEach(function(q, i){ users.push({ id: 'q' + i, name: q.name, email: q.name.toLowerCase().replace(/\s+/g, '.') + '@demo.meti', role: 'qtc', shift: q.shift, active: i % 5 !== 4, teamsName: q.teamsName }); });
+  var pending = [
+    { id: 'p1', name: 'Malak Sherif', email: 'malak@demo.meti', shift: 'Night' },
+    { id: 'p2', name: 'Amr Zaki', email: 'amr@demo.meti', shift: 'Morning' }
+  ];
+
+  function sheets(){
+    var out = [];
+    for (var i = 0; i < 10; i++) { var d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i); out.push(pad(d.getDate()) + '-' + pad(d.getMonth() + 1) + '-' + d.getFullYear()); }
+    return out;
+  }
+
+  var DEMO_MSG = 'Demo mode — nothing is saved';
+
+  function respond(fn, a){
+    switch (fn) {
+      case 'getHomeBundle': return { stats: { data: between(a[1], a[2]), user: SESSION }, targets: TARGETS, bestQtc: between(iso(new Date(now.getTime() - 7 * 864e5)), null) };
+      case 'getStats':
+      case 'getQtcStats': return { data: between(a[1], a[2]), user: SESSION };
+      case 'getBestQtcData': return { data: between(iso(new Date(now.getTime() - 7 * 864e5)), null) };
+      case 'getQtcUsers': return { data: qtcs.map(function(q){ return { name: q.name, teamsName: q.teamsName, shift: q.shift }; }) };
+      case 'getUsers': return { users: users.slice(), pending: pending.slice() };
+      case 'getAttendance': return attendance(a[1], a[2]);
+      case 'getQueueSheets': return { sheets: sheets() };
+      case 'getOtDetails': return { data: ot(a[1]) };
+      case 'getTargets': return { data: TARGETS, targets: TARGETS };
+      case 'setTarget': { var t = {}; for (var k in TARGETS) t[k] = TARGETS[k]; t[a[1]] = a[2]; return { ok: true, targets: t }; }
+      case 'createNotSubmittedSheet':
+      case 'createAttendanceExportSheet': return { err: 'Demo mode — exporting to Google Sheets is turned off' };
+      case 'upsertUser': {
+        var p = a[1] || {}, u = null;
+        users.forEach(function(x){ if (x.id === p.id) u = x; });
+        if (!u) { u = { id: 'u' + (users.length + 1) }; users.push(u); }
+        ['name','email','role','shift','active','teamsName'].forEach(function(f){ if (p[f] !== undefined) u[f] = p[f]; });
+        return { ok: true, msg: DEMO_MSG };
+      }
+      case 'deleteUser': users = users.filter(function(x){ return x.id !== a[1]; }); return { ok: true, msg: DEMO_MSG };
+      case 'approveUser': {
+        var id = a[1], pr = null;
+        pending = pending.filter(function(x){ if (x.id === id) { pr = x; return false; } return true; });
+        if (pr && a[2] === 'approve') users.push({ id: 'u' + (users.length + 1), name: pr.name, email: pr.email, role: (a[3] && a[3].role) || 'qtc', shift: pr.shift, active: true });
+        return { ok: true, msg: DEMO_MSG };
+      }
+      case 'pingSession':
+      case 'logout': return { ok: true };
+      default: return { ok: true, msg: DEMO_MSG };
+    }
+  }
+
+  return {
+    session: { id: 'u1', name: 'Demo Admin', email: 'admin@demo.meti', role: 'admin', shift: '' },
+    run: function(fn, args, s, f){
+      setTimeout(function(){
+        var res;
+        try { res = respond(fn, args || []); } catch (e) { if (f) f(e); return; }
+        if (s) s(res);
+      }, 180 + Math.floor(Math.random() * 220)); // feels like a real request
+    }
+  };
+})()); }
+
+function startDemo(){
+  TOKEN = DEMO_TOKEN;
+  SESSION = _demo().session;
+  sessionStorage.setItem('dk_tok', TOKEN);
+  sessionStorage.setItem('dk_usr', JSON.stringify(SESSION));
+  hide('loginScreen');
+  show('dashScreen');
+  showDash();
+  applyShiftDefaults(SESSION.shift);
+  sessionStorage.setItem('dk_page', 'home');
+  loadStats();
+  setTimeout(function(){ toast('Demo mode — sample data only, nothing is saved', 'ok'); }, 500);
+}
+
+function demoBadge(){
+  if (!_isDemo() || document.getElementById('demoBadge')) return;
+  var b = document.createElement('div');
+  b.id = 'demoBadge';
+  b.textContent = 'DEMO · sample data';
+  b.style.cssText = 'position:fixed;left:50%;bottom:calc(14px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);z-index:9998;background:#1c4587;color:#fff;font:800 11px/1 system-ui,sans-serif;letter-spacing:.08em;padding:8px 14px;border-radius:999px;box-shadow:0 6px 18px rgba(0,0,0,.25);pointer-events:none';
+  document.body.appendChild(b);
+}
+
 var google = {
   script: {
     run: {
@@ -1044,6 +1270,7 @@ var google = {
       withFailureHandler: function(cb) { this._f = cb; return this; },
       execute: function(fn, args) {
   var s = this._s, f = this._f;
+  if (_isDemo(args)) { _demo().run(fn, args, s, f); return; }
   var cacheable = _RPC_CACHEABLE[fn] === true;
   var key = cacheable ? _rpcKey(fn, args) : null;
 
@@ -6764,5 +6991,8 @@ console.log('✅ Att Details Patch: Empty fix + Room counts fix loaded');
 })();
 </script>
 
+<script>
+(function(){var _sd=showDash;showDash=function(){_sd.apply(this,arguments);demoBadge();};if(_isDemo())demoBadge();})();
+</script>
 </body>
 </html>
