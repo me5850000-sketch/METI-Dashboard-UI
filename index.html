@@ -2676,20 +2676,35 @@ var isOverShift = (rowShift === 'Over Shift') ||
 <script>
 // ══ QTC STATS ══
 function initQtcStats(){
-  var area=gid('qtcStatsArea');if(!area)return;
-  area.innerHTML='<div class="loading"><div class="spin"></div> Loading...</div>';
+  var area = gid('qtcStatsArea'); if (!area) return;
+  var CK = 'qtc_users_cache';
+
+  function paint(){
+    if (SESSION && (SESSION.role === 'qtc' || SESSION.role === 'sl')) {
+      var me = null, myNL = SESSION.name.trim().toLowerCase();
+      for (var i = 0; i < qtcStatsList.length; i++) { if (qtcStatsList[i].name.trim().toLowerCase() === myNL) { me = qtcStatsList[i]; break; } }
+      if (me) renderQtcStatsSearchWithSelected(me.teamsName); else renderQtcStatsSearch();
+    } else renderQtcStatsSearch();
+  }
+
+  var cached = !!(qtcStatsList && qtcStatsList.length);
+  if (!cached) {
+    try { var c = JSON.parse(localStorage.getItem(CK) || 'null'); if (c && c.length) { qtcStatsList = c; cached = true; } } catch (e) {}
+  }
+  if (cached) paint(); else area.innerHTML = '<div class="loading"><div class="spin"></div> Loading...</div>';
+
   google.script.run
     .withSuccessHandler(function(r){
-      if(r.err){area.innerHTML='<div class="empty">'+r.err+'</div>';return;}
-      qtcStatsList=r.data||[];
-      if(SESSION&&(SESSION.role==='qtc'||SESSION.role==='sl')){
-    var me=null,myNL=SESSION.name.trim().toLowerCase();
-        for(var i=0;i<qtcStatsList.length;i++){if(qtcStatsList[i].name.trim().toLowerCase()===myNL){me=qtcStatsList[i];break;}}
-        if(me)renderQtcStatsSearchWithSelected(me.teamsName);
-        else renderQtcStatsSearch();
-      }else renderQtcStatsSearch();
+      if (r.err) { if (!cached) area.innerHTML = '<div class="empty">' + r.err + '</div>'; return; }
+      var fresh = r.data || [];
+      var changed = JSON.stringify(fresh) !== JSON.stringify(qtcStatsList);
+      qtcStatsList = fresh;
+      try { localStorage.setItem(CK, JSON.stringify(fresh)); } catch (e) {}
+      var res = gid('qtcStatsResult');
+      var showing = res && res.innerHTML && res.innerHTML.trim() !== '';
+      if ((!cached || changed) && !showing) paint();
     })
-    .withFailureHandler(function(e){area.innerHTML='<div class="empty">'+e.message+'</div>';})
+    .withFailureHandler(function(e){ if (!cached) area.innerHTML = '<div class="empty">' + e.message + '</div>'; })
     .getQtcUsers(TOKEN);
 }
 
