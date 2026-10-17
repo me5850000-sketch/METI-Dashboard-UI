@@ -2725,8 +2725,8 @@ function buildQtcSearchHtml(sel){
   var groups = { 'Morning': [], 'Night': [], 'Over Night': [], 'Other': [] };
   qtcStatsList.forEach(function(u){
     if (isQR && u.name.trim().toLowerCase() !== myNL) return;
-    var s = nShift(u.shift || '');
-    if (!groups[s]) s = 'Other';
+      var s0 = nShift(u.shift || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    var s = s0 === 'morning' ? 'Morning' : s0 === 'night' ? 'Night' : (s0 === 'over night' || s0 === 'overnight') ? 'Over Night' : 'Other';
     groups[s].push(u);
   });
 
